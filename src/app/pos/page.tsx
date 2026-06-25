@@ -4,7 +4,8 @@ import { AppShell } from '@/components/layout/app-shell';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDOR_COMPANIES } from '@/lib/utils';
-import { Search, Plus, Minus, Trash2, Printer, Check, User, CreditCard, DollarSign, Smartphone, X, Flame } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, Printer, Check, User, CreditCard, DollarSign, Smartphone, X, Flame, Scan } from 'lucide-react';
+import { BarcodeScanner } from '@/components/ui/barcode-scanner';
 import { format } from 'date-fns';
 
 interface Product { id:string; sku:string|null; barcode:string|null; name:string; unit_price:number; unit_cost:number; quantity:number; taxable:boolean; vendor_company:string|null; }
@@ -204,9 +205,9 @@ export default function POSPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-obsidian-600" />
-              <input ref={searchRef} placeholder="Search or scan barcode…" value={search} onChange={e=>setSearch(e.target.value)} autoFocus
-                className="d-input pl-10 h-11 w-full" />
+              <Scan className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fire-600 animate-pulse" />
+              <input ref={searchRef} placeholder="Search or scan barcode — scanner auto-adds to cart…" value={search} onChange={e=>setSearch(e.target.value)} autoFocus
+                className="d-input pl-10 h-11 w-full border-fire-900/40" />
             </div>
             <button onClick={() => setShowPin(true)}
               className={cn('flex items-center gap-2 rounded-xl border px-4 text-sm font-medium transition-all', employee ? 'border-fire-700 bg-fire-900/30 text-fire-400' : 'border-dragon-border text-obsidian-400 hover:border-fire-800 hover:text-fire-400')}>

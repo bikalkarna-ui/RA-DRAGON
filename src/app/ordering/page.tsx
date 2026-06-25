@@ -4,7 +4,8 @@ import { AppShell } from '@/components/layout/app-shell';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDOR_COMPANIES } from '@/lib/utils';
-import { Brain, Loader2, Check, X, Plus, ChevronDown, ChevronUp, Send, Package } from 'lucide-react';
+import { Brain, Loader2, Check, X, ChevronDown, ChevronUp, Send, Package } from 'lucide-react';
+import { BarcodeScanner, ScanToast } from '@/components/ui/barcode-scanner';
 
 interface Vendor { id: string; company_name: string; rep_name: string | null; phone: string | null; is_preset: boolean; }
 interface Order { id: string; vendor_name: string; status: string; ai_generated: boolean; ai_reasoning: string | null; total_estimated: number; created_at: string; }
@@ -19,6 +20,8 @@ export default function OrderingPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
+  const [scanResult, setScanResult] = useState<{ barcode: string; product: any } | null>(null);
+  const [scanInfo, setScanInfo] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     if (!store) return;
@@ -33,6 +36,14 @@ export default function OrderingPage() {
   }, [store]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleScan = (result: { barcode: string; product: any }) => {
+    setScanResult(result);
+    if (result.product) {
+      // Show which vendor this product belongs to and its stock
+      setScanInfo(result.product);
+    }
+  };
 
   const generateOrder = async (vendor: Vendor) => {
     setGenerating(vendor.id); setError(null);
@@ -57,27 +68,12 @@ export default function OrderingPage() {
 
   const updateQty = async (itemId: string, orderId: string, qty: number) => {
     await createClient().from('vendor_order_items').update({ approved_qty: qty }).eq('id', itemId);
-    setOrderItems(prev => ({
-      ...prev,
-      [orderId]: (prev[orderId] ?? []).map(i => i.id === itemId ? { ...i, approved_qty: qty } : i),
-    }));
+    setOrderItems(prev => ({ ...prev, [orderId]: (prev[orderId] ?? []).map(i => i.id === itemId ? { ...i, approved_qty: qty } : i) }));
   };
 
-  const approveOrder = async (orderId: string) => {
-    await createClient().from('vendor_orders').update({ status: 'approved' }).eq('id', orderId);
-    fetchData();
-  };
-
-  const sentOrder = async (orderId: string) => {
-    await createClient().from('vendor_orders').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', orderId);
-    fetchData();
-  };
-
-  const deleteOrder = async (orderId: string) => {
-    if (!confirm('Delete this order?')) return;
-    await createClient().from('vendor_orders').delete().eq('id', orderId);
-    fetchData();
-  };
+  const approveOrder = async (orderId: string) => { await createClient().from('vendor_orders').update({ status: 'approved' }).eq('id', orderId); fetchData(); };
+  const sentOrder = async (orderId: string) => { await createClient().from('vendor_orders').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', orderId); fetchData(); };
+  const deleteOrder = async (orderId: string) => { if (!confirm('Delete this order?')) return; await createClient().from('vendor_orders').delete().eq('id', orderId); fetchData(); };
 
   const STATUS_STYLE: Record<string, string> = {
     draft: 'bg-obsidian-800 text-obsidian-300',
@@ -89,15 +85,47 @@ export default function OrderingPage() {
   return (
     <AppShell title="AI Smart Ordering" storeName={store?.name}>
       <div className="space-y-6">
-        <div className="d-card p-5 border-fire-900/40">
-          <div className="flex items-center gap-2 mb-2">
-            <Brain className="h-5 w-5 text-fire-500" />
-            <h2 className="font-bold text-white">Company-Wise AI Orders</h2>
+        {scanResult && (
+          <ScanToast barcode={scanResult.barcode} product={scanResult.product} onClose={() => { setScanResult(null); setScanInfo(null); }} />
+        )}
+
+        {/* Scanner bar */}
+        <div className="d-card p-4 border-fire-900/30">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Brain className="h-4 w-4 text-fire-500 shrink-0" />
+              <p className="text-sm font-medium text-white">Scan a product to see which vendor to reorder from</p>
+            </div>
+            {store && (
+              <BarcodeScanner storeId={store.id} onScan={handleScan} placeholder="Scan product barcode…" className="flex-1 min-w-48" />
+            )}
           </div>
-          <p className="text-sm text-obsidian-400 mb-5">RA Solution analyzes sales velocity for each vendor's products and generates a separate order — one per company. Each order goes to the right rep.</p>
+          {scanInfo && (
+            <div className="mt-3 rounded-lg bg-obsidian-900/60 border border-dragon-border p-3 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-white text-sm">{scanInfo.name}</p>
+                <p className="text-xs text-obsidian-400 mt-0.5">
+                  Stock: <span className={cn('font-bold', scanInfo.quantity <= scanInfo.min_quantity ? 'text-fire-400' : 'text-white')}>{scanInfo.quantity}</span>
+                  {scanInfo.vendor_company && <> · Vendor: <span className="text-fire-400">{scanInfo.vendor_company}</span></>}
+                </p>
+              </div>
+              {scanInfo.vendor_company && (
+                <button
+                  onClick={() => { const v = vendors.find(x => x.company_name === scanInfo.vendor_company); if (v) generateOrder(v); setScanInfo(null); }}
+                  className="btn-fire text-xs py-1.5 px-3 shrink-0">
+                  <Brain className="h-3.5 w-3.5" />Generate {scanInfo.vendor_company} Order
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
+        <div className="d-card p-5 border-fire-900/40">
+          <div className="flex items-center gap-2 mb-4">
+            <Brain className="h-5 w-5 text-fire-500" />
+            <h2 className="font-bold text-white">Generate Company-Wise Orders</h2>
+          </div>
           {error && <div className="mb-4 rounded-lg bg-fire-950/50 border border-fire-900/50 px-3 py-2 text-sm text-fire-400">{error}</div>}
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {vendors.map(vendor => {
               const vc = VENDOR_COMPANIES.find(v => v.name === vendor.company_name);
@@ -112,8 +140,7 @@ export default function OrderingPage() {
                     </div>
                   </div>
                   <button onClick={() => generateOrder(vendor)} disabled={!!generating}
-                    className={cn('w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition-all',
-                      isGenerating ? 'bg-fire-900/50 text-fire-400' : 'btn-fire')}>
+                    className={cn('w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition-all', isGenerating ? 'bg-fire-900/50 text-fire-400' : 'btn-fire')}>
                     {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
                     {isGenerating ? 'Analyzing…' : 'Generate Order'}
                   </button>
@@ -123,14 +150,13 @@ export default function OrderingPage() {
           </div>
         </div>
 
-        {/* Order history */}
         <div>
           <h3 className="font-semibold text-white mb-3">Order History</h3>
           {loading && <p className="text-sm text-obsidian-500">Loading…</p>}
           {!loading && orders.length === 0 && (
             <div className="d-card p-8 text-center">
               <Package className="mx-auto h-10 w-10 text-obsidian-700 mb-3" />
-              <p className="text-sm text-obsidian-500">No orders yet. Click "Generate Order" for any vendor above.</p>
+              <p className="text-sm text-obsidian-500">No orders yet. Scan a product or click "Generate Order" above.</p>
             </div>
           )}
           <div className="space-y-3">
@@ -157,32 +183,23 @@ export default function OrderingPage() {
                       {isExpanded ? <ChevronUp className="h-4 w-4 text-obsidian-500" /> : <ChevronDown className="h-4 w-4 text-obsidian-500" />}
                     </div>
                   </button>
-
                   {isExpanded && (
                     <div className="border-t border-dragon-border">
                       {order.ai_reasoning && (
                         <div className="px-4 py-3 bg-fire-950/30 border-b border-dragon-border">
-                          <p className="text-xs text-obsidian-400"><span className="text-fire-400 font-medium">AI Reasoning: </span>{order.ai_reasoning}</p>
+                          <p className="text-xs text-obsidian-400"><span className="text-fire-400 font-medium">AI: </span>{order.ai_reasoning}</p>
                         </div>
                       )}
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead className="bg-obsidian-900/50">
-                            <tr>
-                              {['Product', 'Current Stock', 'Suggested', 'Approved Qty', 'Unit Cost', 'Total', 'Why'].map(h => (
-                                <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-obsidian-500">{h}</th>
-                              ))}
-                            </tr>
+                            <tr>{['Product','Current Stock','Suggested','Approved Qty','Unit Cost','Total','Why'].map(h => <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-obsidian-500">{h}</th>)}</tr>
                           </thead>
                           <tbody className="divide-y divide-dragon-border">
                             {items.map(item => (
                               <tr key={item.id} className="hover:bg-obsidian-900/20">
                                 <td className="px-4 py-2.5 font-medium text-white">{item.product_name}</td>
-                                <td className="mono px-4 py-2.5 text-center">
-                                  <span className={cn('d-badge text-xs', item.current_stock === 0 ? 'bg-fire-900/40 text-fire-400' : 'bg-gold-900/20 text-gold-400')}>
-                                    {item.current_stock}
-                                  </span>
-                                </td>
+                                <td className="mono px-4 py-2.5 text-center"><span className={cn('d-badge text-xs', item.current_stock === 0 ? 'bg-fire-900/40 text-fire-400' : 'bg-gold-900/20 text-gold-400')}>{item.current_stock}</span></td>
                                 <td className="mono px-4 py-2.5 text-center text-obsidian-300">{item.suggested_qty}</td>
                                 <td className="px-4 py-2.5">
                                   <input type="number" min="0" defaultValue={item.approved_qty ?? item.suggested_qty}
@@ -198,19 +215,9 @@ export default function OrderingPage() {
                         </table>
                       </div>
                       <div className="flex gap-2 p-4 border-t border-dragon-border">
-                        {order.status === 'draft' && (
-                          <button onClick={() => approveOrder(order.id)} className="btn-fire text-xs py-1.5 px-3">
-                            <Check className="h-3.5 w-3.5" />Approve Order
-                          </button>
-                        )}
-                        {order.status === 'approved' && (
-                          <button onClick={() => sentOrder(order.id)} className="btn-fire text-xs py-1.5 px-3">
-                            <Send className="h-3.5 w-3.5" />Mark as Sent
-                          </button>
-                        )}
-                        <button onClick={() => deleteOrder(order.id)} className="btn-ghost text-xs py-1.5 px-3 hover:border-fire-800 hover:text-fire-400">
-                          <X className="h-3.5 w-3.5" />Delete
-                        </button>
+                        {order.status === 'draft' && <button onClick={() => approveOrder(order.id)} className="btn-fire text-xs py-1.5 px-3"><Check className="h-3.5 w-3.5" />Approve</button>}
+                        {order.status === 'approved' && <button onClick={() => sentOrder(order.id)} className="btn-fire text-xs py-1.5 px-3"><Send className="h-3.5 w-3.5" />Mark Sent</button>}
+                        <button onClick={() => deleteOrder(order.id)} className="btn-ghost text-xs py-1.5 px-3"><X className="h-3.5 w-3.5" />Delete</button>
                       </div>
                     </div>
                   )}

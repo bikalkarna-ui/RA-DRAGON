@@ -7,6 +7,7 @@ import { fmt, cn } from '@/lib/utils';
 import { TrendingUp, Package, AlertTriangle, DollarSign, RefreshCw, Zap, ArrowUp, ArrowDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { startOfDay, subDays, format, startOfWeek } from 'date-fns';
+import { BarcodeScanner, ScanToast } from '@/components/ui/barcode-scanner';
 
 export default function DashboardPage() {
   const { store } = useStore();
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
+  const [scanResult, setScanResult] = useState<{ barcode: string; product: any } | null>(null);
 
   const fetchStats = useCallback(async (silent = false) => {
     if (!store) return;
@@ -102,16 +104,24 @@ export default function DashboardPage() {
   return (
     <AppShell title="Live Dashboard" storeName={store?.name}>
       <div className="space-y-5">
-        {/* Live header */}
-        <div className="flex items-center justify-between">
+        {scanResult && (
+          <ScanToast barcode={scanResult.barcode} product={scanResult.product} onClose={() => setScanResult(null)} />
+        )}
+        {/* Live header + scanner */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="flex h-2 w-2 rounded-full bg-fire-500 animate-fire-pulse" />
             <span className="text-xs text-obsidian-500">Auto-refreshes every 30s · Last: {lastRefresh.toLocaleTimeString()}</span>
           </div>
-          <button onClick={() => fetchStats(true)} disabled={refreshing}
-            className="flex items-center gap-1.5 text-xs text-obsidian-500 hover:text-fire-400 transition-colors">
-            <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {store && (
+              <BarcodeScanner storeId={store.id} onScan={r => setScanResult(r)} placeholder="Quick scan any product…" className="w-64" />
+            )}
+            <button onClick={() => fetchStats(true)} disabled={refreshing}
+              className="flex items-center gap-1.5 text-xs text-obsidian-500 hover:text-fire-400 transition-colors whitespace-nowrap">
+              <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />Refresh
+            </button>
+          </div>
         </div>
 
         {/* KPI row */}

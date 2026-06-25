@@ -5,6 +5,7 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDOR_COMPANIES } from '@/lib/utils';
 import { Upload, Loader2, Check, X, Sparkles, FileText, AlertTriangle } from 'lucide-react';
+import { BarcodeScanner, ScanToast } from '@/components/ui/barcode-scanner';
 import { format } from 'date-fns';
 
 interface Invoice { id:string; vendor_name:string|null; vendor_company:string|null; invoice_number:string|null; total_amount:number|null; status:string; price_changes_count:number; created_at:string; }
@@ -29,6 +30,8 @@ export default function InvoicesPage() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<{barcode:string;product:any}|null>(null);
+  const [scanMatchedInvoice, setScanMatchedInvoice] = useState<string|null>(null);
 
   const fetchInvoices = useCallback(async () => {
     if (!store) return;
@@ -84,6 +87,31 @@ export default function InvoicesPage() {
   return (
     <AppShell title="AI Invoice Scanner" storeName={store?.name}>
       <div className="space-y-5">
+        {scanResult && (
+          <ScanToast barcode={scanResult.barcode} product={scanResult.product} onClose={() => setScanResult(null)} />
+        )}
+        {/* Barcode scanner — scan a product to see if it appears on any recent invoice */}
+        {!reviewId && store && (
+          <div className="d-card p-4 border-fire-900/30 flex flex-wrap items-center gap-3">
+            <p className="text-sm font-medium text-white shrink-0">Scan product to find in invoices</p>
+            <BarcodeScanner
+              storeId={store.id}
+              onScan={r => {
+                setScanResult(r);
+                if (r.product) setScanMatchedInvoice(`Scanned: ${r.product.name} · Cost: $${Number(r.product.unit_cost).toFixed(2)} · Last invoice price on file`);
+                else setScanMatchedInvoice(`Barcode ${r.barcode} not found in inventory`);
+              }}
+              placeholder="Scan product barcode…"
+              className="flex-1 min-w-48"
+            />
+            {scanMatchedInvoice && (
+              <div className="w-full rounded-lg bg-obsidian-900/60 border border-dragon-border px-3 py-2 flex items-center justify-between">
+                <p className="text-sm text-obsidian-300">{scanMatchedInvoice}</p>
+                <button onClick={() => setScanMatchedInvoice(null)} className="text-obsidian-600 hover:text-obsidian-300 ml-2">✕</button>
+              </div>
+            )}
+          </div>
+        )}
         {result && (
           <div className="d-card p-4 border-fire-900/50 bg-fire-950/20">
             <div className="flex items-center gap-2 mb-1"><Check className="h-4 w-4 text-fire-500" /><p className="font-semibold text-white">Invoice processed!</p></div>
