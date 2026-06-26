@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
-import { AIUpload } from '@/components/ui/ai-upload';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { FileText, Check, X, AlertTriangle, ChevronRight, Loader2 } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 import { format } from 'date-fns';
 
 export default function InvoicesPage() {
@@ -57,19 +57,12 @@ export default function InvoicesPage() {
         )}
 
         {/* Upload */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button onClick={() => (document.getElementById('inv-file') as HTMLInputElement)?.click()} className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border p-5 hover:border-accent hover:bg-red-50 transition-all">
-            <svg className="h-8 w-8 text-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            <span className="text-sm font-semibold text-sub">Upload Invoice</span>
-            <span className="text-xs text-muted">PDF or photo</span>
-          </button>
-          <button onClick={() => (document.getElementById('inv-file') as HTMLInputElement)?.click()} className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-green-200 bg-green-50 p-5 hover:border-green-400 transition-all">
-            <svg className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            <span className="text-sm font-semibold text-green-700">Scan Invoice</span>
-            <span className="text-xs text-green-500">Use camera</span>
-          </button>
-        </div>
-        <input id="inv-file" type="file" accept="application/pdf,image/*" className="hidden" onChange={async e => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append('file', f); const res = await fetch('/api/scan-invoice', { method: 'POST', body: fd }); const data = await res.json(); if (res.ok) handleScan(data); }} />
+        <MultiScan
+          endpoint="/api/scan-invoice"
+          onResult={handleScan}
+          title="📸 Scan or Upload Invoice"
+          hint="Take photos of all invoice pages — AI reads every product, price, and quantity"
+        />
 
         {/* Review panel */}
         {reviewId && reviewMeta && (

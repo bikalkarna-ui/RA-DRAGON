@@ -5,124 +5,14 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import {
-  Upload, Camera, Loader2, CheckCircle, AlertCircle,
   Plus, Minus, Trash2, Search, Check, User, CreditCard,
-  DollarSign, Smartphone, X, Printer, TrendingUp, TrendingDown, Clock
+  DollarSign, Smartphone, X, Printer, Clock, Loader2
 } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 import { format, startOfDay } from 'date-fns';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type View = 'report' | 'pos' | 'close_till';
-
-// ─── Inline ScanUpload — stays on screen, never navigates away ─────────────
-function ScanUpload({ onResult }: { onResult: (data: any) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [msg, setMsg] = useState('');
-  const [employee, setEmployee] = useState('');
-  const [employees, setEmployees] = useState<any[]>([]);
-  const { store } = useStore();
-
-  useEffect(() => {
-    if (!store) return;
-    createClient().from('employees').select('id,name').eq('store_id', store.id).eq('is_active', true)
-      .then(({ data }) => setEmployees(data ?? []));
-  }, [store]);
-
-  const submit = async (file?: File) => {
-    setState('loading'); setMsg('');
-    try {
-      const fd = new FormData();
-      if (file) fd.append('file', file);
-      const emp = employees.find(e => e.id === employee);
-      fd.append('employee_name', emp?.name ?? 'Unknown');
-      fd.append('employee_id', employee ?? '');
-
-      const res = await fetch('/api/scan-till', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      setState('done');
-      onResult(data);
-    } catch (err: any) {
-      setState('error'); setMsg(err.message);
-    } finally {
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden"
-        onChange={e => { const f = e.target.files?.[0]; if (f) submit(f); }} />
-
-      {employees.length > 0 && (
-        <div>
-          <label className="lbl">Who is closing? (optional)</label>
-          <select value={employee} onChange={e => setEmployee(e.target.value)} className="inp">
-            <option value="">— Select employee —</option>
-            {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
-        </div>
-      )}
-
-      {state === 'idle' && (
-        <div className="grid grid-cols-2 gap-4">
-          <button onClick={() => fileRef.current?.click()}
-            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 p-6 hover:border-accent hover:bg-red-50 transition-all active:scale-[0.98]">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
-              <Upload className="h-7 w-7 text-gray-500" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-gray-800">Upload Report</p>
-              <p className="text-xs text-gray-500 mt-0.5">PDF or photo file</p>
-            </div>
-          </button>
-          <button onClick={() => fileRef.current?.click()}
-            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-green-300 bg-green-50 p-6 hover:border-green-500 hover:bg-green-100 transition-all active:scale-[0.98]">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-200">
-              <Camera className="h-7 w-7 text-green-700" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-green-800">Scan / Camera</p>
-              <p className="text-xs text-green-600 mt-0.5">Point camera at sheet</p>
-            </div>
-          </button>
-        </div>
-      )}
-
-      {state === 'loading' && (
-        <div className="flex flex-col items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-10">
-          <Loader2 className="h-12 w-12 text-accent animate-spin" />
-          <div className="text-center">
-            <p className="font-bold text-gray-900 text-lg">AI is reading your report…</p>
-            <p className="text-gray-500 text-sm mt-1">Extracting every number automatically</p>
-          </div>
-        </div>
-      )}
-
-      {state === 'done' && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-green-300 bg-green-50 p-8">
-          <CheckCircle className="h-12 w-12 text-green-600" />
-          <div className="text-center">
-            <p className="font-bold text-green-800 text-lg">Report processed!</p>
-            <p className="text-green-600 text-sm mt-1">Daily close report updated — scroll up to see it</p>
-          </div>
-          <button onClick={() => setState('idle')} className="text-sm text-green-700 font-semibold underline mt-1">
-            Submit another
-          </button>
-        </div>
-      )}
-
-      {state === 'error' && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-8">
-          <AlertCircle className="h-10 w-10 text-accent" />
-          <p className="font-bold text-accent text-center">{msg || 'Something went wrong'}</p>
-          <button onClick={() => setState('idle')} className="btn btn-ghost text-sm px-5">Try again</button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Manual Entry Form ──────────────────────────────────────────────────────
 function ManualEntry({ onDone }: { onDone: (data: any) => void }) {
@@ -603,18 +493,22 @@ export default function DailySalesPage() {
   const [todaySales, setTodaySales] = useState(0);
   const [todayTxns, setTodayTxns] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedEmp, setSelectedEmp] = useState('');
+  const [employees, setEmployees] = useState<any[]>([]);
 
   const loadData = useCallback(async () => {
     if (!store) return;
     const sb = createClient();
     const today = new Date().toISOString().split('T')[0];
     const todayStart = startOfDay(new Date()).toISOString();
-    const [{ data: rpt }, { data: tills }, { data: sales }] = await Promise.all([
+    const [{ data: rpt }, { data: tills }, { data: sales }, { data: emps }] = await Promise.all([
       sb.from('daily_close_reports').select('*').eq('store_id', store.id).eq('report_date', today).maybeSingle(),
       sb.from('till_readings').select('id').eq('store_id', store.id).eq('reading_date', today),
       sb.from('sales').select('total').eq('store_id', store.id).gte('created_at', todayStart),
+      sb.from('employees').select('id,name').eq('store_id', store.id).eq('is_active', true),
     ]);
     if (rpt) setReport(rpt);
+    setEmployees(emps ?? []);
     setTillCount((tills ?? []).length);
     setTodaySales((sales ?? []).reduce((s: number, r: any) => s + Number(r.total), 0));
     setTodayTxns((sales ?? []).length);
@@ -692,21 +586,32 @@ export default function DailySalesPage() {
       {view === 'pos' && store && <POSRegister store={store} />}
 
       {/* ── CLOSE TILL TAB ── */}
-      {view === 'close_till' && (
+            {view === 'close_till' && (
         <div className="space-y-5">
           <div className="tile p-5 border-l-4 border-l-accent">
             <p className="font-bold text-text text-lg mb-1">Submit Close Till</p>
-            <p className="text-sm text-muted">Upload or scan your close sheet. AI reads every number and builds the daily report. Multiple employees can submit — all are combined.</p>
+            <p className="text-sm text-muted">Take photos of all your till sheet pages. AI reads every number instantly and builds the daily close report.</p>
           </div>
-
           <div className="tile p-5">
-            <p className="font-semibold text-text mb-1">📸 Scan or Upload Close Sheet</p>
-            <p className="text-xs text-muted mb-4">Fastest option — point camera at your paper or upload a photo/PDF</p>
-            <ScanUpload onResult={handleTillResult} />
+            {employees.length > 0 && (
+              <div className="mb-4">
+                <label className="lbl">Who is closing?</label>
+                <select value={selectedEmp} onChange={(e:any) => setSelectedEmp(e.target.value)} className="inp">
+                  <option value="">— Optional —</option>
+                  {employees.map((e:any) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
+            )}
+            <MultiScan
+              endpoint="/api/scan-till"
+              onResult={handleTillResult}
+              title="📸 Photograph Your Till Sheet"
+              hint="Take photo of each page → all pages show as thumbnails → hit Submit to AI"
+              extraFields={selectedEmp ? { employee_id: selectedEmp, employee_name: employees.find((e:any) => e.id === selectedEmp)?.name ?? 'Unknown' } : {}}
+            />
           </div>
-
           <div className="tile p-5">
-            <p className="font-semibold text-text mb-4">✏️ Enter Manually</p>
+            <p className="font-semibold text-text mb-4">✏️ Enter Manually Instead</p>
             <ManualEntry onDone={handleTillResult} />
           </div>
         </div>

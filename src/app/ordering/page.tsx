@@ -4,70 +4,8 @@ import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDORS } from '@/lib/utils';
-import { Brain, Loader2, Check, X, ChevronDown, ChevronUp, Package, Upload, Camera, CheckCircle, AlertCircle, Zap, TrendingDown } from 'lucide-react';
-
-// Shared scan+upload block used in this page
-function ScanUploadBlock({ onResult, label, sublabel }: { onResult: (d: any) => void; label: string; sublabel: string }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [msg, setMsg] = useState('');
-
-  const handle = async (file: File) => {
-    setState('loading');
-    try {
-      const fd = new FormData(); fd.append('file', file);
-      const res = await fetch('/api/scan-report', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) { setState('error'); setMsg(data.error || 'Failed'); return; }
-      setState('done'); onResult(data); setTimeout(() => setState('idle'), 4000);
-    } catch (err: any) { setState('error'); setMsg(err.message); }
-    finally { if (fileRef.current) fileRef.current.value = ''; }
-  };
-
-  return (
-    <div>
-      <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handle(f); }} />
-      {state === 'idle' && (
-        <div>
-          <p className="text-sm font-bold text-text mb-1">{label}</p>
-          <p className="text-xs text-muted mb-3">{sublabel}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border p-5 hover:border-accent hover:bg-red-50 transition-all active:scale-95">
-              <Upload className="h-8 w-8 text-dim" />
-              <span className="text-sm font-semibold text-sub">Upload</span>
-              <span className="text-xs text-muted">PDF or photo</span>
-            </button>
-            <button onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-green-200 bg-green-50 p-5 hover:border-green-400 transition-all active:scale-95">
-              <Camera className="h-8 w-8 text-green-600" />
-              <span className="text-sm font-semibold text-green-700">Scan / Camera</span>
-              <span className="text-xs text-green-500">Point camera at report</span>
-            </button>
-          </div>
-        </div>
-      )}
-      {state === 'loading' && (
-        <div className="flex items-center gap-3 rounded-2xl border border-border p-5">
-          <Loader2 className="h-6 w-6 text-accent animate-spin shrink-0" />
-          <div><p className="font-semibold text-text text-sm">AI reading your report…</p><p className="text-xs text-muted">Extracting sales data to improve order quantities</p></div>
-        </div>
-      )}
-      {state === 'done' && (
-        <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-5">
-          <CheckCircle className="h-6 w-6 text-green-600 shrink-0" />
-          <div><p className="font-semibold text-green-800 text-sm">Report loaded!</p><p className="text-xs text-green-600">AI will use this sales data to suggest smarter order quantities</p></div>
-        </div>
-      )}
-      {state === 'error' && (
-        <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-accent" /><p className="text-sm text-accent">{msg}</p></div>
-          <button onClick={() => setState('idle')} className="text-xs text-accent underline ml-2 shrink-0">Retry</button>
-        </div>
-      )}
-    </div>
-  );
-}
+import { Brain, Loader2, Check, X, ChevronDown, ChevronUp, Package, Zap, TrendingDown } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 
 export default function OrderingPage() {
   const { store } = useStore();
@@ -135,10 +73,11 @@ export default function OrderingPage() {
 
         {/* ── SCAN / UPLOAD REPORT ── */}
         <div className="tile p-5">
-          <ScanUploadBlock
-            label="Scan or Upload Sales Report"
-            sublabel="Upload or scan your Modisoft / daily report — AI reads your sales velocity and suggests the right quantities for each product"
+          <MultiScan
+            endpoint="/api/scan-report"
             onResult={() => setSalesDataLoaded(true)}
+            title="📸 Scan Your Sales Report"
+            hint="Photo or PDF of your Modisoft report — AI uses sales data to improve order quantities"
           />
           {salesDataLoaded && (
             <div className="mt-3 flex items-center gap-2 rounded-xl bg-violet-50 border border-violet-200 px-3 py-2">

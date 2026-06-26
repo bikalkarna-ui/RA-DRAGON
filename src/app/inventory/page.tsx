@@ -4,7 +4,8 @@ import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDORS } from '@/lib/utils';
-import { Search, Plus, X, Check, Pencil, Trash2, AlertTriangle, TrendingDown, Package, Camera, Upload, Loader2, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { Search, Plus, X, Check, Pencil, Trash2, AlertTriangle, Package, Zap } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 
 const DEPARTMENTS = ['Tobacco/CIG', 'Beer & Wine', 'Snacks', 'Beverages', 'Candy', 'Dairy', 'Frozen', 'Health & Beauty', 'Novelty', 'Vape', 'Fuel', 'Lottery', 'Other'];
 
@@ -27,49 +28,6 @@ const STATUS_CONFIG = {
   over:     { label: 'Overstocked',  chip: 'bg-blue-100 text-blue-700',      border: '',                               icon: '🔵', priority: 4 },
   ok:       { label: 'In Stock',     chip: 'bg-green-100 text-green-700',    border: '',                               icon: '🟢', priority: 5 },
 };
-
-// ScanUpload combo button
-function ScanUploadBtn({ onResult }: { onResult: (d: any) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [msg, setMsg] = useState('');
-
-  const handle = async (file: File) => {
-    setState('loading');
-    try {
-      const fd = new FormData(); fd.append('file', file);
-      const res = await fetch('/api/scan-invoice', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) { setState('error'); setMsg(data.error); return; }
-      setState('done'); onResult(data); setTimeout(() => setState('idle'), 3000);
-    } catch (err: any) { setState('error'); setMsg(err.message); }
-    finally { if (fileRef.current) fileRef.current.value = ''; }
-  };
-
-  return (
-    <div>
-      <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handle(f); }} />
-      {state === 'idle' && (
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => fileRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm font-semibold text-sub hover:border-accent hover:text-accent transition-all">
-            <Upload className="h-4 w-4" />Upload Invoice
-          </button>
-          <button onClick={() => fileRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-green-300 bg-green-50 py-3 text-sm font-semibold text-green-700 hover:border-green-500 transition-all">
-            <Camera className="h-4 w-4" />Scan Invoice
-          </button>
-        </div>
-      )}
-      {state === 'loading' && <div className="flex items-center gap-3 rounded-xl border border-border p-4"><Loader2 className="h-5 w-5 text-accent animate-spin" /><p className="text-sm font-medium text-text">AI reading invoice…</p></div>}
-      {state === 'done' && <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4"><CheckCircle className="h-5 w-5 text-green-600" /><p className="text-sm font-medium text-green-800">Invoice processed! Products updated.</p></div>}
-      {state === 'error' && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-accent" /><p className="text-sm text-accent">{msg}</p></div>
-          <button onClick={() => setState('idle')} className="text-xs text-accent underline">Retry</button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function InventoryPage() {
   const { store } = useStore();
@@ -163,7 +121,12 @@ export default function InventoryPage() {
         <div className="tile p-4">
           <p className="text-sm font-bold text-text mb-1">Upload or Scan Invoice</p>
           <p className="text-xs text-muted mb-3">AI reads vendor invoice, matches products, updates costs and stock</p>
-          <ScanUploadBtn onResult={(d) => { setInvoiceResult(d); fetch(); }} />
+          <MultiScan
+            endpoint="/api/scan-invoice"
+            onResult={(d) => { setInvoiceResult(d); fetch(); }}
+            title="📸 Scan Invoice"
+            hint="Photo of vendor invoice — AI extracts every product and updates costs"
+          />
           {invoiceResult && (
             <div className="mt-3 rounded-xl bg-green-50 border border-green-200 p-3">
               <p className="text-sm font-semibold text-green-800">✓ {invoiceResult.items?.length ?? 0} items from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>

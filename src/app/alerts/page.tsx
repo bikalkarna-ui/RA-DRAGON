@@ -4,10 +4,8 @@ import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
-import {
-  Bell, Check, TrendingUp, TrendingDown, AlertTriangle,
-  Package, ShoppingCart, Zap, Brain, ChevronRight, RefreshCw
-} from 'lucide-react';
+import { Bell, Check, TrendingUp, TrendingDown, AlertTriangle, Package, Zap, Brain, RefreshCw } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 import { format } from 'date-fns';
 
 type NotifType = 'out_of_stock' | 'critical' | 'low_stock' | 'overstock' | 'price_change' | 'reorder_suggestion';
@@ -229,6 +227,14 @@ export default function AlertsPage() {
                 </div>
               </div>
             )}
+
+            {/* Upload invoice to detect price changes */}
+            <MultiScan
+              endpoint="/api/scan-invoice"
+              onResult={() => load()}
+              title="📸 Scan Vendor Invoice"
+              hint="AI reads the invoice and automatically detects any price changes"
+            />
 
             {!loading && priceInvoices.length === 0 && (
               <div className="tile p-10 text-center">

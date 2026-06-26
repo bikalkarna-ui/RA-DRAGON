@@ -6,99 +6,10 @@ import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { startOfDay, startOfMonth, subDays, format, getDaysInMonth, startOfMonth as SOM } from 'date-fns';
-import { Calculator, Plus, Minus, RefreshCw, ChevronLeft, ChevronRight, Upload, Camera, CheckCircle, AlertCircle, Loader2, Zap, FileText } from 'lucide-react';
+import { Calculator, Plus, Minus, RefreshCw, ChevronLeft, ChevronRight, Zap, FileText } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 
 type Tab = 'daily' | 'monthly' | 'calendar' | 'archive';
-
-function ScanUploadBlock({ onResult }: { onResult: (d: any) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [msg, setMsg] = useState('');
-  const [extracted, setExtracted] = useState<any>(null);
-
-  const handle = async (file: File) => {
-    setState('loading');
-    try {
-      const fd = new FormData(); fd.append('file', file);
-      const res = await fetch('/api/scan-report', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) { setState('error'); setMsg(data.error || 'Failed'); return; }
-      setState('done'); setExtracted(data.data); onResult(data);
-    } catch (err: any) { setState('error'); setMsg(err.message); }
-    finally { if (fileRef.current) fileRef.current.value = ''; }
-  };
-
-  return (
-    <div className="tile p-5">
-      <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handle(f); }} />
-
-      {state === 'idle' && (
-        <>
-          <p className="text-sm font-bold text-text mb-1">Upload or Scan Daily Report</p>
-          <p className="text-xs text-muted mb-3">Upload or scan your Modisoft or register report — AI extracts every number and adds it to today's report automatically</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border p-5 hover:border-accent hover:bg-red-50 transition-all active:scale-95">
-              <Upload className="h-8 w-8 text-dim" />
-              <span className="text-sm font-bold text-sub">Upload Report</span>
-              <span className="text-xs text-muted">PDF or photo</span>
-            </button>
-            <button onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-green-200 bg-green-50 p-5 hover:border-green-400 transition-all active:scale-95">
-              <Camera className="h-8 w-8 text-green-600" />
-              <span className="text-sm font-bold text-green-700">Scan Report</span>
-              <span className="text-xs text-green-500">Use your camera</span>
-            </button>
-          </div>
-        </>
-      )}
-
-      {state === 'loading' && (
-        <div className="flex flex-col items-center gap-3 py-6">
-          <Loader2 className="h-10 w-10 text-accent animate-spin" />
-          <p className="font-bold text-text">AI reading your report…</p>
-          <p className="text-muted text-sm">Extracting all numbers automatically</p>
-        </div>
-      )}
-
-      {state === 'done' && extracted && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <p className="font-bold text-green-800">Report extracted successfully!</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {[
-              { l: 'Gross Sales', v: fmt.currency(extracted.gross_sales) },
-              { l: 'Net Sales',   v: fmt.currency(extracted.net_sales) },
-              { l: 'Transactions', v: String(extracted.transaction_count ?? '—') },
-            ].map(k => (
-              <div key={k.l} className="bg-green-50 rounded-xl p-3 text-center">
-                <p className="text-xs text-green-700 font-medium">{k.l}</p>
-                <p className="num font-black text-green-900 mt-0.5">{k.v}</p>
-              </div>
-            ))}
-          </div>
-          {extracted.top_categories?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {extracted.top_categories.slice(0, 5).map((c: any) => (
-                <span key={c.name} className="chip chip-green text-xs">{c.name}: {fmt.currency(c.sales)}</span>
-              ))}
-            </div>
-          )}
-          <button onClick={() => { setState('idle'); setExtracted(null); }} className="text-xs text-accent underline">Scan another report</button>
-        </div>
-      )}
-
-      {state === 'error' && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-accent" /><p className="text-sm text-accent">{msg}</p></div>
-          <button onClick={() => setState('idle')} className="text-xs text-accent underline ml-2">Retry</button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function ReportsPage() {
   const { store } = useStore();
@@ -188,7 +99,12 @@ export default function ReportsPage() {
       <div className="space-y-5">
 
         {/* ── SCAN / UPLOAD ── */}
-        <ScanUploadBlock onResult={() => fetchSales(startOfDay(new Date()))} />
+        <MultiScan
+          endpoint="/api/scan-report"
+          onResult={() => fetchSales(startOfDay(new Date()))}
+          title="📸 Scan or Upload Daily Report"
+          hint="Take photo of your Modisoft report — AI extracts all numbers instantly"
+        />
 
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
