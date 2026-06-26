@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {createClient,createAdminClient} from '@/lib/supabase/server';
-const MODEL='anthropic/claude-sonnet-4.6';
+const MODEL='anthropic/claude-sonnet-4-5';
 export async function POST(request:NextRequest){
   try{
     const sb=createClient();

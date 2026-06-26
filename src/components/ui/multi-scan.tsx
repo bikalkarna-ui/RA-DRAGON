@@ -187,10 +187,11 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
         <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-red-200 bg-red-50 py-8 px-5">
           <AlertCircle className="h-10 w-10 text-accent" />
           <div className="text-center">
-            <p className="font-bold text-accent">Something went wrong</p>
-            <p className="text-gray-500 text-sm mt-1 max-w-xs">{msg}</p>
+            <p className="font-bold text-accent text-lg">Upload failed</p>
+            <p className="text-red-700 text-sm mt-2 max-w-xs font-medium bg-red-100 rounded-xl px-3 py-2">{msg}</p>
+            <p className="text-gray-400 text-xs mt-2">Check your internet connection and try again</p>
           </div>
-          <button onClick={reset} className="btn btn-ghost text-sm px-6">Try again</button>
+          <button onClick={reset} className="btn btn-accent text-sm px-8 mt-1">Try again</button>
         </div>
       )}
     </div>
