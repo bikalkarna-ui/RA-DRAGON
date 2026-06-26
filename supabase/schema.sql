@@ -1,6 +1,8 @@
--- RA Solution v3 — Drop everything and recreate
+-- RA Solution v4 — Full rebuild with daily close reports
+drop table if exists notifications cascade;
+drop table if exists daily_close_reports cascade;
+drop table if exists till_readings cascade;
 drop table if exists imports cascade;
-drop table if exists activity_logs cascade;
 drop table if exists fuel_entries cascade;
 drop table if exists lottery_entries cascade;
 drop table if exists invoice_items cascade;
@@ -11,7 +13,6 @@ drop table if exists vendor_order_items cascade;
 drop table if exists vendor_orders cascade;
 drop table if exists vendors cascade;
 drop table if exists products cascade;
-drop table if exists categories cascade;
 drop table if exists employees cascade;
 drop table if exists register_syncs cascade;
 drop table if exists stores cascade;
@@ -47,6 +48,7 @@ create table products (
   id uuid primary key default gen_random_uuid(),
   store_id uuid not null references stores(id) on delete cascade,
   vendor_company text, sku text, barcode text, name text not null,
+  department text,
   unit_cost numeric(10,2) not null default 0,
   unit_price numeric(10,2) not null default 0,
   quantity integer not null default 0,
@@ -54,6 +56,7 @@ create table products (
   max_quantity integer not null default 100,
   taxable boolean not null default true,
   is_active boolean not null default true,
+  last_sold_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -92,7 +95,6 @@ create policy "vo_own" on vendor_orders for all
   using (store_id in (select id from stores where owner_id=auth.uid()))
   with check (store_id in (select id from stores where owner_id=auth.uid()));
 
--- Vendor order items
 create table vendor_order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references vendor_orders(id) on delete cascade,
@@ -115,10 +117,12 @@ create table sales (
   id uuid primary key default gen_random_uuid(),
   store_id uuid not null references stores(id) on delete cascade,
   employee_id uuid references employees(id) on delete set null,
-  employee_name text, subtotal numeric(10,2) not null default 0,
-  tax numeric(10,2) not null default 0, total numeric(10,2) not null default 0,
+  employee_name text,
+  subtotal numeric(10,2) not null default 0,
+  tax numeric(10,2) not null default 0,
+  total numeric(10,2) not null default 0,
   payment_method text not null default 'cash',
-  source text not null default 'pos', -- 'pos' | 'modisoft_sync'
+  source text not null default 'pos',
   created_at timestamptz not null default now()
 );
 create index sales_store on sales(store_id);
@@ -133,41 +137,151 @@ create table sale_items (
   id uuid primary key default gen_random_uuid(),
   sale_id uuid not null references sales(id) on delete cascade,
   product_id uuid references products(id) on delete set null,
-  product_name text not null, vendor_company text, category text, sku text,
+  product_name text not null,
+  vendor_company text, category text, department text, sku text,
   quantity numeric(10,2) not null default 1,
   unit_price numeric(10,2) not null default 0,
   unit_cost numeric(10,2) not null default 0,
   taxable boolean not null default true,
-  line_total numeric(10,2) not null default 0
+  line_total numeric(10,2) not null default 0,
+  created_at timestamptz not null default now()
 );
 alter table sale_items enable row level security;
 create policy "si_own" on sale_items for all
   using (sale_id in (select s.id from sales s join stores st on st.id=s.store_id where st.owner_id=auth.uid()))
   with check (sale_id in (select s.id from sales s join stores st on st.id=s.store_id where st.owner_id=auth.uid()));
 
--- Register syncs (Modisoft daily report uploads)
-create table register_syncs (
+-- Till readings — employees submit close-till reports (can happen multiple times/day)
+create table till_readings (
   id uuid primary key default gen_random_uuid(),
   store_id uuid not null references stores(id) on delete cascade,
-  sync_date date not null default current_date,
-  source text not null default 'modisoft',
+  employee_id uuid references employees(id) on delete set null,
+  employee_name text,
+  reading_date date not null default current_date,
+  reading_time timestamptz not null default now(),
+  -- Cash counted in till
+  cash_counted numeric(10,2) not null default 0,
+  checks_counted numeric(10,2) not null default 0,
+  -- Payment totals from register
+  cash_sales numeric(10,2) not null default 0,
+  credit_sales numeric(10,2) not null default 0,
+  debit_sales numeric(10,2) not null default 0,
+  ebt_sales numeric(10,2) not null default 0,
+  check_sales numeric(10,2) not null default 0,
+  mobile_sales numeric(10,2) not null default 0,
+  -- Payouts
+  mac_payout numeric(10,2) not null default 0,
+  lotto_paid numeric(10,2) not null default 0,
+  lottery_paid numeric(10,2) not null default 0,
+  purchase_paid numeric(10,2) not null default 0,
+  -- Department sales
+  dept_tax numeric(10,2) not null default 0,
+  dept_nontax numeric(10,2) not null default 0,
+  dept_cig numeric(10,2) not null default 0,
+  dept_beer_wine numeric(10,2) not null default 0,
+  dept_novelty numeric(10,2) not null default 0,
+  dept_vape numeric(10,2) not null default 0,
+  dept_unknown_upc numeric(10,2) not null default 0,
+  -- Fuel
+  fuel_unleaded_gallons numeric(10,3) not null default 0,
+  fuel_midgrade_gallons numeric(10,3) not null default 0,
+  fuel_premium_gallons numeric(10,3) not null default 0,
+  fuel_diesel_gallons numeric(10,3) not null default 0,
+  fuel_unleaded_sales numeric(10,2) not null default 0,
+  fuel_midgrade_sales numeric(10,2) not null default 0,
+  fuel_premium_sales numeric(10,2) not null default 0,
+  fuel_diesel_sales numeric(10,2) not null default 0,
+  -- Lottery/lotto
+  lotto_sales numeric(10,2) not null default 0,
+  lottery_sales numeric(10,2) not null default 0,
+  -- Money order
+  money_order_sales numeric(10,2) not null default 0,
+  money_order_fee numeric(10,2) not null default 0,
+  -- ATM
+  atm_total numeric(10,2) not null default 0,
+  -- File upload (if scanned from close-till report)
   file_path text,
-  status text not null default 'processing',
   raw_ai_response jsonb,
-  -- Extracted totals
-  gross_sales numeric(10,2),
-  net_sales numeric(10,2),
-  cash_sales numeric(10,2),
-  card_sales numeric(10,2),
-  tax_collected numeric(10,2),
-  transaction_count integer,
-  top_categories jsonb,
-  top_products jsonb,
   notes text,
   created_at timestamptz not null default now()
 );
-alter table register_syncs enable row level security;
-create policy "rs_own" on register_syncs for all
+alter table till_readings enable row level security;
+create policy "tr_own" on till_readings for all
+  using (store_id in (select id from stores where owner_id=auth.uid()))
+  with check (store_id in (select id from stores where owner_id=auth.uid()));
+
+-- Daily close reports — auto-generated end of day, one per store per date
+create table daily_close_reports (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references stores(id) on delete cascade,
+  report_date date not null,
+  -- Cash flow
+  atm_total numeric(10,2) not null default 0,
+  checks_total numeric(10,2) not null default 0,
+  cash_in_drawer numeric(10,2) not null default 0,
+  net_cash numeric(10,2) not null default 0,
+  total_cash_flow numeric(10,2) not null default 0,
+  -- Expected vs actual
+  cash_expected numeric(10,2) not null default 0,
+  cash_actual numeric(10,2) not null default 0,
+  short_over numeric(10,2) not null default 0,
+  -- Department totals
+  dept_tax numeric(10,2) not null default 0,
+  dept_nontax numeric(10,2) not null default 0,
+  dept_cig numeric(10,2) not null default 0,
+  dept_beer_wine numeric(10,2) not null default 0,
+  dept_novelty numeric(10,2) not null default 0,
+  dept_vape numeric(10,2) not null default 0,
+  dept_unknown_upc numeric(10,2) not null default 0,
+  -- T.Sales
+  total_sales numeric(10,2) not null default 0,
+  lotto_sales numeric(10,2) not null default 0,
+  lottery_sales numeric(10,2) not null default 0,
+  fuel_unleaded numeric(10,2) not null default 0,
+  fuel_midgrade numeric(10,2) not null default 0,
+  fuel_premium numeric(10,2) not null default 0,
+  fuel_diesel numeric(10,2) not null default 0,
+  money_order_sales numeric(10,2) not null default 0,
+  money_order_fee numeric(10,2) not null default 0,
+  sales_tax_collected numeric(10,2) not null default 0,
+  -- T.Cash flow (payment types)
+  credit_card_total numeric(10,2) not null default 0,
+  ebt_total numeric(10,2) not null default 0,
+  check_total numeric(10,2) not null default 0,
+  coupon_total numeric(10,2) not null default 0,
+  mac_payout numeric(10,2) not null default 0,
+  purchase_paid numeric(10,2) not null default 0,
+  lotto_paid numeric(10,2) not null default 0,
+  lottery_paid numeric(10,2) not null default 0,
+  -- Totals
+  total_in numeric(10,2) not null default 0,
+  total_out numeric(10,2) not null default 0,
+  gross numeric(10,2) not null default 0,
+  net numeric(10,2) not null default 0,
+  -- Cash flow section
+  day_close_total_in numeric(10,2) not null default 0,
+  day_close_total_out numeric(10,2) not null default 0,
+  mac_in numeric(10,2) not null default 0,
+  mac_out numeric(10,2) not null default 0,
+  -- Deposit
+  store_deposit numeric(10,2) not null default 0,
+  mac_deposit numeric(10,2) not null default 0,
+  total_deposit numeric(10,2) not null default 0,
+  -- Fuel ATG
+  atg_unleaded numeric(10,3) not null default 0,
+  atg_midgrade numeric(10,3) not null default 0,
+  atg_premium numeric(10,3) not null default 0,
+  atg_diesel numeric(10,3) not null default 0,
+  -- Vendor activities (jsonb array of {vendor,retail,cost,mop})
+  vendor_activities jsonb not null default '[]',
+  -- Meta
+  till_reading_count integer not null default 0,
+  generated_at timestamptz not null default now(),
+  notes text,
+  unique(store_id, report_date)
+);
+alter table daily_close_reports enable row level security;
+create policy "dcr_own" on daily_close_reports for all
   using (store_id in (select id from stores where owner_id=auth.uid()))
   with check (store_id in (select id from stores where owner_id=auth.uid()));
 
@@ -187,7 +301,6 @@ create policy "i_own" on invoices for all
   using (store_id in (select id from stores where owner_id=auth.uid()))
   with check (store_id in (select id from stores where owner_id=auth.uid()));
 
--- Invoice items
 create table invoice_items (
   id uuid primary key default gen_random_uuid(),
   invoice_id uuid not null references invoices(id) on delete cascade,
@@ -206,43 +319,21 @@ create policy "ii_own" on invoice_items for all
   using (invoice_id in (select i.id from invoices i join stores s on s.id=i.store_id where s.owner_id=auth.uid()))
   with check (invoice_id in (select i.id from invoices i join stores s on s.id=i.store_id where s.owner_id=auth.uid()));
 
--- Lottery entries
-create table lottery_entries (
+-- Notifications — smart alerts for owners
+create table notifications (
   id uuid primary key default gen_random_uuid(),
   store_id uuid not null references stores(id) on delete cascade,
-  entry_date date not null default current_date,
-  scratch_sales numeric(10,2) not null default 0,
-  scratch_payouts numeric(10,2) not null default 0,
-  scratch_net numeric(10,2) generated always as (scratch_sales - scratch_payouts) stored,
-  lotto_sales numeric(10,2) not null default 0,
-  lotto_payouts numeric(10,2) not null default 0,
-  lotto_net numeric(10,2) generated always as (lotto_sales - lotto_payouts) stored,
-  total_net numeric(10,2) generated always as ((scratch_sales+lotto_sales)-(scratch_payouts+lotto_payouts)) stored,
-  books_activated integer not null default 0,
-  books_settled integer not null default 0,
-  notes text,
+  type text not null, -- 'low_stock' | 'out_of_stock' | 'overstock' | 'price_change' | 'daily_report_ready' | 'reorder_suggestion'
+  title text not null,
+  message text not null,
+  product_id uuid references products(id) on delete cascade,
+  data jsonb,
+  is_read boolean not null default false,
   created_at timestamptz not null default now()
 );
-alter table lottery_entries enable row level security;
-create policy "le_own" on lottery_entries for all
-  using (store_id in (select id from stores where owner_id=auth.uid()))
-  with check (store_id in (select id from stores where owner_id=auth.uid()));
-
--- Fuel entries
-create table fuel_entries (
-  id uuid primary key default gen_random_uuid(),
-  store_id uuid not null references stores(id) on delete cascade,
-  entry_date date not null default current_date,
-  regular_gallons numeric(10,2) not null default 0, regular_price numeric(6,3) not null default 0,
-  plus_gallons numeric(10,2) not null default 0, plus_price numeric(6,3) not null default 0,
-  premium_gallons numeric(10,2) not null default 0, premium_price numeric(6,3) not null default 0,
-  diesel_gallons numeric(10,2) not null default 0, diesel_price numeric(6,3) not null default 0,
-  total_gallons numeric(10,2) generated always as (regular_gallons+plus_gallons+premium_gallons+diesel_gallons) stored,
-  total_fuel_sales numeric(10,2) generated always as ((regular_gallons*regular_price)+(plus_gallons*plus_price)+(premium_gallons*premium_price)+(diesel_gallons*diesel_price)) stored,
-  notes text, created_at timestamptz not null default now()
-);
-alter table fuel_entries enable row level security;
-create policy "fe_own" on fuel_entries for all
+create index notif_store on notifications(store_id, is_read, created_at desc);
+alter table notifications enable row level security;
+create policy "n_own" on notifications for all
   using (store_id in (select id from stores where owner_id=auth.uid()))
   with check (store_id in (select id from stores where owner_id=auth.uid()));
 
@@ -260,13 +351,18 @@ create policy "im_own" on imports for all
   using (store_id in (select id from stores where owner_id=auth.uid()))
   with check (store_id in (select id from stores where owner_id=auth.uid()));
 
--- Triggers
+-- Updated_at triggers
 create or replace function set_updated_at() returns trigger as $$
 begin new.updated_at=now(); return new; end; $$ language plpgsql;
 create trigger stores_upd before update on stores for each row execute function set_updated_at();
 create trigger products_upd before update on products for each row execute function set_updated_at();
 
 -- Storage
-insert into storage.buckets(id,name,public) values('invoices','invoices',false),('reports','reports',false) on conflict(id) do nothing;
-create policy "inv_up" on storage.objects for insert with check(bucket_id in ('invoices','reports') and (storage.foldername(name))[1] in (select id::text from stores where owner_id=auth.uid()));
-create policy "inv_rd" on storage.objects for select using(bucket_id in ('invoices','reports') and (storage.foldername(name))[1] in (select id::text from stores where owner_id=auth.uid()));
+insert into storage.buckets(id,name,public) values
+  ('invoices','invoices',false),
+  ('reports','reports',false),
+  ('till_readings','till_readings',false)
+on conflict(id) do nothing;
+
+create policy "inv_up" on storage.objects for insert with check(bucket_id in ('invoices','reports','till_readings') and (storage.foldername(name))[1] in (select id::text from stores where owner_id=auth.uid()));
+create policy "inv_rd" on storage.objects for select using(bucket_id in ('invoices','reports','till_readings') and (storage.foldername(name))[1] in (select id::text from stores where owner_id=auth.uid()));
