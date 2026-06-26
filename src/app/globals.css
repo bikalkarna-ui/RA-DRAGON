@@ -2,72 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @layer base {
-  * { box-sizing: border-box; }
-  html { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: #0F1115; }
   body {
-    @apply bg-dragon-dark text-obsidian-100 antialiased;
-    font-family: 'Inter', sans-serif;
-    background-color: #07070a;
+    @apply bg-bg text-text antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui;
+    overscroll-behavior: none;
   }
-  :focus-visible { outline: 2px solid #ff2d1a; outline-offset: 2px; }
-  ::selection { background: rgba(255,45,26,0.3); color: #fff; }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0e0e14; }
-  ::-webkit-scrollbar-thumb { background: #2a1a1a; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #c0392b; }
+  :focus-visible { outline: 2px solid #E53935; outline-offset: 2px; }
+  ::selection { background: rgba(229,57,53,0.25); }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2A2E3A; border-radius: 2px; }
 }
 
 @layer components {
-  /* Dragon card — dark with subtle red border */
-  .d-card {
-    @apply rounded-xl border border-dragon-border bg-dragon-card;
+  /* Screen wrapper — centered, max-width, feels like giant iPad on desktop */
+  .screen {
+    @apply min-h-screen w-full mx-auto;
+    max-width: 680px;
+    padding: 0 16px;
   }
-  .d-card-glow {
-    @apply d-card shadow-fire;
-  }
-  /* Fire button */
-  .btn-fire {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-fire-700 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-fire-600 hover:shadow-fire-sm disabled:opacity-50 disabled:pointer-events-none;
-  }
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-dragon-border px-4 py-2 text-sm font-medium text-obsidian-300 transition-all hover:border-fire-700 hover:text-fire-400 disabled:opacity-50;
-  }
-  /* Input */
-  .d-input {
-    @apply h-10 w-full rounded-lg border border-dragon-border bg-obsidian-900 px-3 text-sm text-obsidian-100 placeholder:text-obsidian-500 focus:border-fire-700 focus:outline-none focus:ring-1 focus:ring-fire-700/30;
-  }
-  .d-select {
-    @apply d-input cursor-pointer;
-  }
-  .d-label {
-    @apply block text-xs font-medium text-obsidian-400 mb-1.5;
-  }
-  /* Badge */
-  .d-badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
-  }
-  /* Mono figures */
-  .mono { @apply font-mono tabular-nums; }
-  /* Red glow text */
-  .fire-text { @apply text-fire-400; }
-  .gold-text { @apply text-gold-400; }
-}
 
-@layer utilities {
-  .dragon-gradient { background: linear-gradient(135deg, #0a0a0f 0%, #1a0808 100%); }
-  .fire-gradient { background: linear-gradient(135deg, #c0392b, #922b21); }
-  .text-fire-gradient { @apply bg-gradient-to-r from-fire-400 to-gold-400 bg-clip-text text-transparent; }
-  .border-fire { border-color: rgba(192,57,43,0.5); }
-  .bg-scales { background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 L20 0 L40 20 L20 40 Z' fill='%23ff2d1a' fill-opacity='0.025'/%3E%3C/svg%3E"); }
-}
+  /* Cards */
+  .tile {
+    @apply bg-surface rounded-xl2 shadow-card border border-border/50;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tile:active { transform: scale(0.97); }
+  .tile-hover:hover { transform: scale(1.02); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
 
-/* Print receipt */
-@media print {
-  body * { visibility: hidden; }
-  #receipt, #receipt * { visibility: visible; }
-  #receipt { position: absolute; top: 0; left: 0; width: 100%; background: white; color: black; }
-  .no-print { display: none !important; }
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white;
+    box-shadow: 0 4px 16px rgba(229,57,53,0.35);
+  }
+  .btn-accent:hover { background: #EF4444; }
+  .btn-accent:active { transform: scale(0.97); }
+  .btn-ghost { @apply btn bg-card text-sub border border-border hover:text-text hover:border-border/80; }
+  .btn-full { @apply w-full; }
+
+  /* Inputs */
+  .inp {
+    @apply w-full rounded-xl2 bg-card border border-border px-4 py-3.5 text-[15px] text-text placeholder:text-muted transition-all;
+    outline: none;
+  }
+  .inp:focus { border-color: #E53935; box-shadow: 0 0 0 3px rgba(229,57,53,0.12); }
+  .lbl { @apply block text-sm font-medium text-sub mb-1.5; }
+
+  /* Badges */
+  .chip { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold; }
+  .chip-red { @apply chip bg-accent/15 text-accent; }
+  .chip-green { @apply chip bg-emerald-500/15 text-emerald-400; }
+  .chip-yellow { @apply chip bg-amber-500/15 text-amber-400; }
+  .chip-blue { @apply chip bg-blue-500/15 text-blue-400; }
+  .chip-gray { @apply chip bg-border text-sub; }
+
+  /* Section header inside a screen */
+  .section-title { @apply text-xs font-semibold uppercase tracking-widest text-muted mb-3; }
+
+  /* Mono numbers */
+  .num { @apply font-mono tabular-nums; }
+
+  /* Divider */
+  .divider { @apply border-b border-border/60; }
+
+  /* Upload zone */
+  .drop-zone {
+    @apply flex flex-col items-center justify-center gap-3 rounded-xl2 border-2 border-dashed border-border p-10 text-center cursor-pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .drop-zone:hover { border-color: #E53935; background: rgba(229,57,53,0.04); }
+
+  /* Back button */
+  .back-btn {
+    @apply flex items-center gap-1.5 text-sm font-medium text-sub hover:text-text transition-colors py-1;
+  }
+
+  /* List row */
+  .list-row {
+    @apply flex items-center justify-between px-5 py-4 hover:bg-card/60 transition-colors;
+  }
 }

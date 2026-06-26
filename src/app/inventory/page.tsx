@@ -1,251 +1,143 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { AppShell } from '@/components/layout/app-shell';
+import { Screen } from '@/components/layout/screen';
+import { AIUpload } from '@/components/ui/ai-upload';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
-import { fmt, cn, VENDOR_COMPANIES } from '@/lib/utils';
-import { Plus, Search, Pencil, Trash2, X, Check, AlertTriangle, Package } from 'lucide-react';
-import { BarcodeScanner, ScanToast } from '@/components/ui/barcode-scanner';
+import { fmt, cn, VENDORS } from '@/lib/utils';
+import { Search, Plus, X, Check, Pencil, Trash2, ChevronRight } from 'lucide-react';
 
-interface Product {
-  id: string; sku: string | null; barcode: string | null; name: string;
-  vendor_company: string | null; unit_cost: number; unit_price: number;
-  quantity: number; min_quantity: number; max_quantity: number; taxable: boolean;
-}
-
-const EMPTY = { sku:'', barcode:'', name:'', vendor_company:'', unit_cost:'', unit_price:'', quantity:'0', min_quantity:'5', max_quantity:'100', taxable:true };
+interface Product { id: string; name: string; vendor_company: string | null; unit_cost: number; unit_price: number; quantity: number; min_quantity: number; max_quantity: number; sku: string | null; barcode: string | null; taxable: boolean; }
+const EMPTY = { name: '', vendor_company: '', sku: '', barcode: '', unit_cost: '', unit_price: '', quantity: '0', min_quantity: '5', max_quantity: '100', taxable: true };
 
 export default function InventoryPage() {
   const { store } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterVendor, setFilterVendor] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filter, setFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
-  const [scanResult, setScanResult] = useState<{ barcode: string; product: any } | null>(null);
-  const [scanHighlight, setScanHighlight] = useState<string | null>(null);
-
-  const fetchProducts = useCallback(async () => {
-    if (!store) return;
-    const { data } = await createClient().from('products').select('*').eq('store_id', store.id).eq('is_active', true).order('name');
-    setProducts((data as Product[]) ?? []);
-    setLoading(false);
-  }, [store]);
-
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
-
   const f = (k: string, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
 
-  const handleScan = (result: { barcode: string; product: any }) => {
-    setScanResult(result);
-    if (result.product) {
-      // Highlight the scanned product in the table and scroll to it
-      setScanHighlight(result.product.id);
-      setSearch(result.product.name);
-      setTimeout(() => setScanHighlight(null), 3000);
-    } else {
-      // Pre-fill the add form with the scanned barcode
-      setForm(prev => ({ ...prev, barcode: result.barcode }));
-      setShowForm(true);
-    }
-  };
+  const fetch = useCallback(async () => {
+    if (!store) return;
+    const { data } = await createClient().from('products').select('*').eq('store_id', store.id).eq('is_active', true).order('name');
+    setProducts((data as Product[]) ?? []); setLoading(false);
+  }, [store]);
+  useEffect(() => { fetch(); }, [fetch]);
 
-  const getStatus = (p: Product) => {
-    if (p.quantity === 0) return 'out';
-    if (p.quantity <= p.min_quantity) return 'low';
-    if (p.max_quantity && p.quantity >= p.max_quantity) return 'over';
-    return 'ok';
-  };
+  const getStatus = (p: Product) => p.quantity === 0 ? 'out' : p.quantity <= p.min_quantity ? 'low' : p.max_quantity && p.quantity >= p.max_quantity ? 'over' : 'ok';
 
   const filtered = products.filter(p => {
     const q = search.toLowerCase();
-    const matchSearch = p.name.toLowerCase().includes(q) || (p.sku ?? '').toLowerCase().includes(q) || (p.barcode ?? '').includes(q);
-    const matchVendor = filterVendor === 'all' || p.vendor_company === filterVendor;
-    const status = getStatus(p);
-    const matchStatus = filterStatus === 'all' || status === filterStatus;
-    return matchSearch && matchVendor && matchStatus;
+    const ms = p.name.toLowerCase().includes(q) || (p.sku ?? '').includes(q) || (p.barcode ?? '').includes(q);
+    const st = getStatus(p);
+    const mf = filter === 'all' || st === filter;
+    return ms && mf;
   });
 
-  const counts = {
-    out: products.filter(p => getStatus(p) === 'out').length,
-    low: products.filter(p => getStatus(p) === 'low').length,
-    over: products.filter(p => getStatus(p) === 'over').length,
-  };
-  const inventoryValue = products.reduce((s, p) => s + Number(p.unit_cost) * p.quantity, 0);
+  const counts = { out: products.filter(p => getStatus(p) === 'out').length, low: products.filter(p => getStatus(p) === 'low').length };
 
-  const startEdit = (p: Product) => {
-    setEditingId(p.id); setShowForm(true);
-    setForm({ sku:p.sku??'', barcode:p.barcode??'', name:p.name, vendor_company:p.vendor_company??'',
-      unit_cost:String(p.unit_cost), unit_price:String(p.unit_price), quantity:String(p.quantity),
-      min_quantity:String(p.min_quantity), max_quantity:String(p.max_quantity), taxable:p.taxable });
-  };
+  const edit = (p: Product) => { setEditId(p.id); setShowForm(true); setForm({ name: p.name, vendor_company: p.vendor_company ?? '', sku: p.sku ?? '', barcode: p.barcode ?? '', unit_cost: String(p.unit_cost), unit_price: String(p.unit_price), quantity: String(p.quantity), min_quantity: String(p.min_quantity), max_quantity: String(p.max_quantity), taxable: p.taxable }); };
 
-  const reset = () => { setForm(EMPTY); setShowForm(false); setEditingId(null); };
+  const reset = () => { setForm(EMPTY); setShowForm(false); setEditId(null); };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!store) return;
-    const payload = { store_id:store.id, sku:form.sku||null, barcode:form.barcode||null, name:form.name,
-      vendor_company:form.vendor_company||null, unit_cost:parseFloat(form.unit_cost)||0,
-      unit_price:parseFloat(form.unit_price)||0, quantity:parseInt(form.quantity,10)||0,
-      min_quantity:parseInt(form.min_quantity,10)||0, max_quantity:parseInt(form.max_quantity,10)||100, taxable:form.taxable };
+    const payload = { store_id: store.id, name: form.name, vendor_company: form.vendor_company || null, sku: form.sku || null, barcode: form.barcode || null, unit_cost: parseFloat(form.unit_cost) || 0, unit_price: parseFloat(form.unit_price) || 0, quantity: parseInt(form.quantity, 10) || 0, min_quantity: parseInt(form.min_quantity, 10) || 0, max_quantity: parseInt(form.max_quantity, 10) || 100, taxable: form.taxable };
     const sb = createClient();
-    if (editingId) await sb.from('products').update(payload).eq('id', editingId);
+    if (editId) await sb.from('products').update(payload).eq('id', editId);
     else await sb.from('products').insert(payload);
-    reset(); fetchProducts();
+    reset(); fetch();
   };
 
-  const del = async (id: string) => {
-    if (!confirm('Delete this product?')) return;
-    await createClient().from('products').update({ is_active: false }).eq('id', id);
-    fetchProducts();
-  };
+  const del = async (id: string) => { if (!confirm('Delete?')) return; await createClient().from('products').update({ is_active: false }).eq('id', id); fetch(); };
 
-  const STATUS_STYLE: Record<string, { badge: string; row: string }> = {
-    out: { badge: 'bg-fire-900/50 text-fire-400', row: 'border-l-2 border-fire-700' },
-    low: { badge: 'bg-gold-900/30 text-gold-400', row: 'border-l-2 border-gold-700' },
-    over: { badge: 'bg-obsidian-700 text-obsidian-300', row: '' },
-    ok:  { badge: 'bg-obsidian-800 text-obsidian-400', row: '' },
-  };
+  const STATUS = { out: { chip: 'chip-red', l: 'Out of stock' }, low: { chip: 'chip-yellow', l: 'Low stock' }, over: { chip: 'chip-gray', l: 'Overstock' }, ok: { chip: 'chip-green', l: 'In stock' } };
 
   return (
-    <AppShell title="Inventory" storeName={store?.name}>
-      <div className="space-y-4">
-        {scanResult && (
-          <ScanToast barcode={scanResult.barcode} product={scanResult.product} onClose={() => setScanResult(null)} />
+    <Screen title="Inventory" subtitle={`${products.length} products · ${fmt.currency(products.reduce((s, p) => s + Number(p.unit_cost) * p.quantity, 0))} value`}
+      action={<button onClick={() => setShowForm(true)} className="btn btn-accent h-9 text-sm px-4">{showForm ? 'Cancel' : '+ Add'}</button>}>
+      <div className="space-y-5">
+
+        {/* AI invoice upload */}
+        <div className="tile p-5">
+          <p className="text-sm font-semibold text-text mb-1">Upload Vendor Invoice</p>
+          <p className="text-xs text-muted mb-4">AI reads invoice, extracts products, updates inventory</p>
+          <AIUpload label="Upload Invoice" description="PDF or photo — AI does the rest" endpoint="/api/scan-invoice"
+            onResult={(d) => { if (d.items?.find((i: any) => i.is_new_product)) { setForm(p => ({ ...p, name: d.items[0].raw_description, unit_cost: String(d.items[0].unit_cost), unit_price: String(d.items[0].suggested_price ?? '') })); setShowForm(true); } }} compact />
+        </div>
+
+        {/* Alerts */}
+        {(counts.out > 0 || counts.low > 0) && (
+          <div className="tile p-4 border border-amber-500/20 bg-amber-500/5">
+            <p className="text-amber-400 text-sm font-semibold">{counts.out > 0 ? `${counts.out} out of stock · ` : ''}{counts.low > 0 ? `${counts.low} low stock` : ''}</p>
+          </div>
         )}
 
-        {/* Summary */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label:'Total Products', value:String(products.length) },
-            { label:'Inventory Value', value:fmt.currency(inventoryValue) },
-            { label:'Low / Out of Stock', value:`${counts.low} / ${counts.out}` },
-            { label:'Overstocked', value:String(counts.over) },
-          ].map(k => (
-            <div key={k.label} className="d-card p-4">
-              <p className="text-xs text-obsidian-500">{k.label}</p>
-              <p className="mono text-xl font-bold text-white mt-1">{k.value}</p>
-            </div>
+        {/* Filter pills */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[{ id: 'all', l: 'All' }, { id: 'out', l: `Out (${counts.out})` }, { id: 'low', l: `Low (${counts.low})` }].map(ft => (
+            <button key={ft.id} onClick={() => setFilter(ft.id)} className={cn('flex-none rounded-full px-4 py-2 text-sm font-medium transition-colors', filter === ft.id ? 'bg-accent text-white' : 'bg-card text-sub hover:text-text border border-border')}>{ft.l}</button>
           ))}
         </div>
 
-        {/* Toolbar with scanner */}
-        <div className="flex flex-wrap items-center gap-2 justify-between">
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* Barcode scanner */}
-            {store && (
-              <BarcodeScanner
-                storeId={store.id}
-                onScan={handleScan}
-                placeholder="Scan barcode to find or add…"
-                className="w-60"
-              />
-            )}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-obsidian-600" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…" className="d-input pl-9 w-44 h-9" />
-            </div>
-            <select value={filterVendor} onChange={e => setFilterVendor(e.target.value)} className="d-select w-36 h-9">
-              <option value="all">All vendors</option>
-              {VENDOR_COMPANIES.map(v => <option key={v.id} value={v.name}>{v.emoji} {v.name}</option>)}
-            </select>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="d-select w-36 h-9">
-              <option value="all">All status</option>
-              <option value="out">Out ({counts.out})</option>
-              <option value="low">Low ({counts.low})</option>
-              <option value="over">Overstocked ({counts.over})</option>
-              <option value="ok">OK</option>
-            </select>
-          </div>
-          <button onClick={() => showForm ? reset() : setShowForm(true)} className={showForm ? 'btn-ghost py-2 h-9' : 'btn-fire h-9'}>
-            {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{showForm ? 'Cancel' : 'Add product'}
-          </button>
-        </div>
-
-        {/* Scan tip */}
-        <p className="text-xs text-obsidian-600 flex items-center gap-1.5">
-          <span className="text-fire-700">▸</span>
-          Scanning a known barcode highlights the product below. Scanning an unknown barcode opens the add form with barcode pre-filled.
-        </p>
+        {/* Search */}
+        <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, SKU, barcode…" className="inp pl-11" /></div>
 
         {/* Form */}
         {showForm && (
-          <div className="d-card p-5">
-            <h3 className="font-semibold text-white mb-4">{editingId ? 'Edit product' : 'New product'}</h3>
-            <form onSubmit={submit} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="col-span-2"><label className="d-label">Product name *</label><input required value={form.name} onChange={e => f('name', e.target.value)} className="d-input" /></div>
-              <div>
-                <label className="d-label">Vendor company</label>
-                <select value={form.vendor_company} onChange={e => f('vendor_company', e.target.value)} className="d-select">
-                  <option value="">— unassigned —</option>
-                  {VENDOR_COMPANIES.filter(v => v.id !== 'custom').map(v => <option key={v.id} value={v.name}>{v.emoji} {v.name}</option>)}
-                </select>
+          <div className="tile p-5 animate-scale-in">
+            <div className="flex items-center justify-between mb-4"><h3 className="font-semibold text-text">{editId ? 'Edit product' : 'New product'}</h3><button onClick={reset}><X className="h-5 w-5 text-muted" /></button></div>
+            <form onSubmit={submit} className="space-y-3">
+              <div><label className="lbl">Product name *</label><input required value={form.name} onChange={e => f('name', e.target.value)} className="inp" /></div>
+              <div><label className="lbl">Vendor</label><select value={form.vendor_company} onChange={e => f('vendor_company', e.target.value)} className="inp">{[{ label: '— unassigned', value: '' }, ...VENDORS.map(v => ({ label: v, value: v }))].map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="lbl">SKU</label><input value={form.sku} onChange={e => f('sku', e.target.value)} className="inp" /></div>
+                <div><label className="lbl">Barcode</label><input value={form.barcode} onChange={e => f('barcode', e.target.value)} className="inp" /></div>
+                <div><label className="lbl">Cost $</label><input type="number" step="0.01" min="0" value={form.unit_cost} onChange={e => f('unit_cost', e.target.value)} className="inp" /></div>
+                <div><label className="lbl">Price $</label><input type="number" step="0.01" min="0" value={form.unit_price} onChange={e => f('unit_price', e.target.value)} className="inp" /></div>
+                <div><label className="lbl">Quantity</label><input type="number" min="0" value={form.quantity} onChange={e => f('quantity', e.target.value)} className="inp" /></div>
+                <div><label className="lbl">Min stock</label><input type="number" min="0" value={form.min_quantity} onChange={e => f('min_quantity', e.target.value)} className="inp" /></div>
               </div>
-              <div><label className="d-label">SKU</label><input value={form.sku} onChange={e => f('sku', e.target.value)} className="d-input" /></div>
-              <div><label className="d-label">Barcode (UPC)</label><input value={form.barcode} onChange={e => f('barcode', e.target.value)} className="d-input" placeholder="Scan or type" /></div>
-              <div><label className="d-label">Cost price $</label><input type="number" step="0.01" min="0" value={form.unit_cost} onChange={e => f('unit_cost', e.target.value)} className="d-input" /></div>
-              <div><label className="d-label">Selling price $</label><input type="number" step="0.01" min="0" value={form.unit_price} onChange={e => f('unit_price', e.target.value)} className="d-input" /></div>
-              <div><label className="d-label">Quantity</label><input type="number" min="0" value={form.quantity} onChange={e => f('quantity', e.target.value)} className="d-input" /></div>
-              <div><label className="d-label">Min stock (alert)</label><input type="number" min="0" value={form.min_quantity} onChange={e => f('min_quantity', e.target.value)} className="d-input" /></div>
-              <div><label className="d-label">Max stock (overstock)</label><input type="number" min="0" value={form.max_quantity} onChange={e => f('max_quantity', e.target.value)} className="d-input" /></div>
-              <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-sm text-obsidian-300 cursor-pointer"><input type="checkbox" checked={form.taxable} onChange={e => f('taxable', e.target.checked)} className="accent-fire-600" />Taxable</label></div>
-              <div className="col-span-2 sm:col-span-4"><button type="submit" className="btn-fire"><Check className="h-4 w-4" />{editingId ? 'Save changes' : 'Add product'}</button></div>
+              <label className="flex items-center gap-2 text-sm text-sub cursor-pointer"><input type="checkbox" checked={form.taxable} onChange={e => f('taxable', e.target.checked)} className="accent-accent" />Taxable item</label>
+              <button type="submit" className="btn btn-accent btn-full"><Check className="h-4 w-4" />{editId ? 'Save changes' : 'Add product'}</button>
             </form>
           </div>
         )}
 
-        {/* Table */}
-        <div className="d-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-obsidian-900/50 border-b border-dragon-border">
-                <tr>
-                  {['Product','Vendor','SKU','Cost','Price','Margin','Stock','Min','Max','Status',''].map(h => (
-                    <th key={h} className={cn('px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-obsidian-500', ['Cost','Price','Margin','Stock','Min','Max'].includes(h) ? 'text-right' : '')}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dragon-border">
-                {loading && <tr><td colSpan={11} className="py-10 text-center text-obsidian-500">Loading…</td></tr>}
-                {!loading && filtered.length === 0 && <tr><td colSpan={11} className="py-10 text-center text-obsidian-500">No products match your filters.</td></tr>}
-                {filtered.map(p => {
-                  const status = getStatus(p);
-                  const ss = STATUS_STYLE[status];
-                  const vc = VENDOR_COMPANIES.find(v => v.name === p.vendor_company);
-                  const margin = p.unit_price > 0 ? ((p.unit_price - p.unit_cost) / p.unit_price * 100) : 0;
-                  const isHighlighted = scanHighlight === p.id;
-                  return (
-                    <tr key={p.id} className={cn('hover:bg-obsidian-900/30 transition-all', ss.row, isHighlighted && 'bg-fire-900/20 shadow-fire-sm')}>
-                      <td className="px-3 py-2.5 font-medium text-white">
-                        {p.name}
-                        {isHighlighted && <span className="ml-2 d-badge bg-fire-700 text-white text-[10px]">📡 Scanned</span>}
-                      </td>
-                      <td className="px-3 py-2.5 text-obsidian-400 text-xs">{vc ? `${vc.emoji} ${vc.name}` : '—'}</td>
-                      <td className="mono px-3 py-2.5 text-obsidian-500 text-xs">{p.sku ?? '—'}</td>
-                      <td className="mono px-3 py-2.5 text-right text-obsidian-400">{fmt.currency(p.unit_cost)}</td>
-                      <td className="mono px-3 py-2.5 text-right text-obsidian-300">{fmt.currency(p.unit_price)}</td>
-                      <td className="mono px-3 py-2.5 text-right text-gold-500 text-xs">{fmt.percent(margin)}</td>
-                      <td className="mono px-3 py-2.5 text-right font-bold text-white">{p.quantity}</td>
-                      <td className="mono px-3 py-2.5 text-right text-obsidian-600 text-xs">{p.min_quantity}</td>
-                      <td className="mono px-3 py-2.5 text-right text-obsidian-600 text-xs">{p.max_quantity}</td>
-                      <td className="px-3 py-2.5"><span className={cn('d-badge text-[10px]', ss.badge)}>{status === 'out' ? 'OUT' : status === 'low' ? 'LOW' : status === 'over' ? 'OVER' : 'OK'}</span></td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex justify-end gap-1">
-                          <button onClick={() => startEdit(p)} className="p-1.5 rounded text-obsidian-600 hover:text-white hover:bg-obsidian-800 transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => del(p.id)} className="p-1.5 rounded text-obsidian-600 hover:text-fire-500 hover:bg-fire-950/50 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {/* Product list */}
+        <div className="tile overflow-hidden">
+          <div className="divide-y divide-border/60">
+            {loading && <p className="py-10 text-center text-muted">Loading…</p>}
+            {!loading && filtered.length === 0 && <p className="py-10 text-center text-muted">No products found.</p>}
+            {filtered.map(p => {
+              const st = getStatus(p); const s = STATUS[st];
+              return (
+                <div key={p.id} className="list-row">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-text truncate">{p.name}</p>
+                      <span className={s.chip}>{s.l}</span>
+                    </div>
+                    <p className="text-xs text-muted">{p.vendor_company ?? '—'} · Cost: {fmt.currency(p.unit_cost)} · Price: {fmt.currency(p.unit_price)}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    <div className="text-right">
+                      <p className="num font-bold text-text">{p.quantity}</p>
+                      <p className="text-xs text-dim">units</p>
+                    </div>
+                    <button onClick={() => edit(p)} className="p-2 text-muted hover:text-text"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => del(p.id)} className="p-2 text-muted hover:text-accent"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
-    </AppShell>
+    </Screen>
   );
 }

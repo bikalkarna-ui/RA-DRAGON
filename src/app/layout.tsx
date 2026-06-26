@@ -1,14 +1,22 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'RA Solution — Inventory That Works', template: '%s | RA Solution' },
-  description: 'Real-time inventory tracking, AI invoice scanning, smart ordering, and live sales — built for convenience stores that want to save time.',
+  title: 'RA Solution',
+  description: 'AI-powered store management',
+  manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#0F1115',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
