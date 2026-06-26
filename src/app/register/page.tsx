@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Check } from 'lucide-react';
+import { Check, ArrowLeft } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,32 +24,41 @@ export default function RegisterPage() {
   };
 
   if (done) return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-5">
-      <div className="tile max-w-sm w-full p-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/15"><Check className="h-7 w-7 text-green-400" /></div>
-        <h2 className="text-xl font-bold text-text mb-2">Check your email</h2>
-        <p className="text-sub text-sm mb-6">Click the link in <b>{form.email}</b> to activate your account.</p>
-        <Link href="/login" className="btn btn-ghost btn-full">Back to Login</Link>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-card max-w-sm w-full p-8 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100"><Check className="h-7 w-7 text-green-600" /></div>
+        <h2 className="text-xl font-black text-gray-900 mb-2">Check your email</h2>
+        <p className="text-gray-500 text-sm mb-6">Click the link in <b>{form.email}</b> to activate your account.</p>
+        <Link href="/login" className="btn-ghost btn-full">Back to Login</Link>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-5">
-      <div className="w-full max-w-sm">
-        <div className="mb-10 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-accent text-white font-bold text-2xl shadow-glow">R</div>
-          <h1 className="text-2xl font-bold text-text">Create account</h1>
-          <p className="text-sub mt-1 text-sm">Free 14-day trial</p>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="p-5">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">
+          <ArrowLeft className="h-4 w-4" />Back to home
+        </Link>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-5 pb-10">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 text-center">
+            <Link href="/" className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-white font-black text-2xl mb-5 shadow-red">R</Link>
+            <h1 className="text-2xl font-black text-gray-900">Create account</h1>
+            <p className="text-gray-500 mt-1 text-sm">Free 14-day trial · No credit card</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-card p-6">
+            <form onSubmit={submit} className="space-y-4">
+              <div><label className="lbl">Store name</label><input required value={form.store} onChange={e => f('store', e.target.value)} className="inp" placeholder="Quick Stop Convenience" autoFocus /></div>
+              <div><label className="lbl">Email</label><input type="email" required value={form.email} onChange={e => f('email', e.target.value)} className="inp" placeholder="you@store.com" /></div>
+              <div><label className="lbl">Password (min 6)</label><input type="password" required minLength={6} value={form.pw} onChange={e => f('pw', e.target.value)} className="inp" placeholder="••••••••" /></div>
+              {err && <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-accent">{err}</div>}
+              <button type="submit" disabled={loading} className="btn-accent btn-full py-3.5 mt-1 rounded-xl">{loading ? 'Creating…' : 'Create Account'}</button>
+            </form>
+          </div>
+          <p className="mt-5 text-center text-sm text-gray-500">Already have an account? <Link href="/login" className="text-accent font-semibold hover:underline">Sign in</Link></p>
         </div>
-        <form onSubmit={submit} className="space-y-4">
-          <div><label className="lbl">Store name</label><input required value={form.store} onChange={e => f('store', e.target.value)} className="inp" placeholder="Quick Stop Convenience" /></div>
-          <div><label className="lbl">Email</label><input type="email" required value={form.email} onChange={e => f('email', e.target.value)} className="inp" placeholder="you@store.com" /></div>
-          <div><label className="lbl">Password (min 6)</label><input type="password" required minLength={6} value={form.pw} onChange={e => f('pw', e.target.value)} className="inp" placeholder="••••••••" /></div>
-          {err && <div className="rounded-xl bg-accent/10 border border-accent/20 px-4 py-3 text-sm text-accent">{err}</div>}
-          <button type="submit" disabled={loading} className="btn btn-accent btn-full py-4 mt-2">{loading ? 'Creating…' : 'Create Account'}</button>
-        </form>
-        <p className="mt-6 text-center text-sm text-muted">Have an account? <Link href="/login" className="text-accent font-medium hover:underline">Sign in</Link></p>
       </div>
     </div>
   );
