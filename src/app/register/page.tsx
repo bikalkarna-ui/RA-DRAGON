@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Check, ArrowLeft } from 'lucide-react';
 import { VENDORS } from '@/lib/utils';
 
 export default function RegisterPage() {
@@ -18,74 +17,116 @@ export default function RegisterPage() {
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
-  if (done) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5">
-      <div className="bg-white rounded-2xl border border-gray-200 max-w-sm w-full p-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-          <Check className="h-7 w-7 text-green-600" />
-        </div>
-        <h2 className="text-xl font-black text-gray-900 mb-2">Check your email</h2>
-        <p className="text-gray-500 text-sm mb-6">Click the link in <b>{email}</b> to activate your account.</p>
-        <Link href="/login" className="btn btn-accent btn-full">Go to Login</Link>
-      </div>
-    </div>
-  );
-
   const submit = async (e: any) => {
-    e.preventDefault(); setErr(''); setLoading(true);
+    e.preventDefault();
+    setErr(''); setLoading(true);
     try {
       const sb = createClient();
       const { data, error } = await sb.auth.signUp({ email, password: pw });
       if (error) { setErr(error.message); setLoading(false); return; }
+
       if (data.user) {
-        const { data: newStore } = await sb.from('stores').insert({ owner_id: data.user.id, name: store }).select('id').single();
+        // Create store
+        const { data: newStore } = await sb.from('stores')
+          .insert({ owner_id: data.user.id, name: store.trim() })
+          .select('id').single();
         if (newStore) {
-          await sb.from('vendors').insert(VENDORS.map((v: string) => ({ store_id: newStore.id, company_name: v, is_preset: true })));
+          await sb.from('vendors').insert(
+            VENDORS.map((v: string) => ({ store_id: newStore.id, company_name: v, is_preset: true }))
+          );
         }
       }
-      if (!data.session) { setDone(true); setLoading(false); return; }
-      window.location.href = '/home';
-    } catch { setErr('Something went wrong.'); setLoading(false); }
+
+      // If session exists, go straight to home (email confirmation disabled)
+      if (data.session) {
+        window.location.href = '/home';
+        return;
+      }
+
+      // Otherwise show "check email" 
+      setDone(true);
+    } catch (ex: any) {
+      setErr(ex?.message || 'Something went wrong.');
+    }
+    setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="p-5">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 font-medium">
-          <ArrowLeft className="h-4 w-4" />Back
-        </Link>
-      </div>
-      <div className="flex-1 flex items-center justify-center px-5 pb-10">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 text-center">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-white font-black text-2xl mb-5">R</div>
-            <h1 className="text-2xl font-black text-gray-900">Create account</h1>
-            <p className="text-gray-500 mt-1 text-sm">Free trial · No credit card needed</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <form onSubmit={submit} className="space-y-4">
-              <div>
-                <label className="lbl">Store name</label>
-                <input required value={store} onChange={e => setStore(e.target.value)} className="inp" placeholder="Quick Stop Convenience" autoFocus />
-              </div>
-              <div>
-                <label className="lbl">Email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="inp" placeholder="you@store.com" />
-              </div>
-              <div>
-                <label className="lbl">Password (min 6 characters)</label>
-                <input type="password" required minLength={6} value={pw} onChange={e => setPw(e.target.value)} className="inp" placeholder="••••••••" />
-              </div>
-              {err && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{err}</p>}
-              <button type="submit" disabled={loading} className="btn btn-accent btn-full py-4">
-                {loading ? 'Creating account…' : 'Create Account'}
-              </button>
-            </form>
-          </div>
-          <p className="mt-5 text-center text-sm text-gray-500">
-            Already have an account? <Link href="/login" className="text-accent font-semibold">Sign in</Link>
+  if (done) return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-5">
+      <div className="w-full max-w-sm text-center">
+        <div className="bg-gray-900 rounded-3xl border border-gray-800 p-10">
+          <div className="text-5xl mb-4">✉️</div>
+          <h2 className="text-2xl font-black text-white mb-3">Check your email</h2>
+          <p className="text-gray-400 text-sm mb-2">
+            We sent a confirmation link to
           </p>
+          <p className="text-white font-bold mb-6">{email}</p>
+          <p className="text-gray-500 text-xs mb-8">
+            Click the link to activate your account, then come back and sign in.
+          </p>
+          <Link href="/login" className="block w-full bg-accent text-white font-bold rounded-2xl py-4 hover:bg-red-700 transition-colors">
+            Go to Sign In
+          </Link>
         </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-5">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-sm relative z-10">
+        <div className="text-center mb-10">
+          <Link href="/">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-white font-black text-3xl mb-4 shadow-lg shadow-red-900/30">R</div>
+          </Link>
+          <h1 className="text-2xl font-black text-white">Create your account</h1>
+          <p className="text-gray-500 text-sm mt-1">Free to start · No credit card needed</p>
+        </div>
+
+        <div className="bg-gray-900 rounded-3xl border border-gray-800 p-8 shadow-2xl">
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Store name</label>
+              <input required value={store} onChange={e => setStore(e.target.value)}
+                placeholder="Quick Stop Convenience"
+                autoFocus
+                className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email address</label>
+              <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="you@store.com"
+                className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password (min 6 characters)</label>
+              <input type="password" required minLength={6} value={pw} onChange={e => setPw(e.target.value)}
+                placeholder="Create a strong password"
+                className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />
+            </div>
+
+            {err && <p className="text-red-400 text-sm bg-red-950/50 rounded-xl px-4 py-3">{err}</p>}
+
+            <button type="submit" disabled={loading}
+              className="w-full bg-accent hover:bg-red-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl py-4 transition-all disabled:opacity-60 mt-2">
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating account…
+                </span>
+              ) : 'Create Account →'}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-sm text-gray-600 mt-6">
+          Already have an account?{' '}
+          <Link href="/login" className="text-accent font-semibold hover:text-red-400">Sign in</Link>
+        </p>
       </div>
     </div>
   );
