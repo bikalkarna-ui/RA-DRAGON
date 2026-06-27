@@ -68,7 +68,7 @@ export default function ReportsPage() {
 
   // Chart data - last 14 days
   const chartData = [...reports].reverse().slice(-14).map(r => ({
-    date: format(new Date(r.report_date + 'T12:00:00'), 'M/d'),
+    date: safeFormat(r.report_date + 'T12:00:00', 'M/d'),
     sales: n(r.total_sales),
     net: n(r.net),
     short: n(r.short_over),

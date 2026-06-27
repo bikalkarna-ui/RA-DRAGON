@@ -10,6 +10,16 @@ import { format, startOfWeek, startOfMonth } from 'date-fns';
 
 type Tab = 'clock' | 'staff' | 'payroll';
 
+
+const safeFormat = (dateVal: any, pattern: string): string => {
+  if (!dateVal) return '—';
+  try {
+    const d = typeof dateVal === 'string' ? new Date(dateVal) : dateVal;
+    if (isNaN(d.getTime())) return '—';
+    return format(d, pattern);
+  } catch { return '—'; }
+};
+
 export default function EmployeesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -193,7 +203,7 @@ export default function EmployeesPage() {
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-600 text-white font-black">{emp.name.charAt(0)}</div>
                         <div>
                           <p className="font-bold text-green-900 text-sm">{emp.name}</p>
-                          <p className="text-xs text-green-700">{hrs}h {mn}m · clocked in {rec ? format(new Date(rec.clock_in), 'h:mm a') : ''}</p>
+                          <p className="text-xs text-green-700">{hrs}h {mn}m · clocked in {rec ? safeFormat(rec.clock_in, 'h:mm a') : ''}</p>
                         </div>
                         <div className="ml-auto h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                       </div>
@@ -215,7 +225,7 @@ export default function EmployeesPage() {
                     <div key={c.id} className="flex items-center justify-between px-5 py-3">
                       <div>
                         <p className="font-semibold text-text text-sm">{c.employee_name}</p>
-                        <p className="text-xs text-muted">In: {format(new Date(c.clock_in), 'h:mm a')}{c.clock_out ? ` · Out: ${format(new Date(c.clock_out), 'h:mm a')}` : ' · Still working'}</p>
+                        <p className="text-xs text-muted">In: {safeFormat(c.clock_in, 'h:mm a')}{c.clock_out ? ` · Out: ${safeFormat(c.clock_out, 'h:mm a')}` : ' · Still working'}</p>
                       </div>
                       {c.hours_worked && <span className="num font-bold text-text">{c.hours_worked}h</span>}
                       {!c.clock_out && <span className="chip chip-green text-[10px]">Active</span>}
@@ -339,7 +349,7 @@ export default function EmployeesPage() {
                   <div key={c.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
                       <p className="font-semibold text-text">{c.employee_name}</p>
-                      <p className="text-xs text-muted">{format(new Date(c.clock_in), 'MMM d')} · {format(new Date(c.clock_in), 'h:mm a')} – {c.clock_out ? format(new Date(c.clock_out), 'h:mm a') : '—'}</p>
+                      <p className="text-xs text-muted">{safeFormat(c.clock_in, 'MMM d')} · {safeFormat(c.clock_in, 'h:mm a')} – {c.clock_out ? safeFormat(c.clock_out, 'h:mm a') : '—'}</p>
                     </div>
                     <span className="num font-bold text-text">{c.hours_worked}h</span>
                   </div>

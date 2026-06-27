@@ -94,7 +94,7 @@ export default function OrderingPage() {
     ].join('\n');
     const blob = new Blob([lines], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `PO-${order.vendor_name}-${format(new Date(order.created_at), 'yyyy-MM-dd')}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `PO-${order.vendor_name}-${safeFormat(order.created_at, 'yyyy-MM-dd')}.csv`; a.click();
   };
 
   if (!mounted) return null;
