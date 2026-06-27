@@ -7,6 +7,7 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { ClientOnly } from '@/components/ui/client-only';
 import { subDays, format, startOfMonth } from 'date-fns';
 import { TrendingUp, TrendingDown, DollarSign, Zap, BarChart3, Calendar, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 
@@ -259,7 +260,7 @@ export default function ReportsPage() {
               <>
                 <div className="tile p-5">
                   <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Daily Sales — Last 14 Days</p>
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ClientOnly><ResponsiveContainer width="100%" height={200}>
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                       <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
@@ -267,12 +268,12 @@ export default function ReportsPage() {
                       <Tooltip content={<Tooltip_ />} />
                       <Bar dataKey="sales" name="Sales" fill="#C0392B" radius={[4, 4, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ResponsiveContainer></ClientOnly>
                 </div>
 
                 <div className="tile p-5">
                   <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Short / Over — Last 14 Days</p>
-                  <ResponsiveContainer width="100%" height={160}>
+                  <ClientOnly><ResponsiveContainer width="100%" height={160}>
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                       <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
@@ -283,7 +284,7 @@ export default function ReportsPage() {
                         radius={[3, 3, 0, 0]}
                         label={{ position: 'top', fontSize: 9, fill: '#9CA3AF', formatter: (v: number) => v !== 0 ? fmt.currency(v) : '' }} />
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ResponsiveContainer></ClientOnly>
                 </div>
 
                 {/* Daily history table */}
