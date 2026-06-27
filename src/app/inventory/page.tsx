@@ -12,7 +12,6 @@ import {
   ChevronDown, ChevronRight, ArrowUpCircle, ArrowDownCircle,
   Camera, Upload, Filter
 } from 'lucide-react';
-import { format } from 'date-fns';
 
 const DEPARTMENTS = ['Tobacco/CIG','Beer & Wine','Snacks','Beverages','Candy','Dairy','Frozen','Health & Beauty','Novelty','Vape','Fuel','Lottery','Auto','Other'];
 
@@ -44,14 +43,6 @@ const EMPTY = { name:'',vendor_company:'',department:'',category:'',sku:'',barco
 
 
 // Safe date formatter - never crashes on null/undefined dates
-const safeFormat = (dateStr: any, pattern: string) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return format(d, pattern);
-  } catch { return '—'; }
-};
 
 export default function InventoryPage() {
   const [mounted, setMounted] = useState(false);
@@ -372,7 +363,7 @@ export default function InventoryPage() {
                             return (
                               <div key={mv.id} className="flex items-center gap-2.5 text-xs">
                                 <Icon className={cn('h-3.5 w-3.5 shrink-0', col)} />
-                                <span className="text-muted shrink-0">{safeFormat(mv.created_at, 'MMM d h:mm a')}</span>
+                                <span className="text-muted shrink-0">{(mv.created_at ? (() => { try { return (() => { try { const __d = new Date(mv.created_at); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</span>
                                 <span className={cn('num font-bold shrink-0', isIn ? 'text-green-600' : 'text-red-600')}>
                                   {isIn ? '+' : ''}{mv.quantity}
                                 </span>

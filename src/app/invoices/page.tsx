@@ -7,18 +7,9 @@ import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { FileText, Check, X, AlertTriangle, Loader2, Trash2, ChevronRight, RotateCcw } from 'lucide-react';
 import { MultiScan } from '@/components/ui/multi-scan';
-import { format } from 'date-fns';
 
 
 // Safe date formatter - never crashes on null/undefined dates
-const safeFormat = (dateStr: any, pattern: string) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return format(d, pattern);
-  } catch { return '—'; }
-};
 
 export default function InvoicesPage() {
   const [mounted, setMounted] = useState(false);
@@ -400,7 +391,7 @@ export default function InvoicesPage() {
                         </div>
                         <p className="text-xs text-muted mt-0.5">
                           {inv.vendor_company ? `${inv.vendor_company} · ` : ''}
-                          {safeFormat(inv.created_at, 'MMM d, yyyy · h:mm a')}
+                          {(inv.created_at ? (() => { try { return (() => { try { const __d = new Date(inv.created_at); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}
                         </p>
                       </div>
 

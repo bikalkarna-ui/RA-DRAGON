@@ -6,7 +6,6 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { Users, Clock, LogIn, LogOut, Check, Plus, X, Eye, EyeOff, Trash2, Download, Loader2, TrendingUp } from 'lucide-react';
-import { format, startOfWeek, startOfMonth } from 'date-fns';
 
 type Tab = 'clock' | 'staff' | 'payroll';
 
@@ -16,7 +15,7 @@ const safeFormat = (dateVal: any, pattern: string): string => {
   try {
     const d = typeof dateVal === 'string' ? new Date(dateVal) : dateVal;
     if (isNaN(d.getTime())) return '—';
-    return format(d, pattern);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
   } catch { return '—'; }
 };
 
@@ -44,7 +43,7 @@ export default function EmployeesPage() {
   const load = useCallback(async () => {
     if (!store) return;
     const sb = createClient();
-    const from = startOfMonth(new Date()).toISOString();
+    const from = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
     const [{ data: emps }, { data: clocks }] = await Promise.all([
       sb.from('employees').select('*').eq('store_id', store.id).order('name'),
       sb.from('time_clock').select('*').eq('store_id', store.id).gte('clock_in', from).order('clock_in', { ascending: false }),
@@ -75,7 +74,7 @@ export default function EmployeesPage() {
       if (!res.ok) { setPinMsg({ text: data.error, ok: false }); return; }
 
       if (action === 'clock_in') {
-        setPinMsg({ text: `✓ ${emp.name} clocked IN at ${format(new Date(), 'h:mm a')}`, ok: true });
+        setPinMsg({ text: `✓ ${emp.name} clocked IN at ${new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})}`, ok: true });
       } else {
         const hrs = data.hours_worked?.toFixed(2) ?? '0';
         setPinMsg({ text: `✓ ${emp.name} clocked OUT — ${hrs} hours`, ok: true });
@@ -126,7 +125,7 @@ export default function EmployeesPage() {
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `payroll-${format(new Date(), 'yyyy-MM')}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `payroll-${`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`}.csv`; a.click();
   };
 
   if (!mounted) return null;
@@ -203,7 +202,7 @@ export default function EmployeesPage() {
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-600 text-white font-black">{emp.name.charAt(0)}</div>
                         <div>
                           <p className="font-bold text-green-900 text-sm">{emp.name}</p>
-                          <p className="text-xs text-green-700">{hrs}h {mn}m · clocked in {rec ? safeFormat(rec.clock_in, 'h:mm a') : ''}</p>
+                          <p className="text-xs text-green-700">{hrs}h {mn}m · clocked in {rec ? (rec.clock_in ? (() => { try { return (() => { try { const __d = new Date(rec.clock_in); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—') : ''}</p>
                         </div>
                         <div className="ml-auto h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                       </div>
@@ -225,7 +224,7 @@ export default function EmployeesPage() {
                     <div key={c.id} className="flex items-center justify-between px-5 py-3">
                       <div>
                         <p className="font-semibold text-text text-sm">{c.employee_name}</p>
-                        <p className="text-xs text-muted">In: {safeFormat(c.clock_in, 'h:mm a')}{c.clock_out ? ` · Out: ${safeFormat(c.clock_out, 'h:mm a')}` : ' · Still working'}</p>
+                        <p className="text-xs text-muted">In: {(c.clock_in ? (() => { try { return (() => { try { const __d = new Date(c.clock_in); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}{c.clock_out ? ` · Out: ${(c.clock_out ? (() => { try { return (() => { try { const __d = new Date(c.clock_out); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}` : ' · Still working'}</p>
                       </div>
                       {c.hours_worked && <span className="num font-bold text-text">{c.hours_worked}h</span>}
                       {!c.clock_out && <span className="chip chip-green text-[10px]">Active</span>}
@@ -349,7 +348,7 @@ export default function EmployeesPage() {
                   <div key={c.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
                       <p className="font-semibold text-text">{c.employee_name}</p>
-                      <p className="text-xs text-muted">{safeFormat(c.clock_in, 'MMM d')} · {safeFormat(c.clock_in, 'h:mm a')} – {c.clock_out ? safeFormat(c.clock_out, 'h:mm a') : '—'}</p>
+                      <p className="text-xs text-muted">{(c.clock_in ? (() => { try { return (() => { try { const __d = new Date(c.clock_in); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')} · {(c.clock_in ? (() => { try { return (() => { try { const __d = new Date(c.clock_in); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')} – {c.clock_out ? (c.clock_out ? (() => { try { return (() => { try { const __d = new Date(c.clock_out); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—') : '—'}</p>
                     </div>
                     <span className="num font-bold text-text">{c.hours_worked}h</span>
                   </div>

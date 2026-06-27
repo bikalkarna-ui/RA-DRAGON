@@ -7,18 +7,9 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDORS } from '@/lib/utils';
 import { Brain, Package, Loader2, Check, X, ChevronDown, ChevronUp, Zap, TrendingDown, Download, RefreshCw, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
 
 
 // Safe date formatter - never crashes on null/undefined dates
-const safeFormat = (dateStr: any, pattern: string) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return format(d, pattern);
-  } catch { return '—'; }
-};
 
 export default function OrderingPage() {
   const [mounted, setMounted] = useState(false);
@@ -85,7 +76,7 @@ export default function OrderingPage() {
   const exportPO = (order: any, items: any[]) => {
     const lines = [
       `PURCHASE ORDER — ${order.vendor_name}`,
-      `Generated: ${safeFormat(order.created_at, 'MMM d, yyyy h:mm a')}`,
+      `Generated: ${(order.created_at ? (() => { try { return (() => { try { const __d = new Date(order.created_at); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}`,
       `PO Total: ${fmt.currency(order.total)}`,
       `AI Notes: ${order.ai_notes ?? '—'}`,
       '',
@@ -94,7 +85,7 @@ export default function OrderingPage() {
     ].join('\n');
     const blob = new Blob([lines], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `PO-${order.vendor_name}-${safeFormat(order.created_at, 'yyyy-MM-dd')}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `PO-${order.vendor_name}-${(order.created_at ? (() => { try { return (() => { try { const __d = new Date(order.created_at); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}.csv`; a.click();
   };
 
   if (!mounted) return null;
@@ -209,7 +200,7 @@ export default function OrderingPage() {
                               {order.status}
                             </span>
                           </div>
-                          <p className="text-xs text-muted">{safeFormat(order.created_at, 'MMM d, yyyy h:mm a')}</p>
+                          <p className="text-xs text-muted">{(order.created_at ? (() => { try { return (() => { try { const __d = new Date(order.created_at); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
                           {order.ai_notes && <p className="text-xs text-muted mt-1 italic">{order.ai_notes}</p>}
                         </div>
                         <div className="text-right shrink-0">

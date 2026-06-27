@@ -11,7 +11,6 @@ import {
   AlertTriangle, Store as StoreIcon, Plus, DollarSign,
   Users, ShoppingCart, Zap, RefreshCw, Clock
 } from 'lucide-react';
-import { startOfDay, subDays } from 'date-fns';
 
 const APPS = [
   { id: 'pos',       label: 'Daily Report',  href: '/pos',        icon: BarChart3,  color: '#C0392B', bg: '#FEF2F2', desc: 'Upload Modisoft report'      },
@@ -51,7 +50,7 @@ export default function HomePage() {
     try {
       const sb = createClient();
       const today     = new Date().toISOString().split('T')[0];
-      const yesterday = subDays(new Date(), 1).toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
       const [
         { data: rpt }, { data: yRpt }, { data: prods },
@@ -62,7 +61,7 @@ export default function HomePage() {
         sb.from('products').select('unit_cost,unit_price,quantity,min_quantity').eq('store_id', store.id).eq('is_active', true),
         sb.from('invoices').select('id').eq('store_id', store.id).eq('status', 'NEEDS_REVIEW'),
         sb.from('time_clock').select('employee_id').eq('store_id', store.id).is('clock_out', null),
-        sb.from('inventory_movements').select('product_name,type,quantity,created_at').eq('store_id', store.id).gte('created_at', startOfDay(new Date()).toISOString()).order('created_at', { ascending: false }).limit(8),
+        sb.from('inventory_movements').select('product_name,type,quantity,created_at').eq('store_id', store.id).gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString()).order('created_at', { ascending: false }).limit(8),
       ]);
 
       const ps = prods ?? [];

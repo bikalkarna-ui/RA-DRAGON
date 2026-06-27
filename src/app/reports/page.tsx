@@ -8,21 +8,12 @@ import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { ClientOnly } from '@/components/ui/client-only';
-import { subDays, format, startOfMonth } from 'date-fns';
 import { TrendingUp, TrendingDown, DollarSign, Zap, BarChart3, Calendar, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 
 type Tab = 'pl' | 'trend' | 'calendar';
 
 
 // Safe date formatter - never crashes on null/undefined dates
-const safeFormat = (dateStr: any, pattern: string) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return format(d, pattern);
-  } catch { return '—'; }
-};
 
 export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
@@ -38,7 +29,7 @@ export default function ReportsPage() {
   const load = useCallback(async () => {
     if (!store) return;
     setLoading(true);
-    const from = subDays(new Date(), 30).toISOString().split('T')[0];
+    const from = new Date(Date.now() - 30*86400000).toISOString().split('T')[0];
     const { data } = await createClient()
       .from('daily_close_reports').select('*')
       .eq('store_id', store.id)
@@ -68,7 +59,7 @@ export default function ReportsPage() {
 
   // Chart data - last 14 days
   const chartData = [...reports].reverse().slice(-14).map(r => ({
-    date: safeFormat(r.report_date + 'T12:00:00', 'M/d'),
+    date: (r.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(r.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—'),
     sales: n(r.total_sales),
     net: n(r.net),
     short: n(r.short_over),
@@ -197,13 +188,13 @@ export default function ReportsPage() {
                 <div className="tile p-4 border border-green-200 bg-green-50">
                   <div className="flex items-center gap-1.5 mb-2"><TrendingUp className="h-4 w-4 text-green-600" /><p className="text-xs text-green-700 font-bold">Best Day</p></div>
                   <p className="num text-xl font-black text-green-800">{fmt.currency(n(bestDay.total_sales))}</p>
-                  <p className="text-xs text-green-600 mt-1">{safeFormat(bestDay.report_date + 'T12:00:00', 'MMM d')}</p>
+                  <p className="text-xs text-green-600 mt-1">{(bestDay.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(bestDay.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
                 </div>
                 {worstDay && (
                   <div className="tile p-4 border border-red-100 bg-red-50">
                     <div className="flex items-center gap-1.5 mb-2"><TrendingDown className="h-4 w-4 text-accent" /><p className="text-xs text-accent font-bold">Slowest Day</p></div>
                     <p className="num text-xl font-black text-accent">{fmt.currency(n(worstDay.total_sales))}</p>
-                    <p className="text-xs text-red-400 mt-1">{safeFormat(worstDay.report_date + 'T12:00:00', 'MMM d')}</p>
+                    <p className="text-xs text-red-400 mt-1">{(worstDay.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(worstDay.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
                   </div>
                 )}
               </div>
@@ -312,7 +303,7 @@ export default function ReportsPage() {
                     {reports.map(r => (
                       <div key={r.report_date} className="flex items-center justify-between px-5 py-3 hover:bg-surface">
                         <div>
-                          <p className="text-sm font-semibold text-text">{safeFormat(r.report_date + 'T12:00:00', 'EEE, MMM d')}</p>
+                          <p className="text-sm font-semibold text-text">{(r.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(r.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
                           <p className="text-xs text-muted">Deposit: {fmt.currency(n(r.total_deposit))}</p>
                         </div>
                         <div className="text-right">
@@ -343,7 +334,7 @@ export default function ReportsPage() {
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-surface">
                 <ChevronLeft className="h-5 w-5 text-sub" />
               </button>
-              <p className="font-black text-text">{format(calDate, 'MMMM yyyy')}</p>
+              <p className="font-black text-text">{calDate.toLocaleDateString('en-US', {month:'long', year:'numeric'})}</p>
               <button onClick={() => setCalDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-surface">
                 <ChevronRight className="h-5 w-5 text-sub" />
@@ -358,9 +349,9 @@ export default function ReportsPage() {
               {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day     = i + 1;
-                const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd');
+                const dateStr = (() => { try { const __d = new Date(year, month, day); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })();
                 const rpt     = reportsByDate.get(dateStr);
-                const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
+                const isToday = dateStr === '—';
                 const isSelected = selectedDay?.report_date === dateStr;
                 return (
                   <button key={day} onClick={() => setSelectedDay(isSelected ? null : rpt ?? null)}
@@ -380,7 +371,7 @@ export default function ReportsPage() {
 
             {selectedDay && (
               <div className="mt-5 border-t border-border pt-4 space-y-3 animate-fade-up">
-                <p className="font-black text-text">{safeFormat(selectedDay.report_date + 'T12:00:00', 'EEEE, MMMM d, yyyy')}</p>
+                <p className="font-black text-text">{(selectedDay.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(selectedDay.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { l: 'Total Sales',   v: fmt.currency(n(selectedDay.total_sales)) },

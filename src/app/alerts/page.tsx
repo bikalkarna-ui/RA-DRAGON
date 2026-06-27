@@ -6,20 +6,11 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import { Bell, TrendingUp, TrendingDown, AlertTriangle, Package, Zap, RefreshCw, Check } from 'lucide-react';
-import { format } from 'date-fns';
 
 type Tab = 'stock' | 'prices';
 
 
 // Safe date formatter - never crashes on null/undefined dates
-const safeFormat = (dateStr: any, pattern: string) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return format(d, pattern);
-  } catch { return '—'; }
-};
 
 export default function AlertsPage() {
   const [mounted, setMounted] = useState(false);
@@ -183,7 +174,7 @@ export default function AlertsPage() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="font-bold text-text">{item.raw_description}</p>
-                      <p className="text-xs text-muted">{item.vendor_name} · {safeFormat(item.invoice_date, 'MMM d, yyyy')}</p>
+                      <p className="text-xs text-muted">{item.vendor_name} · {(item.invoice_date ? (() => { try { return (() => { try { const __d = new Date(item.invoice_date); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
                     </div>
                     <div className={cn('chip font-bold', costUp ? 'chip-red' : 'chip-green')}>
                       {costUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
