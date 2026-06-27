@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Screen } from '@/components/layout/screen';
 import { MultiScan } from '@/components/ui/multi-scan';

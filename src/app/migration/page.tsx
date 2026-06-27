@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
