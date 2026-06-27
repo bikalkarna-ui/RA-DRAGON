@@ -237,13 +237,18 @@ function StoresTab({ stores, currentStore, switchStore, createStore }: {
     e.preventDefault();
     if (!newName.trim()) { setError('Store name is required'); return; }
     setCreating(true); setError('');
-    const fullName = newCity ? `${newName} — ${newCity}` : newName;
-    const result = await createStore(fullName);
-    setCreating(false);
-    if (result) {
-      setNewName(''); setNewCity(''); setShowForm(false);
-    } else {
-      setError('Failed to create store — try again');
+    try {
+      const fullName = newCity ? `${newName} — ${newCity}` : newName;
+      const result = await createStore(fullName);
+      setCreating(false);
+      if (result) {
+        setNewName(''); setNewCity(''); setShowForm(false);
+      } else {
+        setError('Failed to create store — please try again');
+      }
+    } catch (err: any) {
+      setCreating(false);
+      setError(err.message || 'Something went wrong');
     }
   };
 
@@ -341,7 +346,7 @@ function AccountTab() {
 
   const logout = async () => {
     await createClient().auth.signOut();
-    window.location.href = '/';
+    window.location.replace('/');
   };
 
   return (
