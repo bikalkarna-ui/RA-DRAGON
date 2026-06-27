@@ -2,12 +2,10 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Check, ArrowLeft } from 'lucide-react';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [form, setForm] = useState({ store: '', email: '', pw: '' });
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,7 +19,7 @@ export default function RegisterPage() {
     if (error) { setErr(error.message); setLoading(false); return; }
     if (data.user && form.store) await sb.from('stores').insert({ owner_id: data.user.id, name: form.store });
     if (!data.session) { setDone(true); setLoading(false); return; }
-    router.push('/home'); router.refresh();
+    window.location.href = '/home'; ;
   };
 
   if (done) return (

@@ -2,7 +2,6 @@
 export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
@@ -38,7 +37,6 @@ interface DashData {
 
 export default function HomePage() {
   const { store, stores, switchStore } = useStore();
-  const router = useRouter();
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -119,7 +117,7 @@ export default function HomePage() {
 
   const logout = async () => {
     try { await createClient().auth.signOut(); } catch {}
-    router.push('/'); router.refresh();
+    window.location.href = '/';
   };
 
   const hour     = new Date().getHours();

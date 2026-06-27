@@ -2,12 +2,10 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Eye, EyeOff, ArrowLeft, Shield } from 'lucide-react';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail]   = useState('');
   const [pw, setPw]         = useState('');
   const [showPw, setShowPw] = useState(false);

@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,13 +12,12 @@ interface ScreenProps {
 }
 
 export function Screen({ title, subtitle, back = true, action, children, className }: ScreenProps) {
-  const router = useRouter();
   return (
     <div className="min-h-screen bg-white">
       <div className="screen">
         <div className="flex items-center justify-between py-5">
           {back ? (
-            <button onClick={() => router.back()} className="back-btn -ml-1">
+            <button onClick={() => window.history.back()} className="back-btn -ml-1">
               <ChevronLeft className="h-5 w-5" />Back
             </button>
           ) : <div />}
