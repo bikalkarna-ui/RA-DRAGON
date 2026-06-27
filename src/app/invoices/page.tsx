@@ -9,6 +9,17 @@ import { FileText, Check, X, AlertTriangle, Loader2, Trash2, ChevronRight, Rotat
 import { MultiScan } from '@/components/ui/multi-scan';
 import { format } from 'date-fns';
 
+
+// Safe date formatter - never crashes on null/undefined dates
+const safeFormat = (dateStr: any, pattern: string) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return format(d, pattern);
+  } catch { return '—'; }
+};
+
 export default function InvoicesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -389,7 +400,7 @@ export default function InvoicesPage() {
                         </div>
                         <p className="text-xs text-muted mt-0.5">
                           {inv.vendor_company ? `${inv.vendor_company} · ` : ''}
-                          {format(new Date(inv.created_at), 'MMM d, yyyy · h:mm a')}
+                          {safeFormat(inv.created_at, 'MMM d, yyyy · h:mm a')}
                         </p>
                       </div>
 

@@ -10,6 +10,17 @@ import { format } from 'date-fns';
 
 type Tab = 'stock' | 'prices';
 
+
+// Safe date formatter - never crashes on null/undefined dates
+const safeFormat = (dateStr: any, pattern: string) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return format(d, pattern);
+  } catch { return '—'; }
+};
+
 export default function AlertsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -172,7 +183,7 @@ export default function AlertsPage() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="font-bold text-text">{item.raw_description}</p>
-                      <p className="text-xs text-muted">{item.vendor_name} · {format(new Date(item.invoice_date), 'MMM d, yyyy')}</p>
+                      <p className="text-xs text-muted">{item.vendor_name} · {safeFormat(item.invoice_date, 'MMM d, yyyy')}</p>
                     </div>
                     <div className={cn('chip font-bold', costUp ? 'chip-red' : 'chip-green')}>
                       {costUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -205,7 +216,7 @@ export default function AlertsPage() {
                     </div>
                   )}
 
-                  <a href="/invoices" className="btn btn-accent btn-full text-sm py-2.5">Review Invoice & Apply →</a>
+                  <a href="/invoices" className="btn btn-accent btn-full text-sm py-2.5">Review Invoice &amp; Apply →</a>
                 </div>
               );
             })}

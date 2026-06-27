@@ -9,6 +9,17 @@ import { fmt, cn, VENDORS } from '@/lib/utils';
 import { Brain, Package, Loader2, Check, X, ChevronDown, ChevronUp, Zap, TrendingDown, Download, RefreshCw, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
+
+// Safe date formatter - never crashes on null/undefined dates
+const safeFormat = (dateStr: any, pattern: string) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return format(d, pattern);
+  } catch { return '—'; }
+};
+
 export default function OrderingPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -74,7 +85,7 @@ export default function OrderingPage() {
   const exportPO = (order: any, items: any[]) => {
     const lines = [
       `PURCHASE ORDER — ${order.vendor_name}`,
-      `Generated: ${format(new Date(order.created_at), 'MMM d, yyyy h:mm a')}`,
+      `Generated: ${safeFormat(order.created_at, 'MMM d, yyyy h:mm a')}`,
       `PO Total: ${fmt.currency(order.total)}`,
       `AI Notes: ${order.ai_notes ?? '—'}`,
       '',
@@ -198,7 +209,7 @@ export default function OrderingPage() {
                               {order.status}
                             </span>
                           </div>
-                          <p className="text-xs text-muted">{format(new Date(order.created_at), 'MMM d, yyyy h:mm a')}</p>
+                          <p className="text-xs text-muted">{safeFormat(order.created_at, 'MMM d, yyyy h:mm a')}</p>
                           {order.ai_notes && <p className="text-xs text-muted mt-1 italic">{order.ai_notes}</p>}
                         </div>
                         <div className="text-right shrink-0">

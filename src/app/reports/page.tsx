@@ -13,6 +13,17 @@ import { TrendingUp, TrendingDown, DollarSign, Zap, BarChart3, Calendar, Chevron
 
 type Tab = 'pl' | 'trend' | 'calendar';
 
+
+// Safe date formatter - never crashes on null/undefined dates
+const safeFormat = (dateStr: any, pattern: string) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return format(d, pattern);
+  } catch { return '—'; }
+};
+
 export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -113,7 +124,7 @@ export default function ReportsPage() {
   if (!mounted) return null;
 
   return (
-    <Screen title="Reports & P&L" subtitle="Last 30 days — auto-built from Modisoft uploads">
+    <Screen title="Reports & P&amp;L" subtitle="Last 30 days — auto-built from Modisoft uploads">
       <div className="space-y-5">
 
         {/* Upload another report */}
@@ -126,7 +137,7 @@ export default function ReportsPage() {
         {/* Tabs */}
         <div className="flex gap-2">
           {[
-            { id: 'pl',       label: '💰 P&L Summary' },
+            { id: 'pl',       label: '💰 P&amp;L Summary' },
             { id: 'trend',    label: '📈 Trends'       },
             { id: 'calendar', label: '📅 Calendar'     },
           ].map(t => (
@@ -138,7 +149,7 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        {/* ── P&L TAB ── */}
+        {/* ── P&amp;L TAB ── */}
         {tab === 'pl' && (
           <div className="space-y-4">
             {/* 30-day headline numbers */}
@@ -186,13 +197,13 @@ export default function ReportsPage() {
                 <div className="tile p-4 border border-green-200 bg-green-50">
                   <div className="flex items-center gap-1.5 mb-2"><TrendingUp className="h-4 w-4 text-green-600" /><p className="text-xs text-green-700 font-bold">Best Day</p></div>
                   <p className="num text-xl font-black text-green-800">{fmt.currency(n(bestDay.total_sales))}</p>
-                  <p className="text-xs text-green-600 mt-1">{format(new Date(bestDay.report_date + 'T12:00:00'), 'MMM d')}</p>
+                  <p className="text-xs text-green-600 mt-1">{safeFormat(bestDay.report_date + 'T12:00:00', 'MMM d')}</p>
                 </div>
                 {worstDay && (
                   <div className="tile p-4 border border-red-100 bg-red-50">
                     <div className="flex items-center gap-1.5 mb-2"><TrendingDown className="h-4 w-4 text-accent" /><p className="text-xs text-accent font-bold">Slowest Day</p></div>
                     <p className="num text-xl font-black text-accent">{fmt.currency(n(worstDay.total_sales))}</p>
-                    <p className="text-xs text-red-400 mt-1">{format(new Date(worstDay.report_date + 'T12:00:00'), 'MMM d')}</p>
+                    <p className="text-xs text-red-400 mt-1">{safeFormat(worstDay.report_date + 'T12:00:00', 'MMM d')}</p>
                   </div>
                 )}
               </div>
@@ -252,7 +263,7 @@ export default function ReportsPage() {
               <div className="tile p-10 text-center">
                 <BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" />
                 <p className="font-bold text-text mb-1">No data yet</p>
-                <p className="text-muted text-sm">Upload your Modisoft daily reports and all your P&L numbers will appear here automatically</p>
+                <p className="text-muted text-sm">Upload your Modisoft daily reports and all your P&amp;L numbers will appear here automatically</p>
               </div>
             )}
           </div>
@@ -301,7 +312,7 @@ export default function ReportsPage() {
                     {reports.map(r => (
                       <div key={r.report_date} className="flex items-center justify-between px-5 py-3 hover:bg-surface">
                         <div>
-                          <p className="text-sm font-semibold text-text">{format(new Date(r.report_date + 'T12:00:00'), 'EEE, MMM d')}</p>
+                          <p className="text-sm font-semibold text-text">{safeFormat(r.report_date + 'T12:00:00', 'EEE, MMM d')}</p>
                           <p className="text-xs text-muted">Deposit: {fmt.currency(n(r.total_deposit))}</p>
                         </div>
                         <div className="text-right">
@@ -369,7 +380,7 @@ export default function ReportsPage() {
 
             {selectedDay && (
               <div className="mt-5 border-t border-border pt-4 space-y-3 animate-fade-up">
-                <p className="font-black text-text">{format(new Date(selectedDay.report_date + 'T12:00:00'), 'EEEE, MMMM d, yyyy')}</p>
+                <p className="font-black text-text">{safeFormat(selectedDay.report_date + 'T12:00:00', 'EEEE, MMMM d, yyyy')}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { l: 'Total Sales',   v: fmt.currency(n(selectedDay.total_sales)) },

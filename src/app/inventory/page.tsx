@@ -42,6 +42,17 @@ const STATUS = {
 
 const EMPTY = { name:'',vendor_company:'',department:'',category:'',sku:'',barcode:'',unit_cost:'',unit_price:'',quantity:'0',min_quantity:'5',max_quantity:'100',case_pack:'1',reorder_qty:'0',location:'',taxable:true,notes:'' };
 
+
+// Safe date formatter - never crashes on null/undefined dates
+const safeFormat = (dateStr: any, pattern: string) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return format(d, pattern);
+  } catch { return '—'; }
+};
+
 export default function InventoryPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -361,7 +372,7 @@ export default function InventoryPage() {
                             return (
                               <div key={mv.id} className="flex items-center gap-2.5 text-xs">
                                 <Icon className={cn('h-3.5 w-3.5 shrink-0', col)} />
-                                <span className="text-muted shrink-0">{format(new Date(mv.created_at), 'MMM d h:mm a')}</span>
+                                <span className="text-muted shrink-0">{safeFormat(mv.created_at, 'MMM d h:mm a')}</span>
                                 <span className={cn('num font-bold shrink-0', isIn ? 'text-green-600' : 'text-red-600')}>
                                   {isIn ? '+' : ''}{mv.quantity}
                                 </span>
