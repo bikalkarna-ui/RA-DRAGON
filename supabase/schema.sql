@@ -366,3 +366,7 @@ on conflict(id) do nothing;
 
 create policy "inv_up" on storage.objects for insert with check(bucket_id in ('invoices','reports','till_readings') and (storage.foldername(name))[1] in (select id::text from stores where owner_id=auth.uid()));
 create policy "inv_rd" on storage.objects for select using(bucket_id in ('invoices','reports','till_readings') and (storage.foldername(name))[1] in (select id::text from stores where owner_id=auth.uid()));
+
+-- Multi-store: stores already supports multiple per owner_id (remove maybeSingle constraint)
+-- employees table already exists
+-- No schema changes needed — the stores table already allows multiple rows per owner_id

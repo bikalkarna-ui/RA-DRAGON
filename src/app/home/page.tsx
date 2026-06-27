@@ -21,7 +21,7 @@ const APPS = [
 ];
 
 export default function HomePage() {
-  const { store } = useStore();
+  const { store, stores, switchStore } = useStore();
   const router = useRouter();
   const [todaySales, setTodaySales] = useState<number | null>(null);
   const [txns, setTxns] = useState(0);
@@ -107,6 +107,23 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Store switcher — only shows if multiple stores */}
+        {stores.length > 1 && (
+          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+            {stores.map(s => (
+              <button key={s.id} onClick={() => switchStore(s.id)}
+                className={cn('flex-none flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors whitespace-nowrap',
+                  s.id === store?.id ? 'bg-accent text-white' : 'bg-surface border border-border text-sub hover:text-text')}>
+                <StoreIcon className="h-3.5 w-3.5" />
+                {s.name}
+              </button>
+            ))}
+            <a href="/settings" className="flex-none flex items-center gap-1.5 rounded-full border border-dashed border-border px-3 py-2 text-xs text-muted hover:border-accent hover:text-accent transition-colors whitespace-nowrap">
+              <Plus className="h-3.5 w-3.5" />Add store
+            </a>
           </div>
         )}
 

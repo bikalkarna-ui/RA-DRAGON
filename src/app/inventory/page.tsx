@@ -128,9 +128,12 @@ export default function InventoryPage() {
             hint="Photo of vendor invoice — AI extracts every product and updates costs"
           />
           {invoiceResult && (
-            <div className="mt-3 rounded-xl bg-green-50 border border-green-200 p-3">
-              <p className="text-sm font-semibold text-green-800">✓ {invoiceResult.items?.length ?? 0} items from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>
-              <p className="text-xs text-green-600 mt-0.5">Go to <a href="/invoices" className="underline font-semibold">Invoice Scanner</a> to review and apply all changes</p>
+            <div className="mt-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-bold text-amber-900">✓ AI found {invoiceResult.items?.length ?? 0} products from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>
+              <p className="text-sm text-amber-700 mt-1">Products are NOT added yet — you need to review and confirm first.</p>
+              <a href="/invoices" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-accent text-white px-5 py-2.5 text-sm font-bold hover:bg-red-700 transition-colors">
+                Go to Invoices → Review &amp; Apply
+              </a>
             </div>
           )}
         </div>
