@@ -370,3 +370,16 @@ create policy "inv_rd" on storage.objects for select using(bucket_id in ('invoic
 -- Multi-store: stores already supports multiple per owner_id (remove maybeSingle constraint)
 -- employees table already exists
 -- No schema changes needed — the stores table already allows multiple rows per owner_id
+
+-- NOTE: After running this schema, do the following in Supabase dashboard:
+-- Authentication → Email Templates → "Magic Link" template
+-- Replace the template body with ONLY the code, no link:
+--
+-- Subject: Your RA Solution verification code
+-- Body:
+-- <h2>Your verification code</h2>
+-- <p>Enter this code to sign in:</p>
+-- <h1 style="font-size:48px;font-weight:bold;letter-spacing:8px;color:#C0392B;">{{ .Token }}</h1>
+-- <p>This code expires in 5 minutes.</p>
+-- <p>Do NOT click any links. Only use the 6-digit number above.</p>
+-- <p>If you didn't request this, ignore this email.</p>
