@@ -3,7 +3,7 @@
  * MultiScan — camera-first, multi-image scanner used across all pages.
  * Flow: user taps camera OR selects files → previews ALL pages → hits Submit → AI runs → onResult called
  */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, X, Send, Loader2, CheckCircle, AlertCircle, Plus, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
