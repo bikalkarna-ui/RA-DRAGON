@@ -64,7 +64,7 @@ function EmployeesTab({ store }: { store: any }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-bold text-text">Staff & PINs</p>
+          <p className="font-bold text-text">Staff &amp; PINs</p>
           <p className="text-xs text-muted mt-0.5">{employees.filter(e => e.is_active).length} active · {store.name}</p>
         </div>
         <button onClick={() => setShowForm(v => !v)}

@@ -227,7 +227,7 @@ export default async function LandingPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white font-bold text-xs">R</div>
             <span className="font-semibold text-gray-600">RA Solution</span>
           </div>
-          <p>AI-powered management for gas stations & convenience stores</p>
+          <p>AI-powered management for gas stations &amp; convenience stores</p>
           <div className="flex items-center gap-5">
             <Link href="/login" className="hover:text-gray-700 transition-colors">Sign in</Link>
             <Link href="/register" className="hover:text-gray-700 transition-colors">Get started</Link>
