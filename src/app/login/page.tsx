@@ -6,6 +6,9 @@ import { createClient } from '@/lib/supabase/client';
 import { Eye, EyeOff, ArrowLeft, Shield } from 'lucide-react';
 
 export default function LoginPage() {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
   const [email, setEmail]   = useState('');
   const [pw, setPw]         = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -36,6 +39,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

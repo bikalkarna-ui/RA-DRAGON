@@ -14,6 +14,9 @@ import { TrendingUp, TrendingDown, DollarSign, Zap, BarChart3, Calendar, Chevron
 type Tab = 'pl' | 'trend' | 'calendar';
 
 export default function ReportsPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [tab, setTab] = useState<Tab>('pl');
   const [reports, setReports] = useState<any[]>([]);
@@ -106,6 +109,8 @@ export default function ReportsPage() {
         {payload.map((p: any) => <p key={p.name} style={{ color: p.color }} className="font-bold">{p.name}: {fmt.currency(p.value)}</p>)}
       </div>
     ) : null;
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Reports & P&L" subtitle="Last 30 days — auto-built from Modisoft uploads">

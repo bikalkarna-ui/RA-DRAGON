@@ -374,6 +374,9 @@ function AccountTab() {
 
 // ─── Main settings page ──────────────────────────────────────────────────────
 export default function SettingsPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store, stores, switchStore, createStore, refetch } = useStore();
   const [tab, setTab] = useState<Tab>('stores');
 
@@ -383,6 +386,8 @@ export default function SettingsPage() {
     { id: 'employees',  label: '👥 Employees',   show: !!store },
     { id: 'account',    label: '👤 Account',     show: true },
   ];
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Settings" subtitle={store?.name}>

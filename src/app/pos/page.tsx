@@ -14,6 +14,9 @@ import {
 import { format, startOfDay, subDays } from 'date-fns';
 
 export default function DailyReportPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [report, setReport]       = useState<any>(null);
   const [tillCount, setTillCount] = useState(0);
@@ -78,6 +81,8 @@ export default function DailyReportPage() {
   ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
   const vsYesterday = yesterday ? pct(gross, n(yesterday.total_sales)) : null;
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Daily Report" subtitle={format(new Date(), 'EEEE, MMMM d, yyyy')}

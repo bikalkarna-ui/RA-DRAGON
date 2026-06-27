@@ -11,6 +11,9 @@ import { format, startOfWeek, startOfMonth } from 'date-fns';
 type Tab = 'clock' | 'staff' | 'payroll';
 
 export default function EmployeesPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [tab, setTab] = useState<Tab>('clock');
   const [employees, setEmployees] = useState<any[]>([]);
@@ -115,6 +118,8 @@ export default function EmployeesPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `payroll-${format(new Date(), 'yyyy-MM')}.csv`; a.click();
   };
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Employees" subtitle={`${employees.filter(e => e.is_active).length} active · ${clockedIn.size} clocked in`}>

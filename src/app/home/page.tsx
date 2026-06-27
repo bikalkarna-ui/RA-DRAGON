@@ -36,6 +36,9 @@ interface DashData {
 }
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store, stores, switchStore } = useStore();
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,6 +128,8 @@ export default function HomePage() {
   const vsYest   = data && data.yesterdaySales > 0 ? ((data.todaySales - data.yesterdaySales) / data.yesterdaySales * 100) : null;
   const stockAlerts = (data?.notifications ?? []).filter(n => ['out_of_stock','low_stock','critical'].includes(n.type));
   const totalAlerts = (data?.priceAlerts ?? 0) + (data?.outOfStock ?? 0);
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-white">

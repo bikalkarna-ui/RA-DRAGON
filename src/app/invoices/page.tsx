@@ -10,6 +10,9 @@ import { MultiScan } from '@/components/ui/multi-scan';
 import { format } from 'date-fns';
 
 export default function InvoicesPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,6 +160,8 @@ export default function InvoicesPage() {
     FAILED:       'Failed',
     PROCESSING:   'Processing',
   };
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Invoices" subtitle="Upload, track, and archive all vendor invoices">

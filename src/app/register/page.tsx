@@ -6,6 +6,9 @@ import { createClient } from '@/lib/supabase/client';
 import { Check, ArrowLeft } from 'lucide-react';
 
 export default function RegisterPage() {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
   const [form, setForm] = useState({ store: '', email: '', pw: '' });
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +35,8 @@ export default function RegisterPage() {
       </div>
     </div>
   );
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

@@ -11,6 +11,9 @@ import { format } from 'date-fns';
 type Tab = 'stock' | 'prices';
 
 export default function AlertsPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [tab, setTab]       = useState<Tab>('stock');
   const [notifs, setNotifs] = useState<any[]>([]);
@@ -53,6 +56,8 @@ export default function AlertsPage() {
   );
 
   const margin = (cost: number, price: number) => price > 0 ? ((price - cost) / price * 100) : 0;
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Alerts" subtitle="Stock alerts &amp; price change notifications">

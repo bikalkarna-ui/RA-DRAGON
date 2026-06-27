@@ -10,6 +10,9 @@ import { Search, Package, FileText, ShoppingCart, TrendingUp } from 'lucide-reac
 interface Result { type: 'product' | 'invoice' | 'sale'; id: string; title: string; subtitle: string; value?: string; }
 
 export default function SearchPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
@@ -35,6 +38,8 @@ export default function SearchPage() {
 
   const ICONS = { product: Package, invoice: FileText, sale: ShoppingCart };
   const COLORS = { product: 'bg-blue-500/10 text-blue-400', invoice: 'bg-pink-500/10 text-pink-400', sale: 'bg-green-500/10 text-green-400' };
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Search Everything" subtitle="Products, invoices, sales, reports">

@@ -43,6 +43,9 @@ const STATUS = {
 const EMPTY = { name:'',vendor_company:'',department:'',category:'',sku:'',barcode:'',unit_cost:'',unit_price:'',quantity:'0',min_quantity:'5',max_quantity:'100',case_pack:'1',reorder_qty:'0',location:'',taxable:true,notes:'' };
 
 export default function InventoryPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -146,6 +149,8 @@ export default function InventoryPage() {
 
   const MOVE_ICONS: Record<string, any> = { sale: ArrowDownCircle, receive: ArrowUpCircle, adjustment: Check, waste: Trash2, return: ArrowUpCircle };
   const MOVE_COLORS: Record<string, string> = { sale: 'text-red-500', receive: 'text-green-600', adjustment: 'text-blue-500', waste: 'text-orange-500', return: 'text-purple-500' };
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Inventory" subtitle={`${counts.total} products · ${fmt.currency(inventoryValue)} cost · ${fmt.percent(avgMargin)} avg margin`}

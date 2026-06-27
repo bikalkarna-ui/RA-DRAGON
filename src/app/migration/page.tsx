@@ -13,6 +13,9 @@ const AUTO: Record<string, string> = { 'item name': 'product_name', 'product nam
 const parseCSV = (text: string): string[][] => text.split('\n').filter(l => l.trim()).map(line => { const r: string[] = []; let cur = '', q = false; for (let i = 0; i < line.length; i++) { if (line[i] === '"') { q = !q; continue; } if (line[i] === ',' && !q) { r.push(cur.trim()); cur = ''; continue; } cur += line[i]; } r.push(cur.trim()); return r; });
 
 export default function MigrationPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(0);
@@ -67,6 +70,8 @@ export default function MigrationPage() {
   const reset = () => { setStep(0); setFile(null); setRawRows([]); setHeaders([]); setMapping([]); setValidRows([]); setErrors([]); setImportResult(null); if (fileRef.current) fileRef.current.value = ''; };
 
   const STEPS = ['Upload', 'Preview', 'Map', 'Validate', 'Import', 'Done'];
+
+  if (!mounted) return null;
 
   return (
     <Screen title="Import Data" subtitle="CSV or Excel from any POS system — AI maps columns automatically">

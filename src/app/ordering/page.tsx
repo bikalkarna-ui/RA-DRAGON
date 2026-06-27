@@ -10,6 +10,9 @@ import { Brain, Package, Loader2, Check, X, ChevronDown, ChevronUp, Zap, Trendin
 import { format } from 'date-fns';
 
 export default function OrderingPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { store } = useStore();
   const [products, setProducts]       = useState<any[]>([]);
   const [orders, setOrders]           = useState<any[]>([]);
@@ -82,6 +85,8 @@ export default function OrderingPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `PO-${order.vendor_name}-${format(new Date(order.created_at), 'yyyy-MM-dd')}.csv`; a.click();
   };
+
+  if (!mounted) return null;
 
   return (
     <Screen title="AI Ordering" subtitle="Smart reorders based on 30/60/90-day sales velocity">
