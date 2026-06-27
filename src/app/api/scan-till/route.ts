@@ -10,10 +10,23 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not logged in — please sign in first' }, { status: 401 });
 
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store found' }, { status: 400 });
-
+    // Get store — check form data first (sent by client), then look up by owner
     const formData = await request.formData();
+    const formStoreId = formData.get('store_id') as string | null;
+    
+    let store: { id: string } | null = null;
+    if (formStoreId) {
+      // Client sent store_id — verify it belongs to this user
+      const { data } = await sb.from('stores').select('id').eq('id', formStoreId).eq('owner_id', user.id).maybeSingle();
+      store = data;
+    }
+    if (!store) {
+      // Fall back to first store for this user
+      const { data } = await sb.from('stores').select('id').eq('owner_id', user.id).order('created_at').limit(1).maybeSingle();
+      store = data;
+    }
+    if (!store) return NextResponse.json({ error: 'No store found — please complete store setup in Settings' }, { status: 400 });
+
     const employeeName = (formData.get('employee_name') as string) || 'Unknown';
     const employeeId   = (formData.get('employee_id')   as string) || null;
     const manualStr    = formData.get('manual_data') as string | null;

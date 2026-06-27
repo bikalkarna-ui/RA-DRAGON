@@ -8,13 +8,26 @@ export async function POST(request: NextRequest) {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store found' }, { status: 400 });
+    // Get store — check form data first (sent by client), then look up by owner
+    const formData = await request.formData();
+    const formStoreId = formData.get('store_id') as string | null;
+    
+    let store: { id: string } | null = null;
+    if (formStoreId) {
+      // Client sent store_id — verify it belongs to this user
+      const { data } = await sb.from('stores').select('id').eq('id', formStoreId).eq('owner_id', user.id).maybeSingle();
+      store = data;
+    }
+    if (!store) {
+      // Fall back to first store for this user
+      const { data } = await sb.from('stores').select('id').eq('owner_id', user.id).order('created_at').limit(1).maybeSingle();
+      store = data;
+    }
+    if (!store) return NextResponse.json({ error: 'No store found — please complete store setup in Settings' }, { status: 400 });
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return NextResponse.json({ error: 'OPENROUTER_API_KEY not set in Vercel' }, { status: 500 });
 
-    const formData = await request.formData();
     const files: File[] = [...(formData.getAll('file') as File[]).filter((f: File) => f.size > 0)];
     for (let i = 1; i <= 10; i++) { const f = formData.get(`file${i}`) as File | null; if (f && f.size > 0) files.push(f); }
     if (files.length === 0) return NextResponse.json({ error: 'No file received' }, { status: 400 });

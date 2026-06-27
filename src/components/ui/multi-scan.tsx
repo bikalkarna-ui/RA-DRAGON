@@ -23,6 +23,16 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
   const [state, setState] = useState<'idle' | 'preview' | 'loading' | 'done' | 'error'>('idle');
   const [msg, setMsg] = useState('');
   const [progress, setProgress] = useState('');
+  const [storeId, setStoreId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('ra_active_store_id') : null;
+      if (saved) { setStoreId(saved); return; }
+      createClient().from('stores').select('id').limit(1).maybeSingle()
+        .then(({ data }) => { if (data) setStoreId(data.id); });
+    } catch { /* ignore */ }
+  }, []);
 
   const addFiles = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -47,6 +57,8 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       const fd = new FormData();
       images.forEach((img, i) => fd.append(i === 0 ? 'file' : `file${i}`, img.file));
       if (extraFields) Object.entries(extraFields).forEach(([k, v]) => fd.append(k, v));
+      // Always send store_id so API can find the right store
+      if (storeId) fd.append('store_id', storeId);
 
       setProgress('AI reading report…');
       const res = await fetch(endpoint, { method: 'POST', body: fd });
