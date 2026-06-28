@@ -7,17 +7,351 @@ import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import {
-  BarChart3, Clock, RefreshCw, DollarSign,
-  ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp
+  CheckCircle, Trash2, RefreshCw, ChevronDown, ChevronUp,
+  AlertTriangle, FileText, Clock, DollarSign, Zap, Eye,
+  BarChart3, TrendingUp, TrendingDown, Plus
 } from 'lucide-react';
 
-export default function DailyReportPage() {
+const fmtDate = (d: string) => {
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
+  catch { return d; }
+};
+const fmtShort = (d: string) => {
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  catch { return d; }
+};
+const today = () => new Date().toISOString().split('T')[0];
+const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0]; };
+
+function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: () => void; onRefresh: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [notes, setNotes] = useState(report.store_notes || '');
+  const n = (v: any) => Number(v || 0);
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this daily report? All uploads for this date will be removed.')) return;
+    setDeleting(true);
+    await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' });
+    onDelete();
+  };
+
+  const saveNotes = async () => {
+    await fetch('/api/daily-report', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: report.id, store_notes: notes }),
+    });
+    onRefresh();
+  };
+
+  const warnings = report.validation_warnings || [];
+  const grossSales = n(report.gross_sales);
+  const drawerDiff = n(report.drawer_difference);
+  const isToday = report.report_date === today();
+
+  return (
+    <div className={cn('tile overflow-hidden', warnings.length > 0 && 'border-2 border-amber-300')}>
+      {/* Header */}
+      <div className="p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+              <p className="font-black text-text">{isToday ? "Today's Report" : fmtShort(report.report_date)}</p>
+              <span className={cn('chip text-[10px] font-bold',
+                report.status === 'completed' ? 'bg-green-100 text-green-700' :
+                report.status === 'needs_review' ? 'bg-amber-100 text-amber-700' :
+                'bg-gray-100 text-gray-600')}>
+                {report.status === 'completed' ? '✓ Completed' : report.status === 'needs_review' ? '⚠ Review needed' : 'In progress'}
+              </span>
+            </div>
+            <p className="text-xs text-muted">{fmtDate(report.report_date)}</p>
+          </div>
+          <div className="text-right">
+            <p className="num text-2xl font-black text-text">{fmt.currency(grossSales)}</p>
+            <p className="text-xs text-muted">Gross Sales</p>
+          </div>
+        </div>
+
+        {/* Warnings */}
+        {warnings.length > 0 && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 mb-3">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <p className="text-xs font-bold text-amber-800">AI detected {warnings.length} issue{warnings.length > 1 ? 's' : ''}</p>
+            </div>
+            {warnings.map((w: string, i: number) => (
+              <p key={i} className="text-xs text-amber-700">• {w}</p>
+            ))}
+          </div>
+        )}
+
+        {/* Key metrics strip */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className={cn('rounded-xl p-3 text-center border-2',
+            drawerDiff === 0 ? 'border-gray-200 bg-gray-50' :
+            drawerDiff < 0 ? 'border-red-300 bg-red-50' : 'border-green-300 bg-green-50')}>
+            <p className="text-[10px] text-muted font-medium mb-0.5">Drawer</p>
+            <p className={cn('num font-black text-sm',
+              drawerDiff === 0 ? 'text-gray-700' : drawerDiff < 0 ? 'text-accent' : 'text-green-700')}>
+              {drawerDiff >= 0 ? '+' : ''}{fmt.currency(drawerDiff)}
+            </p>
+          </div>
+          <div className="rounded-xl p-3 text-center bg-gray-50">
+            <p className="text-[10px] text-muted font-medium mb-0.5">Cash</p>
+            <p className="num font-black text-sm text-text">{fmt.currency(n(report.actual_cash))}</p>
+          </div>
+          <div className="rounded-xl p-3 text-center bg-gray-50">
+            <p className="text-[10px] text-muted font-medium mb-0.5">Credit</p>
+            <p className="num font-black text-sm text-text">{fmt.currency(n(report.credit_sales))}</p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button onClick={() => setExpanded(v => !v)}
+            className="flex-1 btn btn-ghost text-sm py-2.5 gap-1.5">
+            <Eye className="h-4 w-4" />
+            {expanded ? 'Hide' : 'View Full Report'}
+            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+          <button onClick={handleDelete} disabled={deleting}
+            className="flex items-center gap-1.5 rounded-xl bg-red-50 text-accent px-4 py-2.5 text-sm font-semibold hover:bg-red-100 transition-colors">
+            <Trash2 className="h-4 w-4" />
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+
+      {/* Full report details */}
+      {expanded && (
+        <div className="border-t border-border p-5 space-y-5 bg-gray-50/50">
+          {/* Sales breakdown */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Sales Breakdown</p>
+            <div className="space-y-1.5">
+              {[
+                { label: 'Gross Sales',        value: n(report.gross_sales),        bold: true },
+                { label: 'Net Sales',          value: n(report.net_sales) },
+                { label: 'Fuel Sales',         value: n(report.fuel_sales) },
+                { label: 'Inside Sales',       value: n(report.inside_sales) },
+                { label: 'Merchandise',        value: n(report.merchandise_sales) },
+                { label: 'Lottery Sales',      value: n(report.lottery_sales) },
+                { label: 'Scratch Off',        value: n(report.scratch_sales) },
+                { label: 'Taxes',              value: n(report.taxes) },
+                { label: 'Discounts',          value: n(report.discounts),          negative: true },
+                { label: 'Refunds',            value: n(report.refunds),            negative: true },
+              ].filter(r => r.value !== 0).map(row => (
+                <div key={row.label} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                  <span className={cn('text-sm', row.bold ? 'font-bold text-text' : 'text-gray-600')}>{row.label}</span>
+                  <span className={cn('num text-sm font-semibold', row.bold ? 'text-text' : row.negative ? 'text-accent' : 'text-gray-800')}>
+                    {row.negative ? '−' : ''}{fmt.currency(row.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment methods */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Payment Methods</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Cash',          value: n(report.cash_sales) },
+                { label: 'Credit Card',   value: n(report.credit_sales) },
+                { label: 'Debit',         value: n(report.debit_sales) },
+                { label: 'EBT / SNAP',    value: n(report.ebt_sales) },
+                { label: 'Checks',        value: n(report.check_sales) },
+                { label: 'Money Orders',  value: n(report.money_order_sales) },
+                { label: 'ATM',           value: n(report.atm_sales) },
+              ].filter(r => r.value > 0).map(row => (
+                <div key={row.label} className="rounded-xl bg-white border border-gray-200 p-3">
+                  <p className="text-[10px] text-muted font-medium">{row.label}</p>
+                  <p className="num font-bold text-text">{fmt.currency(row.value)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cash management */}
+          {(n(report.actual_cash) + n(report.safe_drops) + n(report.paid_outs)) > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Cash Management</p>
+              <div className="space-y-1.5">
+                {[
+                  { label: 'Expected Cash',   value: n(report.expected_cash) },
+                  { label: 'Actual Cash',     value: n(report.actual_cash) },
+                  { label: 'Cash Deposit',    value: n(report.cash_deposit) },
+                  { label: 'Safe Drops',      value: n(report.safe_drops),       negative: true },
+                  { label: 'Safe Loans',      value: n(report.safe_loans) },
+                  { label: 'Paid Outs',       value: n(report.paid_outs),        negative: true },
+                  { label: 'Paid Ins',        value: n(report.paid_ins) },
+                  { label: 'Beginning Till',  value: n(report.beginning_till) },
+                  { label: 'Ending Till',     value: n(report.ending_till) },
+                ].filter(r => r.value !== 0).map(row => (
+                  <div key={row.label} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                    <span className="text-sm text-gray-600">{row.label}</span>
+                    <span className={cn('num text-sm font-semibold', row.negative ? 'text-accent' : 'text-gray-800')}>
+                      {row.negative ? '−' : ''}{fmt.currency(row.value)}
+                    </span>
+                  </div>
+                ))}
+                {/* Drawer difference highlighted */}
+                <div className={cn('flex justify-between py-2 px-3 rounded-xl mt-2',
+                  drawerDiff === 0 ? 'bg-green-50' : drawerDiff < 0 ? 'bg-red-50' : 'bg-green-50')}>
+                  <span className="text-sm font-bold text-text">Drawer Difference</span>
+                  <span className={cn('num text-sm font-black', drawerDiff < 0 ? 'text-accent' : 'text-green-700')}>
+                    {drawerDiff >= 0 ? '+' : ''}{fmt.currency(drawerDiff)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lottery */}
+          {n(report.lottery_sales) + n(report.scratch_sales) > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Lottery</p>
+              <div className="space-y-1.5">
+                {[
+                  { label: 'Lottery Sales',    value: n(report.lottery_sales) },
+                  { label: 'Scratch Off Sales', value: n(report.scratch_sales) },
+                  { label: 'Lottery Payouts',  value: n(report.lottery_payouts),  negative: true },
+                  { label: 'Scratch Payouts',  value: n(report.scratch_payouts),  negative: true },
+                  { label: 'Settlement',       value: n(report.lottery_settlement) },
+                  { label: 'Commission',       value: n(report.lottery_commission) },
+                ].filter(r => r.value !== 0).map(row => (
+                  <div key={row.label} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                    <span className="text-sm text-gray-600">{row.label}</span>
+                    <span className={cn('num text-sm font-semibold', row.negative ? 'text-accent' : 'text-gray-800')}>
+                      {row.negative ? '−' : ''}{fmt.currency(row.value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fuel */}
+          {n(report.fuel_sales) > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Fuel</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Unleaded', sales: n(report.fuel_unleaded_sales), gallons: n(report.fuel_unleaded_gallons) },
+                  { label: 'Midgrade', sales: n(report.fuel_midgrade_sales), gallons: n(report.fuel_midgrade_gallons) },
+                  { label: 'Premium',  sales: n(report.fuel_premium_sales),  gallons: n(report.fuel_premium_gallons) },
+                  { label: 'Diesel',   sales: n(report.fuel_diesel_sales),   gallons: n(report.fuel_diesel_gallons) },
+                ].filter(f => f.sales > 0 || f.gallons > 0).map(f => (
+                  <div key={f.label} className="rounded-xl bg-white border border-gray-200 p-3">
+                    <p className="text-[10px] text-muted font-medium">{f.label}</p>
+                    <p className="num font-bold text-text">{fmt.currency(f.sales)}</p>
+                    {f.gallons > 0 && <p className="text-[10px] text-muted">{f.gallons.toFixed(3)} gal</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Store Notes</p>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              className="inp text-sm min-h-20 resize-none"
+              placeholder="Add notes for this day…"
+              onBlur={saveNotes}
+            />
+          </div>
+
+          {/* AI notes */}
+          {report.ai_notes && (
+            <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Zap className="h-3.5 w-3.5 text-violet-600" />
+                <p className="text-xs font-bold text-violet-700">AI Notes</p>
+              </div>
+              <p className="text-xs text-violet-700">{report.ai_notes}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UploadZone({ date, onSuccess }: { date: string; onSuccess: () => void }) {
+  const [uploads, setUploads] = useState<any[]>([]);
+
+  const handleResult = (data: any) => {
+    if (data.report) {
+      setUploads(prev => [...prev, {
+        type: data.reportType,
+        date: data.reportDate,
+        warnings: data.warnings || [],
+      }]);
+      onSuccess();
+    }
+  };
+
+  return (
+    <div className="tile p-5 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
+          <BarChart3 className="h-5 w-5 text-accent" />
+        </div>
+        <div>
+          <p className="font-bold text-text">Upload Today's Reports</p>
+          <p className="text-xs text-muted mt-0.5">
+            Upload any report type — AI identifies it automatically and merges everything into one daily report.
+            You can upload multiple times.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
+        <p className="text-xs font-semibold text-blue-800 mb-1">Accepted report types:</p>
+        <p className="text-xs text-blue-700">
+          Store Close · Till / Register · Lottery · Scratch Off · Department Sales ·
+          Safe Drop · Paid Out · Paid In · Fuel · PLU Sales · Summary
+        </p>
+      </div>
+
+      <MultiScan
+        endpoint="/api/scan-daily-report"
+        onResult={handleResult}
+        title="Scan or Upload Report"
+        hint="Take photos of all pages — AI identifies report type and extracts all numbers"
+        extraFields={{ report_date: date }}
+      />
+
+      {uploads.length > 0 && (
+        <div className="space-y-2">
+          {uploads.map((u, i) => (
+            <div key={i} className={cn('rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm',
+              u.warnings?.length > 0 ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200')}>
+              {u.warnings?.length > 0
+                ? <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                : <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />}
+              <span className={u.warnings?.length > 0 ? 'text-amber-800' : 'text-green-800'}>
+                <span className="font-semibold capitalize">{u.type?.replace('_', ' ')}</span> report processed
+                {u.warnings?.length > 0 && ` · ${u.warnings.length} warning${u.warnings.length > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function DailyReportsPage() {
   const [mounted, setMounted] = useState(false);
-  const [report, setReport] = useState<any>(null);
-  const [tillCount, setTillCount] = useState(0);
+  const [todayReport, setTodayReport] = useState<any>(null);
+  const [prevReports, setPrevReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [yesterday, setYesterday] = useState<any>(null);
-  const [showAll, setShowAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { store } = useStore();
 
@@ -27,22 +361,22 @@ export default function DailyReportPage() {
     if (!store) return;
     try {
       const sb = createClient();
-      const today = new Date().toISOString().split('T')[0];
-      const ydayDate = new Date();
-      ydayDate.setDate(ydayDate.getDate() - 1);
-      const yday = ydayDate.toISOString().split('T')[0];
+      const todayStr = today();
 
-      const [rptRes, tillsRes, yRes] = await Promise.all([
-        sb.from('daily_close_reports').select('*').eq('store_id', store.id).eq('report_date', today).maybeSingle(),
-        sb.from('till_readings').select('id').eq('store_id', store.id).eq('reading_date', today),
-        sb.from('daily_close_reports').select('total_sales').eq('store_id', store.id).eq('report_date', yday).maybeSingle(),
-      ]);
+      // Get today's report
+      const { data: tr } = await sb
+        .from('daily_reports').select('*')
+        .eq('store_id', store.id).eq('report_date', todayStr).maybeSingle();
+      setTodayReport(tr || null);
 
-      const tills = tillsRes.data ?? [];
-      // ONLY show report if uploads exist for today
-      setReport(tills.length > 0 ? (rptRes.data ?? null) : null);
-      setTillCount(tills.length);
-      setYesterday(yRes.data ?? null);
+      // Get last 10 previous reports
+      const { data: prev } = await sb
+        .from('daily_reports').select('*')
+        .eq('store_id', store.id)
+        .lt('report_date', todayStr)
+        .order('report_date', { ascending: false })
+        .limit(10);
+      setPrevReports(prev || []);
     } catch (e) { console.error(e); }
     setLoading(false);
     setRefreshing(false);
@@ -54,188 +388,72 @@ export default function DailyReportPage() {
 
   if (!mounted) return null;
 
-  const n = (v: any) => Number(v || 0);
-  const gross = n(report?.total_sales);
-  const shortOver = n(report?.short_over);
-  const yestSales = n(yesterday?.total_sales);
-  const vsYest = yestSales > 0 ? ((gross - yestSales) / yestSales * 100) : null;
-
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
-  const depts = report ? [
-    { label: 'Tobacco / CIG', value: n(report.dept_cig) },
-    { label: 'Beer & Wine',   value: n(report.dept_beer_wine) },
-    { label: 'Tax Items',     value: n(report.dept_tax) },
-    { label: 'Non-Tax',       value: n(report.dept_nontax) },
-    { label: 'Novelty',       value: n(report.dept_novelty) },
-    { label: 'Vape',          value: n(report.dept_vape) },
-    { label: 'Unknown UPC',   value: n(report.dept_unknown_upc) },
-    { label: 'Lotto',         value: n(report.lotto_sales) },
-    { label: 'Lottery',       value: n(report.lottery_sales) },
-    { label: 'Fuel',          value: n(report.fuel_unleaded) + n(report.fuel_diesel) + n(report.fuel_midgrade) },
-    { label: 'Money Orders',  value: n(report.money_order_sales) + n(report.money_order_fee) },
-  ].filter(d => d.value > 0).sort((a, b) => b.value - a.value) : [];
+  const todayStr = today();
+  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <Screen title="Daily Report" subtitle={dateStr}
+    <Screen title="Daily Reports" subtitle={todayLabel}
       action={
-        <button
-          onClick={() => { setRefreshing(true); loadData(); }}
+        <button onClick={() => { setRefreshing(true); loadData(); }}
           className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
           <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
         </button>
       }>
       <div className="space-y-5">
 
-        {/* Upload */}
-        <div className="tile p-5">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
-              <BarChart3 className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="font-bold text-text">Upload Modisoft Report</p>
-              <p className="text-xs text-muted mt-0.5">
-                Modisoft → Reports → Daily Sales → screenshot or PDF → upload here
-              </p>
-            </div>
-          </div>
-          <MultiScan
-            endpoint="/api/scan-till"
-            onResult={(data: any) => {
-              if (data.report) setReport(data.report);
-              setTillCount(data.tillCount ?? 1);
-              loadData();
-            }}
-            title="Scan or Upload Daily Report"
-            hint="Photo or PDF of your Modisoft report — AI reads all numbers instantly"
-          />
-          {tillCount > 0 && (
-            <p className="mt-3 text-xs text-green-700 font-medium bg-green-50 rounded-xl px-3 py-2">
-              ✓ {tillCount} report{tillCount > 1 ? 's' : ''} uploaded today
-            </p>
-          )}
-        </div>
-
-        {/* Loading */}
-        {loading && (
+        {loading ? (
           <div className="tile p-10 text-center">
             <RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" />
           </div>
-        )}
-
-        {/* No report yet */}
-        {!loading && !report && (
-          <div className="tile p-10 text-center border-2 border-dashed border-gray-200">
-            <Clock className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-            <p className="font-bold text-gray-700 mb-1">No report uploaded today</p>
-            <p className="text-gray-400 text-sm">Upload your Modisoft report above — numbers appear automatically</p>
-          </div>
-        )}
-
-        {/* Report */}
-        {!loading && report && (
+        ) : (
           <>
-            <div className="tile p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">Total Sales Today</p>
-                <p className="num text-4xl font-black text-text">{fmt.currency(gross)}</p>
-                {vsYest !== null && (
-                  <div className={cn('flex items-center gap-1 mt-2 text-xs font-semibold',
-                    vsYest >= 0 ? 'text-green-600' : 'text-accent')}>
-                    {vsYest >= 0
-                      ? <ArrowUpRight className="h-3.5 w-3.5" />
-                      : <ArrowDownRight className="h-3.5 w-3.5" />}
-                    {Math.abs(vsYest).toFixed(1)}% vs yesterday ({fmt.currency(yestSales)})
-                  </div>
+            {/* TODAY */}
+            {todayReport ? (
+              <>
+                <ReportCard
+                  report={todayReport}
+                  onDelete={() => { setTodayReport(null); loadData(); }}
+                  onRefresh={loadData}
+                />
+                {/* Option to add more uploads */}
+                <button
+                  onClick={() => setTodayReport({ ...todayReport, _showUpload: !todayReport._showUpload })}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 py-4 text-sm font-semibold text-muted hover:border-accent hover:text-accent transition-colors">
+                  <Plus className="h-4 w-4" />
+                  Add more reports to today
+                </button>
+                {todayReport._showUpload && (
+                  <UploadZone date={todayStr} onSuccess={loadData} />
                 )}
-              </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
-                <DollarSign className="h-7 w-7 text-accent" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className={cn('tile p-4 border-2',
-                shortOver < 0 ? 'border-red-300 bg-red-50' :
-                shortOver > 0 ? 'border-green-300 bg-green-50' : 'border-gray-200')}>
-                <p className="text-xs text-muted font-medium mb-1">Short / Over</p>
-                <p className={cn('num text-2xl font-black',
-                  shortOver < 0 ? 'text-accent' : shortOver > 0 ? 'text-green-700' : 'text-gray-700')}>
-                  {shortOver > 0 ? '+' : ''}{fmt.currency(shortOver)}
-                </p>
-                <p className="text-xs text-muted mt-1">
-                  {shortOver === 0 ? 'Exact ✓' : shortOver < 0 ? 'Drawer short' : 'Drawer over'}
-                </p>
-              </div>
-              <div className="tile p-4">
-                <p className="text-xs text-muted font-medium mb-1">Cash to Deposit</p>
-                <p className="num text-2xl font-black text-text">{fmt.currency(n(report.cash_actual))}</p>
-                <p className="text-xs text-muted mt-1">Expected: {fmt.currency(n(report.cash_expected))}</p>
-              </div>
-              <div className="tile p-4">
-                <p className="text-xs text-muted font-medium mb-1">Credit / Debit</p>
-                <p className="num text-2xl font-black text-text">{fmt.currency(n(report.credit_card_total))}</p>
-              </div>
-              <div className="tile p-4">
-                <p className="text-xs text-muted font-medium mb-1">Total Payouts</p>
-                <p className="num text-2xl font-black text-accent">{fmt.currency(n(report.total_out))}</p>
-              </div>
-            </div>
-
-            {depts.length > 0 && (
-              <div className="tile p-5">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">What Sold Today</p>
-                <div className="space-y-3">
-                  {(showAll ? depts : depts.slice(0, 6)).map(dept => {
-                    const pct = gross > 0 ? (dept.value / gross * 100) : 0;
-                    return (
-                      <div key={dept.label}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-text">{dept.label}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted">{pct.toFixed(1)}%</span>
-                            <span className="num text-sm font-bold text-text">{fmt.currency(dept.value)}</span>
-                          </div>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+              </>
+            ) : (
+              <>
+                {/* No report yet today */}
+                <div className="tile p-6 border-2 border-dashed border-gray-200 text-center">
+                  <Clock className="mx-auto h-10 w-10 text-gray-300 mb-3" />
+                  <p className="font-bold text-gray-700 text-lg mb-1">No report yet today</p>
+                  <p className="text-gray-400 text-sm">Upload your close reports below. AI identifies each one automatically.</p>
                 </div>
-                {depts.length > 6 && (
-                  <button onClick={() => setShowAll(v => !v)}
-                    className="mt-4 flex items-center gap-1.5 text-xs text-accent font-semibold">
-                    {showAll
-                      ? <><ChevronUp className="h-3.5 w-3.5" />Show less</>
-                      : <><ChevronDown className="h-3.5 w-3.5" />Show all {depts.length} categories</>}
-                  </button>
-                )}
-              </div>
+                <UploadZone date={todayStr} onSuccess={loadData} />
+              </>
             )}
 
-            <div className="rounded-2xl bg-accent p-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-red-200 mb-3">Today's Deposit</p>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between gap-10">
-                    <span className="text-red-200 text-sm">Store Deposit</span>
-                    <span className="num font-bold text-white">{fmt.currency(n(report.store_deposit))}</span>
-                  </div>
-                  <div className="flex justify-between gap-10">
-                    <span className="text-red-200 text-sm">MAC Deposit</span>
-                    <span className="num font-bold text-white">{fmt.currency(n(report.mac_deposit))}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-red-200 text-xs">TOTAL DEPOSIT</p>
-                  <p className="num text-3xl font-black text-white">{fmt.currency(n(report.total_deposit))}</p>
+            {/* PREVIOUS REPORTS */}
+            {prevReports.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Previous Reports</p>
+                <div className="space-y-3">
+                  {prevReports.map(r => (
+                    <ReportCard
+                      key={r.id}
+                      report={r}
+                      onDelete={loadData}
+                      onRefresh={loadData}
+                    />
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>
