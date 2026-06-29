@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@layer base {
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: #FFFFFF; scroll-behavior: smooth; }
+  body {
+    @apply bg-white text-text antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui;
+    overscroll-behavior: none;
+  }
+  :focus-visible { outline: 2px solid #C0392B; outline-offset: 2px; }
+  ::selection { background: rgba(192,57,43,0.12); }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #F3F4F6; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+}
+
+@layer components {
+  /* App screen wrapper */
+  .screen {
+    @apply min-h-screen w-full mx-auto;
+    max-width: 680px;
+    padding: 0 20px;
+  }
+
+  /* Cards */
+  .tile {
+    @apply bg-white rounded-xl2 shadow-card border border-border;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .tile-hover:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.10); transform: translateY(-1px); }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-semibold transition-all;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-accent { @apply btn bg-accent text-white shadow-red; }
+  .btn-accent:hover { @apply bg-accent2; }
+  .btn-accent:active { transform: scale(0.98); }
+  .btn-ghost { @apply btn bg-surface text-sub border border-border hover:text-text hover:border-gray-300; }
+  .btn-full { @apply w-full justify-center; }
+
+  /* Inputs */
+  .inp {
+    @apply w-full rounded-xl bg-surface border border-border px-4 py-3 text-[15px] text-text placeholder:text-dim transition-all;
+    outline: none;
+  }
+  .inp:focus { @apply border-accent bg-white; box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+  .lbl { @apply block text-sm font-medium text-sub mb-1.5; }
+
+  /* Badges / chips */
+  .chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold; }
+  .chip-red { @apply chip bg-red-50 text-accent; }
+  .chip-green { @apply chip bg-green-50 text-green-700; }
+  .chip-yellow { @apply chip bg-amber-50 text-amber-700; }
+  .chip-blue { @apply chip bg-blue-50 text-blue-700; }
+  .chip-gray { @apply chip bg-gray-100 text-gray-600; }
+
+  /* Section label */
+  .section-title { @apply text-xs font-semibold uppercase tracking-widest text-dim mb-3; }
+
+  /* Mono numbers */
+  .num { @apply font-mono tabular-nums; }
+
+  /* List row */
+  .list-row { @apply flex items-center justify-between px-5 py-4 hover:bg-surface transition-colors cursor-default; }
+
+  /* Back button */
+  .back-btn { @apply flex items-center gap-1 text-sm font-medium text-accent hover:text-accent2 transition-colors py-1; }
+
+  /* Drop zone */
+  .drop-zone {
+    @apply flex flex-col items-center justify-center gap-3 rounded-xl2 border-2 border-dashed border-border p-10 text-center cursor-pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .drop-zone:hover { border-color: #C0392B; background: rgba(192,57,43,0.02); }
+  .drop-zone:active { transform: scale(0.99); }
+
+  /* Divider */
+  .divider { @apply border-b border-border; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #receipt, #receipt * { visibility: visible; }
+  #receipt { position: absolute; top: 0; left: 0; width: 100%; }
+  .no-print { display: none !important; }
+
+  @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-up { animation: fade-up 0.2s ease-out; }
+  @keyframes scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .animate-scale-in { animation: scale-in 0.15s ease-out; }
+  .shadow-lifted { box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+}
