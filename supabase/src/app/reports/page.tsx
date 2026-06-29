@@ -1,395 +1,265 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
-import { MultiScan } from '@/components/ui/multi-scan';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { TrendingUp, TrendingDown, RefreshCw, BarChart3, Calendar, DollarSign, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
 import { ClientOnly } from '@/components/ui/client-only';
-import { TrendingUp, TrendingDown, DollarSign, Zap, BarChart3, Calendar, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 
-type Tab = 'pl' | 'trend' | 'calendar';
-
-
-// Safe date formatter - never crashes on null/undefined dates
+type Tab = 'today' | 'week' | 'month' | 'calendar';
 
 export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const { store } = useStore();
-  const [tab, setTab] = useState<Tab>('pl');
+  const [tab, setTab] = useState<Tab>('week');
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [calDate, setCalDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<any>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const load = useCallback(async () => {
     if (!store) return;
-    setLoading(true);
-    const from = new Date(Date.now() - 30*86400000).toISOString().split('T')[0];
-    const { data } = await createClient()
-      .from('daily_close_reports').select('*')
-      .eq('store_id', store.id)
-      .gte('report_date', from)
-      .order('report_date', { ascending: false });
+    const sb = createClient();
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
+    const { data } = await sb.from('daily_reports').select('*').eq('store_id', store.id).gte('report_date', ninetyDaysAgo).order('report_date', { ascending: false });
     setReports(data ?? []);
-    setLoading(false);
+    setLoading(false); setRefreshing(false);
   }, [store]);
 
-  useEffect(() => { load(); }, [load]);
-
-  const n = (v: any) => Number(v || 0);
-
-  // 30-day totals
-  const totalGross   = reports.reduce((s, r) => s + n(r.total_sales), 0);
-  const totalPayouts = reports.reduce((s, r) => s + n(r.total_out), 0);
-  const totalNet     = reports.reduce((s, r) => s + n(r.net), 0);
-  const totalDeposit = reports.reduce((s, r) => s + n(r.total_deposit), 0);
-  const avgDaily     = reports.length > 0 ? totalGross / reports.length : 0;
-  const bestDay      = reports.reduce((best, r) => n(r.total_sales) > n(best?.total_sales ?? 0) ? r : best, reports[0]);
-  const worstDay     = reports.filter(r => n(r.total_sales) > 0).reduce((worst, r) => n(r.total_sales) < n(worst?.total_sales ?? 999999) ? r : worst, reports[reports.length - 1]);
-
-  // Short/over summary
-  const totalShortOver = reports.reduce((s, r) => s + n(r.short_over), 0);
-  const shortDays   = reports.filter(r => n(r.short_over) < -1).length;
-  const overDays    = reports.filter(r => n(r.short_over) > 1).length;
-
-  // Chart data - last 14 days
-  const chartData = [...reports].reverse().slice(-14).map(r => ({
-    date: (r.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(r.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—'),
-    sales: n(r.total_sales),
-    net: n(r.net),
-    short: n(r.short_over),
-  }));
-
-  // Dept totals across 30 days
-  const deptTotals = [
-    { label: 'CIG / Tobacco',  key: 'dept_cig'         },
-    { label: 'Beer & Wine',    key: 'dept_beer_wine'    },
-    { label: 'Tax Items',      key: 'dept_tax'          },
-    { label: 'Non-Tax',        key: 'dept_nontax'       },
-    { label: 'Vape',           key: 'dept_vape'         },
-    { label: 'Novelty',        key: 'dept_novelty'      },
-    { label: 'Lotto',          key: 'lotto_sales'       },
-    { label: 'Lottery',        key: 'lottery_sales'     },
-    { label: 'Fuel Unleaded',  key: 'fuel_unleaded'     },
-    { label: 'Fuel Diesel',    key: 'fuel_diesel'       },
-    { label: 'Money Orders',   key: 'money_order_sales' },
-  ].map(d => ({
-    ...d,
-    total: reports.reduce((s, r) => s + n(r[d.key]), 0),
-    avg: reports.length > 0 ? reports.reduce((s, r) => s + n(r[d.key]), 0) / reports.length : 0,
-  })).filter(d => d.total > 0).sort((a, b) => b.total - a.total);
-
-  // AI Recommendations
-  const recommendations: { type: 'good' | 'warn' | 'alert'; text: string }[] = [];
-  if (shortDays > 3) recommendations.push({ type: 'alert', text: `Drawer was short ${shortDays} days this month — check your cashiers` });
-  if (totalShortOver > 100) recommendations.push({ type: 'good', text: `Drawer is consistently over — double-check MAC/lotto payouts are being recorded` });
-  if (avgDaily > 0 && chartData.length >= 2) {
-    const lastWeekAvg = chartData.slice(-7).reduce((s, d) => s + d.sales, 0) / 7;
-    const prevWeekAvg = chartData.slice(-14, -7).reduce((s, d) => s + d.sales, 0) / 7;
-    if (lastWeekAvg > prevWeekAvg * 1.1) recommendations.push({ type: 'good', text: `Sales up ${((lastWeekAvg / prevWeekAvg - 1) * 100).toFixed(0)}% this week vs last week — great trend` });
-    if (lastWeekAvg < prevWeekAvg * 0.9) recommendations.push({ type: 'warn', text: `Sales down ${((1 - lastWeekAvg / prevWeekAvg) * 100).toFixed(0)}% this week — check if any department dropped` });
-  }
-  if (deptTotals[0]) recommendations.push({ type: 'good', text: `${deptTotals[0].label} is your top revenue department — keep it stocked` });
-  const unknownUPC = reports.reduce((s, r) => s + n(r.dept_unknown_upc), 0);
-  if (unknownUPC > 500) recommendations.push({ type: 'warn', text: `${fmt.currency(unknownUPC)} in Unknown UPC sales — add these products to inventory` });
-
-  // Calendar
-  const reportsByDate = new Map(reports.map(r => [r.report_date, r]));
-  const year = calDate.getFullYear(), month = calDate.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDow = new Date(year, month, 1).getDay();
-
-  const Tooltip_ = ({ active, payload, label }: any) =>
-    active && payload?.length ? (
-      <div className="tile px-3 py-2 text-xs shadow-lg">
-        <p className="text-muted mb-1">{label}</p>
-        {payload.map((p: any) => <p key={p.name} style={{ color: p.color }} className="font-bold">{p.name}: {fmt.currency(p.value)}</p>)}
-      </div>
-    ) : null;
+  useEffect(() => { if (mounted && store) load(); }, [mounted, store, load]);
 
   if (!mounted) return null;
 
+  const n = (v: any) => Number(v || 0);
+  const today = new Date().toISOString().split('T')[0];
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+
+  const todayRpt   = reports.find(r => r.report_date === today);
+  const weekRpts   = reports.filter(r => r.report_date >= weekAgo);
+  const monthRpts  = reports.filter(r => r.report_date >= monthAgo);
+
+  const sum = (rpts: any[], field: string) => rpts.reduce((s, r) => s + n(r[field]), 0);
+  const avg = (rpts: any[], field: string) => rpts.length ? sum(rpts, field) / rpts.length : 0;
+
+  // Chart data - last 30 days sorted ascending for chart
+  const chartData = [...monthRpts].reverse().map(r => ({
+    date: (() => { try { return new Date(r.report_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return r.report_date; } })(),
+    sales: n(r.gross_sales),
+    cash: n(r.cash_sales),
+    credit: n(r.credit_sales),
+    fuel: n(r.fuel_sales),
+    lottery: n(r.lottery_sales),
+    short_over: n(r.drawer_difference),
+  }));
+
+  // Best and worst days
+  const sortedByS = [...monthRpts].sort((a, b) => n(b.gross_sales) - n(a.gross_sales));
+  const bestDay  = sortedByS[0];
+  const worstDay = sortedByS[sortedByS.length - 1];
+
+  // Calendar month
+  const calYear = calDate.getFullYear();
+  const calMonth = calDate.getMonth();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const calMonthStr = calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const StatCard = ({ label, value, sub, color = '' }: any) => (
+    <div className="tile p-4 text-center">
+      <p className="text-xs text-muted font-medium mb-1">{label}</p>
+      <p className={cn('num font-black text-xl', color)}>{value}</p>
+      {sub && <p className="text-xs text-muted mt-0.5">{sub}</p>}
+    </div>
+  );
+
+  const TABS = [
+    { id: 'today' as Tab, label: 'Today' },
+    { id: 'week' as Tab,  label: '7 Days' },
+    { id: 'month' as Tab, label: '30 Days' },
+    { id: 'calendar' as Tab, label: '📅 Cal' },
+  ];
+
   return (
-    <Screen title="Reports & P&amp;L" subtitle="Last 30 days — auto-built from Modisoft uploads">
+    <Screen title="Reports & P&L" subtitle="Sales analytics and trends"
+      action={<button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub"><RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} /></button>}>
       <div className="space-y-5">
-
-        {/* Upload another report */}
-        <div className="tile p-4">
-          <p className="text-xs font-bold text-muted mb-3 uppercase tracking-wide">Upload Today's Report</p>
-          <MultiScan endpoint="/api/scan-till" onResult={load}
-            title="Scan Modisoft Report" hint="Adds to today's data and updates all charts below" />
-        </div>
-
         {/* Tabs */}
         <div className="flex gap-2">
-          {[
-            { id: 'pl',       label: '💰 P&amp;L Summary' },
-            { id: 'trend',    label: '📈 Trends'       },
-            { id: 'calendar', label: '📅 Calendar'     },
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id as Tab)}
-              className={cn('flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors border',
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={cn('flex-1 rounded-xl py-2.5 text-sm font-bold border transition-colors',
                 tab === t.id ? 'bg-accent text-white border-accent' : 'bg-surface text-sub border-border hover:text-text')}>
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* ── P&amp;L TAB ── */}
-        {tab === 'pl' && (
-          <div className="space-y-4">
-            {/* 30-day headline numbers */}
-            <div className="tile p-5 border-l-4 border-l-accent">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Last 30 Days</p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Total Revenue',   value: fmt.currency(totalGross),   green: true  },
-                  { label: 'Net After Payouts', value: fmt.currency(totalNet),   green: totalNet >= 0 },
-                  { label: 'Total Payouts',   value: fmt.currency(totalPayouts),  green: false },
-                  { label: 'Total Deposited', value: fmt.currency(totalDeposit),  green: true  },
-                  { label: 'Avg Daily Sales', value: fmt.currency(avgDaily),      green: true  },
-                  { label: 'Days Reported',   value: `${reports.length} days`,    green: true  },
-                ].map(k => (
-                  <div key={k.label}>
-                    <p className="text-xs text-muted">{k.label}</p>
-                    <p className={cn('num font-black text-xl mt-0.5', k.green ? 'text-text' : 'text-accent')}>{k.value}</p>
+        {loading && <div className="tile p-10 text-center"><RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" /></div>}
+
+        {/* ── TODAY ── */}
+        {!loading && tab === 'today' && (
+          <>
+            {!todayRpt ? (
+              <div className="tile p-10 text-center"><BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-700">No report uploaded today</p><p className="text-muted text-sm mt-1">Upload your daily close report to see today's numbers</p></div>
+            ) : (
+              <>
+                <div className="tile p-6 text-center">
+                  <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-2">Today's Gross Sales</p>
+                  <p className="num text-5xl font-black text-text">{fmt.currency(n(todayRpt.gross_sales))}</p>
+                  <div className={cn('flex items-center justify-center gap-1.5 mt-3 text-sm font-semibold', n(todayRpt.drawer_difference) < 0 ? 'text-red-600' : 'text-green-600')}>
+                    <span>{n(todayRpt.drawer_difference) < -0.5 ? '⚠' : '✓'} Drawer: {n(todayRpt.drawer_difference) >= 0 ? '+' : ''}{fmt.currency(n(todayRpt.drawer_difference))}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Short/Over summary */}
-            <div className={cn('tile p-5 border-2',
-              totalShortOver < -10 ? 'border-red-300 bg-red-50' : totalShortOver > 10 ? 'border-green-300 bg-green-50' : 'border-gray-200')}>
-              <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Cash Accuracy (30 days)</p>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={cn('num text-3xl font-black', totalShortOver < 0 ? 'text-accent' : totalShortOver > 0 ? 'text-green-700' : 'text-gray-700')}>
-                    {totalShortOver >= 0 ? '+' : ''}{fmt.currency(totalShortOver)}
-                  </p>
-                  <p className="text-xs text-muted mt-1">cumulative short/over</p>
                 </div>
-                <div className="text-right space-y-1">
-                  <p className="text-sm"><span className="num font-bold text-accent">{shortDays}</span> <span className="text-muted text-xs">days short</span></p>
-                  <p className="text-sm"><span className="num font-bold text-green-600">{overDays}</span> <span className="text-muted text-xs">days over</span></p>
-                  <p className="text-sm"><span className="num font-bold text-gray-600">{reports.length - shortDays - overDays}</span> <span className="text-muted text-xs">days exact</span></p>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatCard label="Net Sales"    value={fmt.currency(n(todayRpt.net_sales))} />
+                  <StatCard label="Fuel Sales"   value={fmt.currency(n(todayRpt.fuel_sales))} />
+                  <StatCard label="Lottery"      value={fmt.currency(n(todayRpt.lottery_sales))} />
+                  <StatCard label="Taxes"        value={fmt.currency(n(todayRpt.taxes))} />
+                  <StatCard label="Cash"         value={fmt.currency(n(todayRpt.cash_sales))} />
+                  <StatCard label="Credit"       value={fmt.currency(n(todayRpt.credit_sales))} />
+                  <StatCard label="EBT"          value={fmt.currency(n(todayRpt.ebt_sales))} />
+                  <StatCard label="Transactions" value={n(todayRpt.transactions) || '—'} />
                 </div>
-              </div>
-            </div>
-
-            {/* Best/Worst days */}
-            {bestDay && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="tile p-4 border border-green-200 bg-green-50">
-                  <div className="flex items-center gap-1.5 mb-2"><TrendingUp className="h-4 w-4 text-green-600" /><p className="text-xs text-green-700 font-bold">Best Day</p></div>
-                  <p className="num text-xl font-black text-green-800">{fmt.currency(n(bestDay.total_sales))}</p>
-                  <p className="text-xs text-green-600 mt-1">{(bestDay.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(bestDay.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
-                </div>
-                {worstDay && (
-                  <div className="tile p-4 border border-red-100 bg-red-50">
-                    <div className="flex items-center gap-1.5 mb-2"><TrendingDown className="h-4 w-4 text-accent" /><p className="text-xs text-accent font-bold">Slowest Day</p></div>
-                    <p className="num text-xl font-black text-accent">{fmt.currency(n(worstDay.total_sales))}</p>
-                    <p className="text-xs text-red-400 mt-1">{(worstDay.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(worstDay.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
-                  </div>
-                )}
-              </div>
+              </>
             )}
-
-            {/* AI Recommendations */}
-            {recommendations.length > 0 && (
-              <div className="tile p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Zap className="h-5 w-5 text-violet-600" />
-                  <p className="font-bold text-text">AI Recommendations</p>
-                </div>
-                <div className="space-y-2.5">
-                  {recommendations.map((r, i) => (
-                    <div key={i} className={cn('flex items-start gap-3 rounded-xl px-4 py-3',
-                      r.type === 'good'  ? 'bg-green-50 border border-green-200' :
-                      r.type === 'warn'  ? 'bg-amber-50 border border-amber-200' :
-                      'bg-red-50 border border-red-200')}>
-                      <span className="text-base shrink-0 mt-0.5">
-                        {r.type === 'good' ? '✅' : r.type === 'warn' ? '⚠️' : '🚨'}
-                      </span>
-                      <p className={cn('text-sm font-medium',
-                        r.type === 'good' ? 'text-green-800' : r.type === 'warn' ? 'text-amber-800' : 'text-red-800')}>
-                        {r.text}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Department breakdown */}
-            {deptTotals.length > 0 && (
-              <div className="tile p-5">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Revenue by Department (30 days)</p>
-                <div className="space-y-3">
-                  {deptTotals.map(dept => (
-                    <div key={dept.label}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-text">{dept.label}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted">avg {fmt.currency(dept.avg)}/day</span>
-                          <span className="num text-sm font-bold text-text">{fmt.currency(dept.total)}</span>
-                        </div>
-                      </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-accent rounded-full"
-                          style={{ width: `${totalGross > 0 ? (dept.total / totalGross * 100) : 0}%`, opacity: 0.7 + (dept.total / deptTotals[0].total) * 0.3 }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {reports.length === 0 && !loading && (
-              <div className="tile p-10 text-center">
-                <BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" />
-                <p className="font-bold text-text mb-1">No data yet</p>
-                <p className="text-muted text-sm">Upload your Modisoft daily reports and all your P&amp;L numbers will appear here automatically</p>
-              </div>
-            )}
-          </div>
+          </>
         )}
 
-        {/* ── TREND TAB ── */}
-        {tab === 'trend' && (
-          <div className="space-y-4">
-            {chartData.length > 0 ? (
-              <>
-                <div className="tile p-5">
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Daily Sales — Last 14 Days</p>
-                  <ClientOnly><ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                      <Tooltip content={<Tooltip_ />} />
-                      <Bar dataKey="sales" name="Sales" fill="#C0392B" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer></ClientOnly>
-                </div>
-
-                <div className="tile p-5">
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Short / Over — Last 14 Days</p>
-                  <ClientOnly><ResponsiveContainer width="100%" height={160}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
-                      <Tooltip content={<Tooltip_ />} />
-                      <Bar dataKey="short" name="Short/Over"
-                        fill="#C0392B"
-                        radius={[3, 3, 0, 0]}
-                        label={{ position: 'top', fontSize: 9, fill: '#9CA3AF', formatter: (v: number) => v !== 0 ? fmt.currency(v) : '' }} />
-                    </BarChart>
-                  </ResponsiveContainer></ClientOnly>
-                </div>
-
-                {/* Daily history table */}
-                <div className="tile overflow-hidden">
-                  <div className="border-b border-border px-5 py-3.5">
-                    <p className="font-bold text-text text-sm">Daily History</p>
+        {/* ── WEEK / MONTH ── */}
+        {!loading && (tab === 'week' || tab === 'month') && (
+          <>
+            {(() => {
+              const rpts = tab === 'week' ? weekRpts : monthRpts;
+              const label = tab === 'week' ? '7-Day' : '30-Day';
+              const totalSales = sum(rpts, 'gross_sales');
+              const totalFuel = sum(rpts, 'fuel_sales');
+              const totalLottery = sum(rpts, 'lottery_sales');
+              const avgSales = avg(rpts, 'gross_sales');
+              const totalShortOver = sum(rpts, 'drawer_difference');
+              return (
+                <>
+                  <div className="tile p-5 text-center">
+                    <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-2">{label} Total Sales</p>
+                    <p className="num text-5xl font-black text-text">{fmt.currency(totalSales)}</p>
+                    <p className="text-sm text-muted mt-2">{rpts.length} days reported · avg {fmt.currency(avgSales)}/day</p>
+                    {totalShortOver !== 0 && (
+                      <div className={cn('mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold', totalShortOver < 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700')}>
+                        {totalShortOver < 0 ? '⚠' : '✓'} {label} Short/Over: {totalShortOver >= 0 ? '+' : ''}{fmt.currency(totalShortOver)}
+                      </div>
+                    )}
                   </div>
-                  <div className="divide-y divide-border/60 max-h-96 overflow-y-auto">
-                    {reports.map(r => (
-                      <div key={r.report_date} className="flex items-center justify-between px-5 py-3 hover:bg-surface">
+
+                  {/* Bar chart */}
+                  {chartData.length > 0 && (
+                    <div className="tile p-5">
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Daily Sales</p>
+                      <ClientOnly>
+                        <ResponsiveContainer width="100%" height={200}>
+                          <BarChart data={tab === 'week' ? chartData.slice(-7) : chartData} margin={{ top: 5, right: 5, bottom: 20, left: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} angle={-45} textAnchor="end" />
+                            <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={v => '$' + (v/1000).toFixed(0) + 'k'} />
+                            <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']} labelStyle={{ fontSize: 12 }} />
+                            <Bar dataKey="sales" fill="#C0392B" radius={[4,4,0,0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ClientOnly>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatCard label="Total Fuel"    value={fmt.currency(totalFuel)} />
+                    <StatCard label="Total Lottery" value={fmt.currency(totalLottery)} />
+                    <StatCard label="Avg Cash"      value={fmt.currency(avg(rpts, 'cash_sales'))} sub="per day" />
+                    <StatCard label="Avg Credit"    value={fmt.currency(avg(rpts, 'credit_sales'))} sub="per day" />
+                  </div>
+
+                  {/* Best/worst */}
+                  {bestDay && worstDay && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="tile p-4 border-l-4 border-l-green-500">
+                        <div className="flex items-center gap-1.5 mb-2"><ArrowUpRight className="h-4 w-4 text-green-600" /><p className="text-xs font-bold text-green-800">Best Day</p></div>
+                        <p className="num font-black text-text">{fmt.currency(n(bestDay.gross_sales))}</p>
+                        <p className="text-xs text-muted mt-1">{(() => { try { return new Date(bestDay.report_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return bestDay.report_date; } })()}</p>
+                      </div>
+                      <div className="tile p-4 border-l-4 border-l-red-400">
+                        <div className="flex items-center gap-1.5 mb-2"><ArrowDownRight className="h-4 w-4 text-red-600" /><p className="text-xs font-bold text-red-800">Worst Day</p></div>
+                        <p className="num font-black text-text">{fmt.currency(n(worstDay.gross_sales))}</p>
+                        <p className="text-xs text-muted mt-1">{(() => { try { return new Date(worstDay.report_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return worstDay.report_date; } })()}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Report list */}
+                  <div className="tile overflow-hidden">
+                    <div className="px-5 py-3 border-b border-border"><p className="text-xs font-bold uppercase tracking-wide text-muted">Daily Breakdown</p></div>
+                    {rpts.slice(0, 14).map(r => (
+                      <div key={r.id} className="px-5 py-3.5 flex items-center justify-between border-b border-border/50 last:border-0">
                         <div>
-                          <p className="text-sm font-semibold text-text">{(r.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(r.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
-                          <p className="text-xs text-muted">Deposit: {fmt.currency(n(r.total_deposit))}</p>
+                          <p className="text-sm font-semibold text-text">{(() => { try { return new Date(r.report_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); } catch { return r.report_date; } })()}</p>
+                          <p className="text-xs text-muted">Cash: {fmt.currency(n(r.cash_sales))} · Credit: {fmt.currency(n(r.credit_sales))}</p>
                         </div>
                         <div className="text-right">
-                          <p className="num font-black text-text">{fmt.currency(n(r.total_sales))}</p>
-                          <span className={cn('chip text-[10px]',
-                            n(r.short_over) === 0 ? 'chip-gray' : n(r.short_over) < 0 ? 'chip-red' : 'chip-green')}>
-                            {n(r.short_over) >= 0 ? '+' : ''}{fmt.currency(n(r.short_over))}
-                          </span>
+                          <p className="num font-bold text-text">{fmt.currency(n(r.gross_sales))}</p>
+                          {n(r.drawer_difference) !== 0 && (
+                            <p className={cn('num text-xs font-bold', n(r.drawer_difference) < 0 ? 'text-red-600' : 'text-green-600')}>
+                              {n(r.drawer_difference) >= 0 ? '+' : ''}{fmt.currency(n(r.drawer_difference))}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </>
-            ) : (
-              <div className="tile p-10 text-center">
-                <p className="text-muted">Upload at least 2 days of reports to see trends</p>
-              </div>
-            )}
-          </div>
+                </>
+              );
+            })()}
+          </>
         )}
 
-        {/* ── CALENDAR TAB ── */}
-        {tab === 'calendar' && (
-          <div className="tile p-5">
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setCalDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-surface">
-                <ChevronLeft className="h-5 w-5 text-sub" />
-              </button>
-              <p className="font-black text-text">{calDate.toLocaleDateString('en-US', {month:'long', year:'numeric'})}</p>
-              <button onClick={() => setCalDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-surface">
-                <ChevronRight className="h-5 w-5 text-sub" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {['S','M','T','W','T','F','S'].map((d, i) => <p key={i} className="text-center text-xs text-muted font-medium py-1">{d}</p>)}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day     = i + 1;
-                const dateStr = (() => { try { const __d = new Date(year, month, day); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })();
-                const rpt     = reportsByDate.get(dateStr);
-                const isToday = dateStr === '—';
-                const isSelected = selectedDay?.report_date === dateStr;
-                return (
-                  <button key={day} onClick={() => setSelectedDay(isSelected ? null : rpt ?? null)}
-                    disabled={!rpt}
-                    className={cn('rounded-xl p-1.5 text-center transition-all',
-                      isSelected     ? 'bg-accent' :
-                      isToday        ? 'border-2 border-accent' :
-                      rpt            ? 'bg-surface hover:bg-border cursor-pointer' :
-                      'opacity-30 cursor-default')}>
-                    <p className={cn('text-xs font-black', isSelected ? 'text-white' : isToday ? 'text-accent' : 'text-text')}>{day}</p>
-                    {rpt && !isSelected && <p className="text-[9px] text-green-600 num leading-none">{fmt.currency(n(rpt.total_sales)).replace('$','')}</p>}
-                    {rpt && !isSelected && n(rpt.short_over) < -1 && <div className="h-1 w-1 rounded-full bg-accent mx-auto mt-0.5" />}
-                  </button>
-                );
-              })}
-            </div>
-
-            {selectedDay && (
-              <div className="mt-5 border-t border-border pt-4 space-y-3 animate-fade-up">
-                <p className="font-black text-text">{(selectedDay.report_date + 'T12:00:00' ? (() => { try { return (() => { try { const __d = new Date(selectedDay.report_date + 'T12:00:00'); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { l: 'Total Sales',   v: fmt.currency(n(selectedDay.total_sales)) },
-                    { l: 'Net',           v: fmt.currency(n(selectedDay.net))          },
-                    { l: 'Short/Over',    v: `${n(selectedDay.short_over) >= 0 ? '+' : ''}${fmt.currency(n(selectedDay.short_over))}` },
-                    { l: 'Cash Deposit',  v: fmt.currency(n(selectedDay.total_deposit)) },
-                    { l: 'Credit Card',   v: fmt.currency(n(selectedDay.credit_card_total)) },
-                    { l: 'Payouts',       v: fmt.currency(n(selectedDay.total_out))   },
-                  ].map(k => (
-                    <div key={k.l} className="bg-surface rounded-xl p-3 text-center">
-                      <p className="text-[10px] text-muted font-medium">{k.l}</p>
-                      <p className="num font-black text-text text-sm mt-0.5">{k.v}</p>
-                    </div>
-                  ))}
-                </div>
+        {/* ── CALENDAR ── */}
+        {!loading && tab === 'calendar' && (
+          <>
+            <div className="tile p-5">
+              <div className="flex items-center justify-between mb-5">
+                <button onClick={() => setCalDate(new Date(calYear, calMonth - 1, 1))} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-text"><ChevronLeft className="h-5 w-5" /></button>
+                <p className="font-bold text-text">{calMonthStr}</p>
+                <button onClick={() => setCalDate(new Date(calYear, calMonth + 1, 1))} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-text"><ChevronRight className="h-5 w-5" /></button>
               </div>
-            )}
-          </div>
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <p key={d} className="text-[10px] text-muted font-bold text-center">{d}</p>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array(firstDay).fill(null).map((_, i) => <div key={`e${i}`} />)}
+                {Array(daysInMonth).fill(null).map((_, i) => {
+                  const d = i + 1;
+                  const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                  const rpt = reports.find(r => r.report_date === dateStr);
+                  const isToday = dateStr === today;
+                  return (
+                    <div key={d} className={cn('rounded-xl p-1.5 text-center min-h-12 flex flex-col items-center justify-center',
+                      isToday ? 'ring-2 ring-accent' : '',
+                      rpt ? 'bg-green-50 border border-green-200' : 'bg-surface border border-border/30')}>
+                      <p className={cn('text-xs font-bold', isToday ? 'text-accent' : rpt ? 'text-green-800' : 'text-muted')}>{d}</p>
+                      {rpt && <p className="num text-[9px] font-bold text-green-700 leading-none mt-0.5">{fmt.currency(n(rpt.gross_sales)).replace('$', '$').split('.')[0]}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="tile p-4">
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-2"><div className="h-3 w-3 rounded bg-green-200 border border-green-300" /><span className="text-muted">Report uploaded</span></div>
+                <div className="flex items-center gap-2"><div className="h-3 w-3 rounded ring-2 ring-accent bg-surface" /><span className="text-muted">Today</span></div>
+                <div className="flex items-center gap-2"><div className="h-3 w-3 rounded bg-surface border border-border/30" /><span className="text-muted">No report</span></div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </Screen>
