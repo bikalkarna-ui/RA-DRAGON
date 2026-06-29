@@ -56,90 +56,107 @@ function ReportFull({ r }: { r: any }) {
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div>
       <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">{title}</p>
-      <div className="space-y-1">{children}</div>
+      <div className="space-y-0.5">{children}</div>
     </div>
   );
 
-  const Row = ({ label, value, neg, bold, isCurrency = true }: any) => {
-    if (!value && value !== 0) return null;
+  const Row = ({ label, value, neg, bold, isCurrency = true, color = '' }: any) => {
+    if (value === undefined || value === null) return null;
     if (value === 0 && !bold) return null;
     return (
       <div className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
         <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-600')}>{label}</span>
-        <span className={cn('num text-sm font-semibold', bold ? 'text-text' : neg ? 'text-accent' : 'text-gray-800')}>
+        <span className={cn('num text-sm font-semibold', bold ? 'text-text' : neg ? 'text-accent' : color || 'text-gray-800')}>
           {neg && value > 0 ? '−' : ''}{isCurrency ? fmt.currency(value) : value.toLocaleString()}
         </span>
       </div>
     );
   };
 
+  const depts = r.department_sales || {};
+  const deptEntries = Object.entries(depts).filter(([,v]) => Number(v) > 0).sort((a,b) => Number(b[1]) - Number(a[1]));
+
   return (
     <div className="space-y-5">
-      <Section title="Sales Breakdown">
-        <Row label="Gross Sales"       value={n(r.gross_sales)}       bold />
-        <Row label="Net Sales"         value={n(r.net_sales)} />
-        <Row label="Fuel Sales"        value={n(r.fuel_sales)} />
-        <Row label="Inside Sales"      value={n(r.inside_sales)} />
-        <Row label="Merchandise"       value={n(r.merchandise_sales)} />
-        <Row label="Lottery Sales"     value={n(r.lottery_sales)} />
-        <Row label="Scratch Off"       value={n(r.scratch_sales)} />
-        <Row label="Taxes Collected"   value={n(r.taxes)} />
-        <Row label="Discounts"         value={n(r.discounts)} neg />
-        <Row label="Refunds"           value={n(r.refunds)} neg />
-        <Row label="Transactions"      value={n(r.transactions)} isCurrency={false} />
-        <Row label="Customers"         value={n(r.customers)} isCurrency={false} />
+
+      {/* Sales Summary */}
+      <Section title="Sales Summary">
+        <Row label="Gross Sales"      value={n(r.gross_sales)}        bold />
+        <Row label="Fuel Sales"       value={n(r.fuel_sales)} />
+        <Row label="Inside / Non-Fuel" value={n(r.inside_sales)} />
+        <Row label="Net Sales"        value={n(r.net_sales)} />
+        <Row label="Lottery Sales"    value={n(r.lottery_sales)} />
+        <Row label="Scratch Off"      value={n(r.scratch_sales)} />
+        <Row label="Taxes"            value={n(r.taxes)} />
+        <Row label="Discounts"        value={n(r.discounts)}           neg />
+        <Row label="Refunds"          value={n(r.refunds)}             neg />
+        <Row label="Transactions"     value={n(r.transactions)}        isCurrency={false} />
       </Section>
 
+      {/* Payment Methods */}
       <Section title="Payment Methods">
-        <Row label="Cash"         value={n(r.cash_sales)} />
-        <Row label="Credit Card"  value={n(r.credit_sales)} />
-        <Row label="Debit"        value={n(r.debit_sales)} />
-        <Row label="EBT / SNAP"   value={n(r.ebt_sales)} />
-        <Row label="Checks"       value={n(r.check_sales)} />
-        <Row label="Money Orders" value={n(r.money_order_sales)} />
-        <Row label="ATM"          value={n(r.atm_sales)} />
+        <Row label="Cash"             value={n(r.cash_sales)} />
+        <Row label="Credit Card"      value={n(r.credit_sales)} />
+        <Row label="Debit"            value={n(r.debit_sales)} />
+        <Row label="Checks"           value={n(r.check_sales)} />
+        <Row label="EBT / SNAP"       value={n(r.ebt_sales)} />
+        <Row label="Money Orders"     value={n(r.money_order_sales)} />
+        <Row label="ATM"              value={n(r.atm_sales)} />
       </Section>
 
-      {(n(r.actual_cash) + n(r.safe_drops) + n(r.paid_outs) + n(r.paid_ins)) > 0 && (
+      {/* Cash Management */}
+      {(n(r.actual_cash) + n(r.safe_drops) + n(r.paid_outs) + n(r.paid_ins) + n(r.beginning_till)) > 0 && (
         <Section title="Cash Management">
-          <Row label="Cash Sales"     value={n(r.cash_sales)} />
-          <Row label="Beginning Till" value={n(r.beginning_till)} />
-          <Row label="Safe Loans"     value={n(r.safe_loans)} />
-          <Row label="Paid Ins"       value={n(r.paid_ins)} />
-          <Row label="Safe Drops"     value={n(r.safe_drops)} neg />
-          <Row label="Paid Outs"      value={n(r.paid_outs)} neg />
-          <Row label="Expected Cash"  value={n(r.expected_cash)} />
-          <Row label="Actual Cash"    value={n(r.actual_cash)} />
-          <Row label="Cash Deposit"   value={n(r.cash_deposit)} />
-          <Row label="Ending Till"    value={n(r.ending_till)} />
-          <div className={cn('flex justify-between items-center px-3 py-2.5 rounded-xl mt-2 font-black',
-            n(r.drawer_difference) < -0.5 ? 'bg-red-100 text-red-700' :
-            n(r.drawer_difference) > 0.5  ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>
+          <Row label="Beginning Till"  value={n(r.beginning_till)} />
+          <Row label="Cash Sales"      value={n(r.cash_sales)} />
+          <Row label="Safe Loans"      value={n(r.safe_loans)} />
+          <Row label="Paid Ins"        value={n(r.paid_ins)} />
+          <Row label="Safe Drops"      value={n(r.safe_drops)}       neg />
+          <Row label="Paid Outs"       value={n(r.paid_outs)}        neg />
+          <Row label="Expected Cash"   value={n(r.expected_cash)} />
+          <Row label="Actual Cash"     value={n(r.actual_cash)} />
+          <Row label="Cash Deposit"    value={n(r.cash_deposit)} />
+          <Row label="Ending Till"     value={n(r.ending_till)} />
+          {/* Short/Over highlighted row */}
+          <div className={cn('flex justify-between items-center px-3 py-2.5 rounded-xl mt-2 border-2 font-black',
+            n(r.drawer_difference) < -0.5 ? 'bg-red-50 border-red-400 text-red-700' :
+            n(r.drawer_difference) > 0.5  ? 'bg-green-50 border-green-400 text-green-700' :
+            'bg-gray-50 border-gray-200 text-gray-600')}>
             <span>SHORT / OVER</span>
-            <span className="num text-lg">{n(r.drawer_difference) >= 0 ? '+' : ''}{fmt.currency(n(r.drawer_difference))}</span>
+            <span className="num text-xl">{n(r.drawer_difference) >= 0 ? '+' : ''}{fmt.currency(n(r.drawer_difference))}</span>
           </div>
         </Section>
       )}
 
-      {(n(r.lottery_sales) + n(r.scratch_sales)) > 0 && (
+      {/* Lottery Detail */}
+      {(n(r.lottery_sales) + n(r.scratch_sales) + n(r.lottery_settlement)) > 0 && (
         <Section title="Lottery">
-          <Row label="Lottery Sales"     value={n(r.lottery_sales)} />
+          <Row label="Draw Game Sales"   value={n(r.lottery_sales)} />
           <Row label="Scratch Off Sales" value={n(r.scratch_sales)} />
-          <Row label="Lottery Payouts"   value={n(r.lottery_payouts)} neg />
-          <Row label="Scratch Payouts"   value={n(r.scratch_payouts)} neg />
-          <Row label="Settlement"        value={n(r.lottery_settlement)} />
-          <Row label="Commission"        value={n(r.lottery_commission)} />
+          <Row label="Lottery Payouts"   value={n(r.lottery_payouts)}  neg />
+          <Row label="Scratch Cashes"    value={n(r.scratch_payouts)}  neg />
+          <Row label="Settlements"       value={n(r.lottery_settlement)} />
+          <Row label="Commissions"       value={n(r.lottery_commission)} />
+          {n(r.lottery_settlement) > 0 && (
+            <div className="flex justify-between py-1.5 mt-1 border-t-2 border-gray-200">
+              <span className="text-sm font-bold text-text">Net Balance</span>
+              <span className="num text-sm font-black text-text">
+                {fmt.currency(n(r.lottery_settlement) - n(r.lottery_commission))}
+              </span>
+            </div>
+          )}
         </Section>
       )}
 
+      {/* Fuel Breakdown */}
       {n(r.fuel_sales) > 0 && (
-        <Section title="Fuel">
+        <Section title="Fuel Sales">
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Unleaded', sales: n(r.fuel_unleaded_sales), gal: n(r.fuel_unleaded_gallons) },
-              { label: 'Midgrade', sales: n(r.fuel_midgrade_sales), gal: n(r.fuel_midgrade_gallons) },
-              { label: 'Premium',  sales: n(r.fuel_premium_sales),  gal: n(r.fuel_premium_gallons)  },
-              { label: 'Diesel',   sales: n(r.fuel_diesel_sales),   gal: n(r.fuel_diesel_gallons)   },
+              { label: 'Unleaded',  sales: n(r.fuel_unleaded_sales), gal: n(r.fuel_unleaded_gallons) },
+              { label: 'Midgrade',  sales: n(r.fuel_midgrade_sales), gal: n(r.fuel_midgrade_gallons) },
+              { label: 'Regular+',  sales: n(r.fuel_premium_sales),  gal: n(r.fuel_premium_gallons) },
+              { label: 'Diesel',    sales: n(r.fuel_diesel_sales),   gal: n(r.fuel_diesel_gallons) },
             ].filter(f => f.sales > 0 || f.gal > 0).map(f => (
               <div key={f.label} className="rounded-xl bg-surface border border-border p-3">
                 <p className="text-[10px] text-muted">{f.label}</p>
@@ -150,6 +167,27 @@ function ReportFull({ r }: { r: any }) {
           </div>
         </Section>
       )}
+
+      {/* Department Sales */}
+      {deptEntries.length > 0 && (
+        <Section title={`Department Sales (${deptEntries.length})`}>
+          <div className="space-y-1">
+            {deptEntries.map(([dept, val]) => {
+              const v = Number(val);
+              const gross = n(r.inside_sales) || n(r.gross_sales);
+              const pct = gross > 0 ? (v / gross * 100) : 0;
+              return (
+                <div key={dept} className="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
+                  <span className="text-sm text-gray-700 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
+                  <span className="text-xs text-muted w-10 text-right">{pct.toFixed(1)}%</span>
+                  <span className="num text-sm font-bold text-text w-20 text-right">{fmt.currency(v)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
     </div>
   );
 }

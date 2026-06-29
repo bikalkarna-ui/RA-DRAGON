@@ -28,111 +28,134 @@ const APPS = [
 // ── AI Copilot Chat ─────────────────────────────────────────────────────────
 function AICopilot({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
-    { role: 'assistant', content: "Hi! I'm your RA Dragon AI assistant. Ask me anything about your store — sales, inventory, deposits, invoices, or anything else." }
+    { role: 'assistant', content: "Hi! Ask me anything about your store — today\'s sales, what to deposit, inventory, short/over, or anything else." }
   ]);
-  const [input, setInput]     = useState('');
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef  = useRef<HTMLInputElement>(null);
 
-  const SUGGESTIONS = [
-    'How much should I deposit today?',
-    'What products are running low?',
-    'How were sales this week?',
-    'Show me today\'s short/over',
-  ];
+  const SUGGESTIONS = ["Deposit amount today?", "What\'s running low?", "Week\'s total sales?", "Today\'s short/over"];
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const send = async (text?: string) => {
-    const msg = text || input.trim();
+    const msg = (text || input).trim();
     if (!msg || loading) return;
     setInput('');
-    const newMessages = [...messages, { role: 'user', content: msg }];
-    setMessages(newMessages);
+    const next = [...messages, { role: 'user', content: msg }];
+    setMessages(next);
     setLoading(true);
     try {
-      const res = await fetch('/api/ai-copilot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, history: messages }),
-      });
+      const res = await fetch('/api/ai-copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, history: messages }) });
       const data = await res.json();
-      setMessages([...newMessages, { role: 'assistant', content: data.reply || data.error || 'Something went wrong.' }]);
+      setMessages([...next, { role: 'assistant', content: data.reply || data.error || 'Something went wrong.' }]);
     } catch {
-      setMessages([...newMessages, { role: 'assistant', content: 'Connection error. Please try again.' }]);
+      setMessages([...next, { role: 'assistant', content: 'Connection error. Try again.' }]);
     }
     setLoading(false);
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gray-950">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent">
-            <Zap className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <p className="font-black text-white">RA Dragon AI</p>
-            <p className="text-xs text-gray-500">Your business assistant</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-gray-800 transition-colors">
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-        {messages.map((m, i) => (
-          <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-            <div className={cn('max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
-              m.role === 'user'
-                ? 'bg-accent text-white rounded-tr-sm'
-                : 'bg-gray-800 text-gray-100 rounded-tl-sm')}>
-              {m.content}
+      {/* Bottom sheet — ChatGPT style */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-white rounded-t-3xl shadow-2xl border-t border-gray-200"
+        style={{ height: '72vh', maxWidth: 680, margin: '0 auto' }}>
+
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="h-1 w-10 rounded-full bg-gray-300" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent shadow-red">
+              <Zap className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="font-black text-text text-sm leading-tight">RA Dragon AI</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-[10px] text-muted font-medium">Knows your store data</p>
+              </div>
             </div>
           </div>
-        ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5">
-              {[0,1,2].map(i => <div key={i} className="h-2 w-2 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
-            </div>
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Suggestions */}
-      {messages.length <= 1 && (
-        <div className="px-5 pb-3 flex flex-wrap gap-2">
-          {SUGGESTIONS.map(s => (
-            <button key={s} onClick={() => send(s)}
-              className="text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-1.5 hover:bg-gray-700 hover:text-white transition-colors border border-gray-700">
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="px-5 pb-8 pt-3 border-t border-gray-800">
-        <div className="flex gap-3">
-          <input
-            value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && send()}
-            placeholder="Ask anything about your store…"
-            autoFocus
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-2xl px-5 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent transition-colors"
-          />
-          <button onClick={() => send()} disabled={!input.trim() || loading}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-white disabled:opacity-40 hover:bg-red-700 transition-colors active:scale-95">
-            <Send className="h-5 w-5" />
+          <button onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {messages.map((m, i) => (
+            <div key={i} className={cn('flex items-end gap-2', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+              {m.role === 'assistant' && (
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5">
+                  <Zap className="h-3.5 w-3.5 text-white" />
+                </div>
+              )}
+              <div className={cn('max-w-[80%] px-4 py-3 text-sm leading-relaxed',
+                m.role === 'user'
+                  ? 'bg-accent text-white rounded-2xl rounded-br-md'
+                  : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md')}>
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex items-end gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5">
+                <Zap className="h-3.5 w-3.5 text-white" />
+              </div>
+              <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
+                {[0,1,2].map(i => <div key={i} className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />)}
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Suggestions — show only at start */}
+        {messages.length <= 1 && (
+          <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
+            {SUGGESTIONS.map(s => (
+              <button key={s} onClick={() => send(s)}
+                className="flex-none text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap">
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input row */}
+        <div className="px-4 pb-8 pt-2 border-t border-gray-100">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-2xl px-4 py-2.5">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="Ask anything…"
+              autoFocus
+              className="flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-sm focus:outline-none"
+            />
+            <button
+              onClick={() => send()}
+              disabled={!input.trim() || loading}
+              className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all active:scale-95',
+                input.trim() && !loading ? 'bg-accent text-white shadow-red' : 'bg-gray-300 text-gray-400')}>
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
