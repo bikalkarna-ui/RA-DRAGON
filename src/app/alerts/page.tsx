@@ -1,217 +1,242 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
-import { Bell, TrendingUp, TrendingDown, AlertTriangle, Package, Zap, RefreshCw, Check } from 'lucide-react';
+import { Bell, AlertTriangle, TrendingUp, TrendingDown, Package, Zap, RefreshCw, Check, DollarSign, Clock, ChevronRight } from 'lucide-react';
 
-type Tab = 'stock' | 'prices';
-
-
-// Safe date formatter - never crashes on null/undefined dates
+type Tab = 'stock' | 'prices' | 'cash' | 'ai';
 
 export default function AlertsPage() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const { store } = useStore();
-  const [tab, setTab]       = useState<Tab>('stock');
+  const [tab, setTab] = useState<Tab>('stock');
   const [notifs, setNotifs] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const load = useCallback(async () => {
     if (!store) return;
-    setLoading(true);
-    const sb = createClient();
-    const [{ data: prods }, { data: invs }] = await Promise.all([
-      sb.from('products').select('id,name,quantity,min_quantity,max_quantity,unit_cost,unit_price,vendor_company,department,sku').eq('store_id', store.id).eq('is_active', true).order('quantity'),
-      sb.from('invoices').select('*,invoice_items(id,raw_description,unit_cost,old_cost,suggested_price,old_price,price_changed,product_id,quantity)').eq('store_id', store.id).eq('status', 'NEEDS_REVIEW').order('created_at', { ascending: false }),
-    ]);
-
-    // Auto-generate notifications
-    const alerts: any[] = [];
-    for (const p of prods ?? []) {
-      if (p.quantity === 0) alerts.push({ type: 'out_of_stock', title: `${p.name} is OUT OF STOCK`, message: `Order from ${p.vendor_company ?? 'vendor'} immediately`, product: p, priority: 1 });
-      else if (p.quantity <= Math.ceil(p.min_quantity * 0.5)) alerts.push({ type: 'critical', title: `${p.name} — Critical`, message: `Only ${p.quantity} left (min: ${p.min_quantity})`, product: p, priority: 2 });
-      else if (p.quantity <= p.min_quantity) alerts.push({ type: 'low_stock', title: `${p.name} — Low Stock`, message: `${p.quantity} remaining (min: ${p.min_quantity})`, product: p, priority: 3 });
-    }
-    alerts.sort((a, b) => a.priority - b.priority);
-
-    setNotifs(alerts);
-    setInvoices(invs ?? []);
-    setProducts(prods ?? []);
-    setLoading(false);
+    try {
+      const sb = createClient();
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+      const [{ data: ns }, { data: invs }, { data: rpts }, { data: prods }] = await Promise.all([
+        sb.from('notifications').select('*').eq('store_id', store.id).order('created_at', { ascending: false }).limit(50),
+        sb.from('invoices').select('*, invoice_items(*)').eq('store_id', store.id).eq('status', 'NEEDS_REVIEW').order('created_at', { ascending: false }).limit(20),
+        sb.from('daily_reports').select('*').eq('store_id', store.id).gte('report_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]).order('report_date', { ascending: false }),
+        sb.from('products').select('*').eq('store_id', store.id).eq('is_active', true).order('quantity'),
+      ]);
+      setNotifs(ns ?? []);
+      setInvoices(invs ?? []);
+      setReports(rpts ?? []);
+      setProducts(prods ?? []);
+    } catch (e) { console.error(e); }
+    setLoading(false); setRefreshing(false);
   }, [store]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (mounted && store) load(); }, [mounted, store, load]);
 
-  // Price change items across all invoices needing review
-  const priceChanges = invoices.flatMap(inv =>
-    (inv.invoice_items ?? []).filter((i: any) => i.price_changed).map((i: any) => ({
-      ...i, vendor_name: inv.vendor_name, vendor_company: inv.vendor_company,
-      invoice_id: inv.id, invoice_date: inv.created_at,
-    }))
-  );
+  const markRead = async (id: string) => {
+    await createClient().from('notifications').update({ is_read: true }).eq('id', id);
+    setNotifs(p => p.map(n => n.id === id ? { ...n, is_read: true } : n));
+  };
 
-  const margin = (cost: number, price: number) => price > 0 ? ((price - cost) / price * 100) : 0;
+  const markAllRead = async () => {
+    const unread = notifs.filter(n => !n.is_read).map(n => n.id);
+    if (!unread.length) return;
+    await createClient().from('notifications').update({ is_read: true }).in('id', unread);
+    setNotifs(p => p.map(n => ({ ...n, is_read: true })));
+  };
 
   if (!mounted) return null;
 
-  return (
-    <Screen title="Alerts" subtitle="Stock alerts &amp; price change notifications">
-      <div className="space-y-5">
+  const n = (v: any) => Number(v || 0);
+  const outOfStock = products.filter(p => n(p.quantity) === 0);
+  const critical   = products.filter(p => n(p.quantity) > 0 && n(p.quantity) <= Math.ceil(n(p.min_quantity) * 0.5));
+  const lowStock   = products.filter(p => n(p.quantity) > n(p.min_quantity) * 0.5 && n(p.quantity) <= n(p.min_quantity));
+  const priceChanges = invoices.flatMap(inv => (inv.invoice_items ?? []).filter((i: any) => i.price_changed).map((i: any) => ({ ...i, vendor_name: inv.vendor_name, invoice_date: inv.created_at, invoice_id: inv.id })));
+  const cashIssues = reports.filter(r => Math.abs(n(r.drawer_difference)) > 5);
+  const unreadAI   = notifs.filter(n => !n.is_read);
 
-        {/* Tab bar */}
+  const TABS = [
+    { id: 'stock' as Tab,  label: '📦 Stock',  badge: outOfStock.length + critical.length },
+    { id: 'prices' as Tab, label: '💰 Prices', badge: priceChanges.length },
+    { id: 'cash' as Tab,   label: '💵 Cash',   badge: cashIssues.length },
+    { id: 'ai' as Tab,     label: '🤖 AI',     badge: unreadAI.length },
+  ];
+
+  return (
+    <Screen title="Alert Center"
+      subtitle={`${outOfStock.length} out of stock · ${priceChanges.length} price changes · ${unreadAI.length} unread`}
+      action={
+        <button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+        </button>
+      }>
+      <div className="space-y-5">
+        {/* Tabs */}
         <div className="flex gap-2">
-          {[{ id: 'stock', label: `🔔 Stock Alerts (${notifs.length})` }, { id: 'prices', label: `💰 Price Changes (${priceChanges.length})` }].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id as Tab)}
-              className={cn('flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors border',
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={cn('flex-1 relative rounded-xl py-2.5 text-xs font-bold border transition-colors',
                 tab === t.id ? 'bg-accent text-white border-accent' : 'bg-surface text-sub border-border hover:text-text')}>
               {t.label}
+              {t.badge > 0 && <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-black px-1">{t.badge}</span>}
             </button>
           ))}
         </div>
 
-        {/* ── STOCK ALERTS ── */}
-        {tab === 'stock' && (
-          <div className="space-y-3">
-            {loading && <div className="tile p-10 text-center"><RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" /></div>}
-            {!loading && notifs.length === 0 && (
-              <div className="tile p-10 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mx-auto mb-4">
-                  <Check className="h-8 w-8 text-green-600" />
-                </div>
-                <p className="font-bold text-text text-lg mb-1">All products stocked</p>
-                <p className="text-muted text-sm">No stock alerts right now</p>
-              </div>
-            )}
+        {loading && <div className="tile p-10 text-center"><RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" /></div>}
 
-            {/* Group by type */}
-            {['out_of_stock', 'critical', 'low_stock'].map(type => {
-              const group = notifs.filter(n => n.type === type);
-              if (!group.length) return null;
-              const config = {
-                out_of_stock: { label: 'Out of Stock', color: 'border-red-400 bg-red-50', titleColor: 'text-red-800', badge: 'bg-red-100 text-red-700' },
-                critical:     { label: 'Critical',     color: 'border-orange-400 bg-orange-50', titleColor: 'text-orange-800', badge: 'bg-orange-100 text-orange-700' },
-                low_stock:    { label: 'Low Stock',    color: 'border-amber-300 bg-amber-50', titleColor: 'text-amber-800', badge: 'bg-amber-100 text-amber-700' },
-              }[type]!;
-              return (
-                <div key={type}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={cn('chip font-bold', config.badge)}>{config.label}</span>
-                    <span className="text-xs text-muted">{group.length} products</span>
-                  </div>
-                  <div className="space-y-2">
-                    {group.map((n, i) => {
-                      const p = n.product;
-                      const needUnits = Math.max((p.reorder_qty || p.min_quantity * 2) - p.quantity, 0);
-                      const estCost = needUnits * Number(p.unit_cost);
-                      return (
-                        <div key={i} className={cn('tile p-4 border-l-4', type === 'out_of_stock' ? 'border-l-red-500' : type === 'critical' ? 'border-l-orange-500' : 'border-l-amber-400')}>
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <p className={cn('font-bold text-sm', config.titleColor)}>{n.title}</p>
-                              <p className="text-xs text-muted mt-0.5">{n.message}</p>
-                              {p.vendor_company && <p className="text-xs text-muted">Vendor: {p.vendor_company} · {p.department ?? '—'}</p>}
-                            </div>
-                            <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl shrink-0 text-white font-black text-lg',
-                              type === 'out_of_stock' ? 'bg-red-500' : type === 'critical' ? 'bg-orange-500' : 'bg-amber-400')}>
-                              {p.quantity}
-                            </div>
-                          </div>
-
-                          {/* AI Recommendation */}
-                          <div className="rounded-xl bg-violet-50 border border-violet-200 px-3 py-2.5 mb-3">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Zap className="h-3.5 w-3.5 text-violet-600" />
-                              <p className="text-xs font-bold text-violet-700">AI Recommendation</p>
-                            </div>
-                            <p className="text-xs text-violet-800">
-                              {type === 'out_of_stock'
-                                ? `Order ${needUnits || p.min_quantity * 2} units immediately from ${p.vendor_company ?? 'your vendor'}. Est. cost: ${fmt.currency(estCost || p.unit_cost * p.min_quantity * 2)}`
-                                : `Reorder ${needUnits} units to reach min level. ${p.vendor_company ? `Contact ${p.vendor_company}` : 'Contact your vendor'}`}
-                            </p>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <a href="/ordering" className="flex-1 btn btn-accent text-xs py-2">Generate AI Order →</a>
-                            <a href="/inventory" className="flex-1 btn btn-ghost text-xs py-2">View Inventory</a>
-                          </div>
+        {/* ── STOCK ── */}
+        {!loading && tab === 'stock' && (
+          <>
+            {outOfStock.length === 0 && critical.length === 0 && lowStock.length === 0 ? (
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-700">All stock levels look good</p></div>
+            ) : (
+              <>
+                {[
+                  { title: '🔴 Out of Stock', items: outOfStock, color: 'border-l-red-500', bg: 'bg-red-50', chip: 'chip-red', msg: 'Order immediately' },
+                  { title: '🟠 Critical — Order Now', items: critical, color: 'border-l-orange-500', bg: 'bg-orange-50', chip: 'chip-red', msg: 'Very low stock' },
+                  { title: '🟡 Low Stock — Order Soon', items: lowStock, color: 'border-l-amber-400', bg: 'bg-amber-50', chip: 'chip-yellow', msg: 'Below minimum' },
+                ].filter(g => g.items.length > 0).map(group => (
+                  <div key={group.title} className="tile overflow-hidden">
+                    <div className={cn('px-5 py-3 border-b border-border', group.bg)}>
+                      <p className="text-sm font-bold text-text">{group.title} ({group.items.length})</p>
+                    </div>
+                    {group.items.map(p => (
+                      <div key={p.id} className={cn('px-5 py-4 flex items-center justify-between border-b border-border/50 last:border-0 border-l-4', group.color)}>
+                        <div>
+                          <p className="font-semibold text-text text-sm">{p.name}</p>
+                          <p className="text-xs text-muted mt-0.5">{p.vendor_company ?? '—'} · Min: {p.min_quantity} · Reorder: {p.reorder_qty || '—'}</p>
                         </div>
-                      );
-                    })}
+                        <div className="text-right shrink-0">
+                          <p className={cn('num font-black text-xl', p.quantity === 0 ? 'text-red-700' : 'text-amber-700')}>{p.quantity}</p>
+                          <p className="text-[10px] text-muted">units left</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                ))}
+              </>
+            )}
+          </>
         )}
 
-        {/* ── PRICE CHANGES ── */}
-        {tab === 'prices' && (
-          <div className="space-y-3">
-            {loading && <div className="tile p-10 text-center"><RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" /></div>}
-            {!loading && priceChanges.length === 0 && (
-              <div className="tile p-10 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mx-auto mb-4">
-                  <Check className="h-8 w-8 text-green-600" />
+        {/* ── PRICES ── */}
+        {!loading && tab === 'prices' && (
+          <>
+            {priceChanges.length === 0 ? (
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-700">No price changes detected</p></div>
+            ) : (
+              <div className="tile overflow-hidden">
+                <div className="px-5 py-3 border-b border-border bg-blue-50">
+                  <p className="text-sm font-bold text-blue-800">{priceChanges.length} price change{priceChanges.length > 1 ? 's' : ''} need review</p>
                 </div>
-                <p className="font-bold text-text mb-1">No price changes pending</p>
-                <p className="text-muted text-sm">Scan a vendor invoice to detect price changes automatically</p>
+                {priceChanges.map((item, i) => {
+                  const oldCost = n(item.unit_cost_old || item.old_unit_cost);
+                  const newCost = n(item.unit_cost || item.new_unit_cost);
+                  const diff = newCost - oldCost;
+                  const pct = oldCost > 0 ? (diff / oldCost * 100) : 0;
+                  return (
+                    <div key={i} className="px-5 py-4 border-b border-border/50 last:border-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-semibold text-text text-sm">{item.product_name}</p>
+                          <p className="text-xs text-muted mt-0.5">{item.vendor_name} · {(() => { try { return new Date(item.invoice_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return '—'; } })()}</p>
+                        </div>
+                        <div className="text-right shrink-0 ml-4">
+                          <div className="flex items-center gap-2">
+                            <span className="num text-sm text-muted line-through">{fmt.currency(oldCost)}</span>
+                            <span className="text-gray-400">→</span>
+                            <span className="num font-bold text-text">{fmt.currency(newCost)}</span>
+                          </div>
+                          <div className={cn('flex items-center gap-1 justify-end mt-1', diff > 0 ? 'text-red-600' : 'text-green-600')}>
+                            {diff > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                            <span className="text-xs font-bold">{diff > 0 ? '+' : ''}{fmt.currency(diff)} ({pct.toFixed(1)}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                      <a href="/invoices" className="mt-2 inline-flex items-center gap-1 text-xs text-accent font-semibold hover:underline">
+                        Review Invoice <ChevronRight className="h-3 w-3" />
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             )}
+          </>
+        )}
 
-            {priceChanges.map((item, i) => {
-              const oldM = item.old_cost && item.old_price ? margin(item.old_cost, item.old_price) : null;
-              const newM = item.unit_cost && item.suggested_price ? margin(item.unit_cost, item.suggested_price) : null;
-              const costUp = Number(item.unit_cost) > Number(item.old_cost);
-              return (
-                <div key={i} className="tile p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-bold text-text">{item.raw_description}</p>
-                      <p className="text-xs text-muted">{item.vendor_name} · {(item.invoice_date ? (() => { try { return (() => { try { const __d = new Date(item.invoice_date); if(isNaN(__d.getTime())) return '—'; return __d.toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch { return '—'; } })(); } catch { return '—'; } })() : '—')}</p>
-                    </div>
-                    <div className={cn('chip font-bold', costUp ? 'chip-red' : 'chip-green')}>
-                      {costUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {costUp ? 'Cost Up' : 'Cost Down'}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="rounded-xl bg-gray-50 border border-gray-200 p-3">
-                      <p className="text-[10px] text-muted font-semibold uppercase mb-1">Old Cost</p>
-                      <p className="num font-black text-text">{fmt.currency(item.old_cost ?? 0)}</p>
-                      {oldM !== null && <p className="text-xs text-muted mt-0.5">Margin: {fmt.percent(oldM)}</p>}
-                    </div>
-                    <div className={cn('rounded-xl border p-3', costUp ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200')}>
-                      <p className="text-[10px] text-muted font-semibold uppercase mb-1">New Cost</p>
-                      <p className={cn('num font-black', costUp ? 'text-accent' : 'text-green-700')}>{fmt.currency(item.unit_cost ?? 0)}</p>
-                      {newM !== null && <p className="text-xs text-muted mt-0.5">New margin: {fmt.percent(newM)}</p>}
-                    </div>
-                  </div>
-
-                  {/* Suggested retail */}
-                  {item.suggested_price && (
-                    <div className="rounded-xl bg-violet-50 border border-violet-200 px-3 py-2.5 mb-3">
-                      <div className="flex items-center gap-1.5 mb-1"><Zap className="h-3.5 w-3.5 text-violet-600" /><p className="text-xs font-bold text-violet-700">AI Recommendation</p></div>
-                      <p className="text-xs text-violet-800">
-                        {costUp
-                          ? `Cost increased by ${fmt.currency(Number(item.unit_cost) - Number(item.old_cost))}. Suggested new retail: ${fmt.currency(item.suggested_price)} to maintain margin`
-                          : `Cost decreased — consider keeping current retail price to improve your margin`}
-                      </p>
-                    </div>
-                  )}
-
-                  <a href="/invoices" className="btn btn-accent btn-full text-sm py-2.5">Review Invoice &amp; Apply →</a>
+        {/* ── CASH ── */}
+        {!loading && tab === 'cash' && (
+          <>
+            {cashIssues.length === 0 ? (
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-700">All drawers balanced this week</p></div>
+            ) : (
+              <div className="tile overflow-hidden">
+                <div className="px-5 py-3 border-b border-border bg-red-50">
+                  <p className="text-sm font-bold text-red-800">{cashIssues.length} cash discrepanc{cashIssues.length > 1 ? 'ies' : 'y'} this week</p>
                 </div>
-              );
-            })}
-          </div>
+                {cashIssues.map(r => {
+                  const diff = n(r.drawer_difference);
+                  const isShort = diff < 0;
+                  return (
+                    <div key={r.id} className="px-5 py-4 border-b border-border/50 last:border-0">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-text text-sm">{(() => { try { return new Date(r.report_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }); } catch { return r.report_date; } })()}</p>
+                          <p className="text-xs text-muted mt-0.5">Expected: {fmt.currency(n(r.expected_cash))} · Actual: {fmt.currency(n(r.actual_cash))}</p>
+                        </div>
+                        <div className={cn('rounded-xl px-3 py-1.5 text-center', isShort ? 'bg-red-100' : 'bg-green-100')}>
+                          <p className={cn('num font-black text-lg', isShort ? 'text-red-700' : 'text-green-700')}>{diff >= 0 ? '+' : ''}{fmt.currency(diff)}</p>
+                          <p className={cn('text-[10px] font-bold', isShort ? 'text-red-600' : 'text-green-600')}>{isShort ? 'SHORT' : 'OVER'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── AI ALERTS ── */}
+        {!loading && tab === 'ai' && (
+          <>
+            {unreadAI.length > 0 && (
+              <button onClick={markAllRead} className="btn btn-ghost btn-full text-sm gap-2"><Check className="h-4 w-4" />Mark all read</button>
+            )}
+            {notifs.length === 0 ? (
+              <div className="tile p-10 text-center"><Zap className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-700">No AI alerts yet</p><p className="text-muted text-sm mt-1">Alerts appear when AI detects issues in your store data</p></div>
+            ) : (
+              <div className="tile overflow-hidden divide-y divide-border/50">
+                {notifs.map(n => (
+                  <div key={n.id} className={cn('px-5 py-4 flex items-start gap-3', !n.is_read && 'bg-violet-50/50')}>
+                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl',
+                      n.type === 'out_of_stock' ? 'bg-red-100 text-red-600' :
+                      n.type === 'low_stock' ? 'bg-amber-100 text-amber-600' :
+                      'bg-violet-100 text-violet-600')}>
+                      {n.type === 'out_of_stock' || n.type === 'low_stock' ? <Package className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-text">{n.title}</p>
+                      <p className="text-xs text-muted mt-0.5">{n.message}</p>
+                      {n.action_label && n.action_url && <a href={n.action_url} className="text-xs text-accent font-semibold mt-1.5 inline-block hover:underline">{n.action_label} →</a>}
+                    </div>
+                    {!n.is_read && <button onClick={() => markRead(n.id)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600"><Check className="h-3.5 w-3.5" /></button>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Screen>
