@@ -35,45 +35,19 @@ async function callAI(images: { b64: string; type: string }[], apiKey: string): 
   const content: any[] = [
     {
       type: 'text',
-      text: `You are reading gas station store closing documents. These may include:
-- Store Close report (summary with Grand Total, Fuel Sales, Non-Fuel Sales, payment methods like Cash/Credit/Debit/Check/CRIND)
-- Till Report (register tape with Cash, Credit, Debit, Safe Drops, Paid Outs, Short amount)
-- Texas Lottery report (Gross Sales, Net Sales, Scratch Cashes, Settlements, Commissions, Balance)
-- Fuel ATG delivery report (Gross Increase, Net Increase gallons)
-- Handwritten daily report (Safe Drop amounts, check numbers, deliveries received)
-- Scratch-off count sheet (book numbers, prices)
-- Department Sales report (dept names with gross sales amounts)
-- Tax Collection report
+      text: `Gas station report reader. Extract numbers ONLY from image. Return ONLY raw JSON:
+{"report_type":"store_close","report_date":null,"register_number":null,"operator_name":null,"gross_sales":null,"net_sales":null,"fuel_sales":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"inside_sales":null,"non_fuel_sales":null,"lottery_sales":null,"lottery_net_sales":null,"scratch_sales":null,"lottery_payouts":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"lottery_balance":null,"taxes":null,"discounts":null,"refunds":null,"transactions":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"money_order_sales":null,"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,"beginning_till":null,"ending_till":null,"expected_cash":null,"actual_cash":null,"cash_deposit":null,"drawer_difference":null,"cashier_short":null,"delivery_gallons":null,"department_sales":{},"notes":""}
 
-Read ALL numbers exactly as printed. Never calculate. Never guess. If unclear, use null.
-
-Return ONLY this exact JSON with no markdown, no text before or after:
-{"report_type":"store_close","report_date":null,"register_number":null,"operator_name":null,"store_number":null,
-"gross_sales":null,"net_sales":null,"total_revenue":null,"network_revenue":null,
-"fuel_sales":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,
-"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"fuel_total_gallons":null,
-"fuel_discounts":null,"non_fuel_sales":null,"inside_sales":null,"merchandise_sales":null,
-"lottery_sales":null,"lottery_net_sales":null,"scratch_sales":null,"lottery_payouts":null,"scratch_payouts":null,
-"lottery_settlements":null,"lottery_commissions":null,"lottery_balance":null,
-"taxes":null,"discounts":null,"refunds":null,"transactions":null,"customers":null,
-"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,
-"crind_credit":null,"crind_debit":null,"money_order_sales":null,"atm_amount":null,
-"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,
-"beginning_till":null,"ending_till":null,"expected_cash":null,"actual_cash":null,
-"cash_deposit":null,"drawer_difference":null,"cashier_short":null,
-"delivery_gallons":null,"atg_start_gallons":null,"atg_end_gallons":null,
-"department_sales":{},"notes":""}
-
-IMPORTANT RULES:
-- report_type: use store_close, till, lottery, scratch, department, safe_drop, paid_out, paid_in, fuel_atg, handwritten, tax, or unknown
-- report_date: extract date as YYYY-MM-DD. If you see "Jun 29 2026" write "2026-06-29". If "06/28/26" write "2026-06-28"
-- For Store Close: gross_sales = Grand Total Store Sales Reading
-- For Till: cashier_short is the "CASHIER SHORT AMOUNT", beginning_till is "TILL BEGINNING BALANCE"
-- For Lottery: lottery_settlements, lottery_commissions, lottery_balance from the settlement section
-- For CRIND (pay-at-pump): put in crind_credit and crind_debit fields
-- For checks: put in check_sales
-- Department sales: put each dept name and amount in department_sales object like {"BEER": 875.66, "SNACK": 439.49}
-- Handwritten reports: extract safe drop amounts, check payee/amounts, delivery info into notes`
+Rules:
+- report_type: store_close, till, lottery, scratch, department, safe_drop, paid_out, paid_in, fuel_atg, handwritten, tax, unknown
+- report_date: YYYY-MM-DD format only (e.g. 2026-06-29)
+- Store Close: gross_sales=Grand Total, fuel_sales=Total Fuel Sales, inside_sales=Non Fuel Sales
+- Till: cashier_short=CASHIER SHORT AMOUNT, beginning_till=TILL BEGINNING BALANCE, credit_sales=Credit total, debit_sales=Debit total
+- CRIND/pay-at-pump amounts go in crind_credit or crind_debit
+- Checks go in check_sales
+- Lottery: lottery_settlements from Settlements line, lottery_commissions from Commissions
+- Department sales: {"BEER":875.66,"SNACK":439.49} etc
+- null for missing fields, never calculate`
     }
   ];
 
@@ -88,7 +62,7 @@ IMPORTANT RULES:
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1200, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 2000, messages: [{ role: 'user', content }] }),
   });
 
   if (!res.ok) {
@@ -98,10 +72,40 @@ IMPORTANT RULES:
   const data = await res.json();
   const raw = (data?.choices?.[0]?.message?.content ?? '').trim();
   const clean = raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
-  const match = clean.match(/\{[\s\S]*\}/);
+  // Try to find and parse JSON - handle truncated responses
+  const match = clean.match(/\{[\s\S]*/);
   if (!match) throw new Error(`No JSON in AI response. Got: ${clean.slice(0,200)}`);
-  try { return JSON.parse(match[0]); }
-  catch { throw new Error(`JSON parse failed: ${match[0].slice(0,100)}`); }
+  
+  let jsonStr = match[0];
+  
+  // Try parsing as-is first
+  try { return JSON.parse(jsonStr); } catch {}
+  
+  // If truncated, try to close it properly
+  // Count unclosed braces and brackets
+  let depth = 0;
+  let inStr = false;
+  let escape = false;
+  for (const ch of jsonStr) {
+    if (escape) { escape = false; continue; }
+    if (ch === '\\') { escape = true; continue; }
+    if (ch === '"' && !escape) { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === '{' || ch === '[') depth++;
+    else if (ch === '}' || ch === ']') depth--;
+  }
+  
+  // Close any open string and add missing closing braces
+  if (inStr) jsonStr += '"';
+  if (depth > 0) jsonStr += '}'.repeat(depth);
+  
+  try { return JSON.parse(jsonStr); }
+  catch { 
+    // Last resort: extract what we can with a simple approach
+    const simple = jsonStr.replace(/,\s*["}]\s*$/, '') + '}';
+    try { return JSON.parse(simple); }
+    catch { throw new Error(`JSON parse failed after ${jsonStr.length} chars`); }
+  }
 }
 
 function merge(existing: any, u: any): any {
