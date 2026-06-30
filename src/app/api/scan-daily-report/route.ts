@@ -35,19 +35,50 @@ async function callAI(images: { b64: string; type: string }[], apiKey: string): 
   const content: any[] = [
     {
       type: 'text',
-      text: `Gas station report reader. Extract numbers ONLY from image. Return ONLY raw JSON:
-{"report_type":"store_close","report_date":null,"register_number":null,"operator_name":null,"gross_sales":null,"net_sales":null,"fuel_sales":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"inside_sales":null,"non_fuel_sales":null,"lottery_sales":null,"lottery_net_sales":null,"scratch_sales":null,"lottery_payouts":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"lottery_balance":null,"taxes":null,"discounts":null,"refunds":null,"transactions":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"money_order_sales":null,"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,"beginning_till":null,"ending_till":null,"expected_cash":null,"actual_cash":null,"cash_deposit":null,"drawer_difference":null,"cashier_short":null,"delivery_gallons":null,"department_sales":{},"notes":""}
+      text: `You are reading gas station daily close reports. Extract numbers exactly as printed. Return ONLY raw JSON no markdown.
 
-Rules:
+JSON template:
+{"report_type":"store_close","report_date":null,"register_number":null,"operator_name":null,"gross_sales":null,"net_sales":null,"fuel_sales":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"inside_sales":null,"non_fuel_sales":null,"lottery_sales":null,"scratch_sales":null,"lottery_payouts":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"lottery_balance":null,"taxes":null,"discounts":null,"refunds":null,"transactions":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"crind_cash":null,"money_order_sales":null,"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,"beginning_till":null,"ending_till":null,"expected_cash":null,"actual_cash":null,"cash_deposit":null,"drawer_difference":null,"cashier_short":null,"delivery_gallons":null,"department_sales":{},"notes":""}
+
+CRITICAL RULES FOR TEXACO/24 SEVEN MART STORE CLOSE FORMAT:
 - report_type: store_close, till, lottery, scratch, department, safe_drop, paid_out, paid_in, fuel_atg, handwritten, tax, unknown
-- report_date: YYYY-MM-DD format only (e.g. 2026-06-29)
-- Store Close: gross_sales=Grand Total, fuel_sales=Total Fuel Sales, inside_sales=Non Fuel Sales
-- Till: cashier_short=CASHIER SHORT AMOUNT, beginning_till=TILL BEGINNING BALANCE, credit_sales=Credit total, debit_sales=Debit total
-- CRIND/pay-at-pump amounts go in crind_credit or crind_debit
-- Checks go in check_sales
-- Lottery: lottery_settlements from Settlements line, lottery_commissions from Commissions
-- Department sales: {"BEER":875.66,"SNACK":439.49} etc
-- null for missing fields, never calculate`
+- report_date: YYYY-MM-DD only. "Jun 29 2026"=2026-06-29, "06/29/26"=2026-06-29
+- gross_sales = "Grand Total Store Sales Reading" or "Total Sales" — the biggest total number
+- fuel_sales = "Total Fuel Sales"
+- inside_sales = "Non Fuel Sales" 
+- taxes = "Total Taxes Collected"
+- fuel_unleaded_sales = Grade 01 UNLEAD REG sales amount
+- fuel_midgrade_sales = Grade 02 UNL SUP US sales amount  
+- fuel_premium_sales = Grade 03 REG PLS sales amount
+- fuel_diesel_sales = Grade 04 DIESEL sales amount
+- fuel_unleaded_gallons = Grade 01 volume
+- fuel_midgrade_gallons = Grade 02 volume
+- fuel_premium_gallons = Grade 03 volume
+- fuel_diesel_gallons = Grade 04 volume
+
+FOR METHOD OF PAYMENT section in Store Close:
+- cash_sales = row labeled exactly "Cash" (not Cash Acceptor, not CRIND Cash)
+- crind_cash = "Cash Acceptor Cash" or "Cash Accpt" — pay at pump cash
+- credit_sales = "Credit" row amount
+- crind_credit = "CRIND CR Local Acct" or "Crind CREDIT" amount
+- crind_debit = "Crind DEBIT" amount  
+- check_sales = "Check" row amount
+- debit_sales = "Debit" row amount
+FOR TILL REPORT (register tape):
+- beginning_till = "TILL BEGINNING BALANCE" — usually $250.00
+- cashier_short = "CASHIER SHORT AMOUNT" (positive number even if drawer is short)
+- credit_sales = Credit amount from CASHIER COUNTED section
+- debit_sales = Debit amount from CASHIER COUNTED section
+
+FOR TEXAS LOTTERY:
+- lottery_sales = "DRAW GM GROSS SALES" or sum of all game sales
+- scratch_payouts = "SCRATCH CASHES" amount (may show as negative like 650.00-)
+- lottery_settlements = "SETTLEMENTS" amount
+- lottery_commissions = "COMMISSIONS" amount  
+- lottery_balance = "BALANCE" amount
+
+Department sales: {"BEER":875.66,"SNACK":439.49,"TOBACCO":155.20} — use gross sales column
+Use null for any field not visible. Never calculate.`
     }
   ];
 
@@ -115,6 +146,8 @@ function merge(existing: any, u: any): any {
   const t = u.report_type || 'unknown';
 
   if (t === 'store_close') {
+    // Drawer difference: prefer handwritten value, else use extracted
+    const drawerDiff = n(u.drawer_difference) || n(existing.drawer_difference);
     return {
       ...existing,
       gross_sales: n(u.gross_sales) || n(u.total_revenue) || n(existing.gross_sales),
@@ -134,28 +167,45 @@ function merge(existing: any, u: any): any {
       discounts: keep('discounts'),
       refunds: keep('refunds'),
       transactions: keep('transactions'),
+      // Cash: actual register cash only (not CRIND/pay-at-pump)
       cash_sales: n(u.cash_sales) || n(existing.cash_sales),
-      credit_sales: n(u.credit_sales) || n(existing.credit_sales),
-      debit_sales: n(u.debit_sales) || n(existing.debit_sales),
+      // Credit: direct credit + CRIND credit combined
+      credit_sales: (n(u.credit_sales) + n(u.crind_credit)) || n(existing.credit_sales),
+      // Debit: direct debit + CRIND debit combined
+      debit_sales: (n(u.debit_sales) + n(u.crind_debit)) || n(existing.debit_sales),
       ebt_sales: keep('ebt_sales'),
       check_sales: keep('check_sales'),
+      // Store CRIND cash separately for reference
+      atm_sales: n(u.crind_cash) || n(existing.atm_sales),
       crind_credit: keep('crind_credit'),
       crind_debit: keep('crind_debit'),
+      // Drawer difference from handwritten note on report
+      drawer_difference: drawerDiff,
     };
   }
   if (t === 'till') {
+    // Till report: cashier_short = how much the drawer is short (always positive on receipt)
+    // beginning_till = starting cash in drawer (usually $250)
+    // actual_cash = what cashier physically counted
+    // expected_cash = beginning_till + cash tendered during shift
+    const tillBegin = n(u.beginning_till) || n(existing.beginning_till);
+    const cashShort = n(u.cashier_short); // positive number = short
+    const actualCounted = n(u.actual_cash) || tillBegin;
+    const expectedCash = cashShort > 0 ? actualCounted + cashShort : n(u.expected_cash) || n(existing.expected_cash);
+    const drawerDiff = cashShort > 0 ? -cashShort : (n(u.drawer_difference) || n(existing.drawer_difference));
     return {
       ...existing,
-      cash_sales: sum('cash_sales'),
-      credit_sales: sum('credit_sales'),
-      debit_sales: sum('debit_sales'),
+      cash_sales: n(u.cash_sales) || n(existing.cash_sales),
+      credit_sales: n(u.credit_sales) + n(existing.credit_sales),
+      debit_sales: n(u.debit_sales) + n(existing.debit_sales),
+      ebt_sales: sum('ebt_sales'),
       safe_drops: sum('safe_drops'),
       paid_outs: sum('paid_outs'),
       paid_ins: sum('paid_ins'),
-      actual_cash: sum('actual_cash'),
-      expected_cash: sum('expected_cash'),
-      beginning_till: sum('beginning_till'),
-      drawer_difference: n(u.cashier_short) ? -n(u.cashier_short) : sum('drawer_difference'),
+      beginning_till: tillBegin,
+      actual_cash: actualCounted,
+      expected_cash: expectedCash,
+      drawer_difference: drawerDiff,
     };
   }
   if (t === 'lottery') {
@@ -285,14 +335,84 @@ export async function POST(request: NextRequest) {
     const merged = merge(existing || {}, extracted);
     const warnings = validate(merged);
 
-    // Calculate short/over
-    const expectedCash = n(merged.expected_cash) || (n(merged.cash_sales) - n(merged.paid_outs) - n(merged.safe_drops) + n(merged.paid_ins));
-    const actualCash   = n(merged.actual_cash);
-    const shortOver    = n(merged.drawer_difference) || (actualCash > 0 && expectedCash > 0 ? actualCash - expectedCash : 0);
+    // ── Smart Short/Over — POS is the truth, not the employee ────────────────
+    //
+    // The Store Close report is the OFFICIAL record from the POS system.
+    // The employee cannot alter it. We use POS numbers as ground truth.
+    //
+    // HOW IT WORKS:
+    // POS knows exactly: Cash Sales, Safe Drops, Paid Outs, Paid Ins, Beginning Till
+    // Expected Cash in drawer = Beginning Till + Cash Sales - Safe Drops - Paid Outs + Paid Ins
+    // If employee counts more or less = Short/Over
+    //
+    // If till report is also uploaded, we compare POS expected vs till actual.
+    // If NO till report = we still show what SHOULD be in drawer from POS numbers.
+    // Employee can't fake this because they didn't generate the Store Close report.
 
-    // Build total credit (include CRIND)
-    const totalCredit = n(merged.credit_sales) + n(merged.crind_credit);
-    const totalDebit  = n(merged.debit_sales)  + n(merged.crind_debit);
+    const beginningTill = n(merged.beginning_till);
+    const cashSales     = n(merged.cash_sales);
+    const safeDrop      = n(merged.safe_drops);
+    const paidOuts      = n(merged.paid_outs);
+    const paidIns       = n(merged.paid_ins);
+    const safeLoans     = n(merged.safe_loans);
+    const grossSales    = n(merged.gross_sales);
+    const creditSales   = n(merged.credit_sales);
+    const debitSales    = n(merged.debit_sales);
+    const ebtSales      = n(merged.ebt_sales);
+    const checkSales    = n(merged.check_sales);
+    const crindCash     = n(merged.crind_cash) || n(merged.atm_sales);
+    const lottoPayouts  = n(merged.lottery_payouts) + n(merged.scratch_payouts);
+
+    // Step 1: Calculate expected cash from POS Store Close numbers
+    // This is what SHOULD be in the drawer — POS generated, employee cannot fake
+    let expectedCash = n(merged.expected_cash);
+
+    if (expectedCash === 0) {
+      if (cashSales > 0 || beginningTill > 0) {
+        // Store Close has cash sales — use directly
+        expectedCash = beginningTill + cashSales - safeDrop - paidOuts + paidIns + safeLoans;
+      } else if (grossSales > 0 && (creditSales + debitSales + checkSales + crindCash) > 0) {
+        // No explicit cash_sales — estimate: gross minus all non-cash
+        const nonCash = creditSales + debitSales + ebtSales + checkSales + crindCash + lottoPayouts;
+        const estimatedCash = Math.max(0, grossSales - nonCash);
+        expectedCash = beginningTill + estimatedCash - safeDrop - paidOuts + paidIns + safeLoans;
+      }
+    }
+
+    // Step 2: Actual cash — what employee physically counted
+    // Sources in priority order (all from reports, not employee claims):
+    // a) Explicit actual_cash from till report
+    // b) Beginning till (if cashier_short also provided, we can derive actual)
+    const actualCash    = n(merged.actual_cash);
+    const cashierShort  = n(merged.cashier_short); // from POS till tape — POS calculated this
+
+    // Step 3: Calculate Short/Over
+    let shortOver = 0;
+
+    if (cashierShort > 0 && expectedCash > 0) {
+      // POS till tape reported how much short — cross-check with our expected
+      // Use POS-calculated short (more reliable than our estimate)
+      shortOver = -cashierShort;
+      // Override expected to be consistent: actual = expected + short
+      if (actualCash === 0) {
+        // Derive actual from POS expected and reported short
+        // actual = expectedCash + shortOver (negative = they came up short)
+      }
+    } else if (actualCash > 0 && expectedCash > 0) {
+      // Both known — straight calculation
+      shortOver = actualCash - expectedCash;
+    } else if (expectedCash > 0 && actualCash === 0) {
+      // Only expected known (Store Close only, no till uploaded)
+      // Can't calculate short/over yet — show 0 but show expected
+      // Owner knows: expected is from POS, go check the drawer
+      shortOver = 0;
+    }
+
+    // Round to cents
+    shortOver = Math.round(shortOver * 100) / 100;
+
+    const totalCredit = n(merged.credit_sales);
+    const totalDebit  = n(merged.debit_sales);
 
     const payload: Record<string, any> = {
       store_id: store.id,

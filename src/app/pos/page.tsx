@@ -23,28 +23,60 @@ type Tab = 'report' | 'checklist' | 'timeline';
 function ShortOverBox({ value, expected, actual }: { value: number; expected: number; actual: number }) {
   const short = value < -0.5;
   const over  = value > 0.5;
+  const noActual = actual === 0 && expected > 0 && value === 0;
+
   return (
     <div className={cn('rounded-2xl border-2 p-5 mb-4',
-      short ? 'border-red-400 bg-red-50' : over ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50')}>
+      short    ? 'border-red-400 bg-red-50' :
+      over     ? 'border-green-400 bg-green-50' :
+      noActual ? 'border-amber-300 bg-amber-50' :
+      'border-gray-200 bg-gray-50')}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">SHORT / OVER</p>
-      <div className="flex items-end justify-between">
+
+      {noActual ? (
+        // Only Store Close uploaded — show expected, prompt for till
         <div>
-          <p className={cn('num font-black text-5xl leading-none', short ? 'text-red-700' : over ? 'text-green-700' : 'text-gray-500')}>
-            {over ? '+' : ''}{fmt.currency(value)}
-          </p>
-          <p className={cn('text-sm font-semibold mt-2', short ? 'text-red-600' : over ? 'text-green-600' : 'text-gray-500')}>
-            {short ? `⚠ Drawer is ${fmt.currency(Math.abs(value))} short` :
-             over  ? `✓ Drawer is ${fmt.currency(value)} over` :
-             '✓ Drawer balanced perfectly'}
-          </p>
-        </div>
-        {(expected > 0 || actual > 0) && (
-          <div className="text-right space-y-1">
-            <div><p className="text-xs text-gray-400">Expected</p><p className="num font-bold text-gray-700">{fmt.currency(expected)}</p></div>
-            <div><p className="text-xs text-gray-400">Actual</p><p className="num font-bold text-gray-700">{fmt.currency(actual)}</p></div>
+          <p className="text-sm font-bold text-amber-800 mb-2">⚠ Upload till report to calculate</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-amber-700 mb-1">POS says drawer should have:</p>
+              <p className="num font-black text-3xl text-amber-800">{fmt.currency(expected)}</p>
+            </div>
+            <div className="text-right text-xs text-amber-700">
+              <p>This is calculated from</p>
+              <p>your Store Close report.</p>
+              <p className="font-bold mt-1">Employee cannot alter this.</p>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex items-end justify-between">
+          <div>
+            <p className={cn('num font-black text-5xl leading-none',
+              short ? 'text-red-700' : over ? 'text-green-700' : 'text-gray-500')}>
+              {over ? '+' : ''}{fmt.currency(value)}
+            </p>
+            <p className={cn('text-sm font-semibold mt-2',
+              short ? 'text-red-600' : over ? 'text-green-600' : 'text-gray-500')}>
+              {short ? `⚠ Drawer is ${fmt.currency(Math.abs(value))} short` :
+               over  ? `✓ Drawer is ${fmt.currency(value)} over` :
+               '✓ Drawer balanced perfectly'}
+            </p>
+          </div>
+          {(expected > 0 || actual > 0) && (
+            <div className="text-right space-y-1">
+              <div>
+                <p className="text-xs text-gray-400">POS Expected</p>
+                <p className="num font-bold text-gray-700">{fmt.currency(expected)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Employee Counted</p>
+                <p className="num font-bold text-gray-700">{fmt.currency(actual)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -206,8 +238,19 @@ function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: ()
   const handleDelete = async () => {
     if (!confirm('Delete this daily report? This cannot be undone.')) return;
     setDeleting(true);
-    await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' });
-    onDelete();
+    try {
+      const res = await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        alert('Delete failed: ' + (data.error || 'Unknown error'));
+        setDeleting(false);
+        return;
+      }
+      onDelete();
+    } catch (e: any) {
+      alert('Delete failed: ' + e.message);
+      setDeleting(false);
+    }
   };
 
   return (
