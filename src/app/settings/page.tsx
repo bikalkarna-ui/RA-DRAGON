@@ -11,7 +11,7 @@ import {
   CheckCircle, AlertCircle
 } from 'lucide-react';
 
-type Tab = 'stores' | 'store_info' | 'employees' | 'account';
+type Tab = 'stores' | 'store_info' | 'employees' | 'account' | 'connector';
 
 // ─── Employee PIN manager ────────────────────────────────────────────────────
 function EmployeesTab({ store }: { store: any }) {
@@ -333,6 +333,115 @@ function StoresTab({ stores, currentStore, switchStore, createStore }: {
   );
 }
 
+
+// ─── Connector tab ─────────────────────────────────────────────────────────────
+function ConnectorTab({ store }: { store: any }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const generate = async () => {
+    setLoading(true);
+    const res = await fetch('/api/connector/register', { method: 'POST' });
+    const data = await res.json();
+    setResult(data);
+    setLoading(false);
+  };
+
+  const copy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* What is this */}
+      <div className="tile p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
+            <span className="text-accent text-lg font-black">R</span>
+          </div>
+          <div>
+            <p className="font-bold text-text">RA Dragon Connector</p>
+            <p className="text-xs text-muted">Windows app that auto-syncs your POS to RA Dragon</p>
+          </div>
+        </div>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>✓ Installs on your back-office PC (where Gilbarco Passport runs)</p>
+          <p>✓ Automatically reads sales, inventory, and reports directly from POS</p>
+          <p>✓ Syncs to your RA Dragon account every 30 seconds</p>
+          <p>✓ Works offline — queues data until internet returns</p>
+        </div>
+      </div>
+
+      {/* Step 1: Get connector */}
+      <div className="tile p-5">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 1 — Get the Connector App</p>
+        <p className="text-sm text-gray-600 mb-4">Download the Windows connector and install it on your store's back-office computer (the PC where Gilbarco Passport is installed).</p>
+        <div className="rounded-xl bg-gray-50 border border-border p-4 text-sm font-mono text-gray-700 mb-3">
+          Coming soon — download link will appear here
+        </div>
+        <p className="text-xs text-muted">The connector runs silently in the background as a Windows Service.</p>
+      </div>
+
+      {/* Step 2: Generate key */}
+      <div className="tile p-5">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 2 — Generate Your API Key</p>
+        <p className="text-sm text-gray-600 mb-4">Generate a secret key that connects your store to the RA Dragon connector. Enter this key in the connector's Settings screen.</p>
+
+        {!result && (
+          <button onClick={generate} disabled={loading}
+            className="btn btn-accent btn-full gap-2">
+            {loading ? 'Generating…' : '🔑 Generate Connector Key'}
+          </button>
+        )}
+
+        {result?.success && (
+          <div className="space-y-3">
+            <div className="rounded-xl bg-green-50 border border-green-200 p-3 mb-3">
+              <p className="text-xs font-bold text-green-800 mb-1">✓ Key generated — copy these into the connector's Settings</p>
+            </div>
+
+            {[
+              { label: 'Cloud URL', value: result.cloud_url },
+              { label: 'Store ID', value: result.store_id },
+              { label: 'API Key', value: result.api_key },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-xs text-muted font-semibold mb-1">{label}</p>
+                <div className="flex gap-2">
+                  <div className="flex-1 rounded-xl bg-gray-50 border border-border px-3 py-2 text-xs font-mono text-gray-700 truncate">{value}</div>
+                  <button onClick={() => copy(value, label)}
+                    className={cn('flex h-9 w-16 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors',
+                      copied === label ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}>
+                    {copied === label ? '✓' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            <button onClick={generate} disabled={loading} className="btn btn-ghost btn-full text-sm mt-2">
+              Regenerate key (invalidates old key)
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Step 3: Setup */}
+      <div className="tile p-5">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 3 — Enter in Connector Settings</p>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>1. Open RA Dragon Connector on your store PC</p>
+          <p>2. Right-click the tray icon → Settings</p>
+          <p>3. Paste the Cloud URL, Store ID, and API Key</p>
+          <p>4. Click Save — the connector will auto-detect your POS and start syncing</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Account tab ─────────────────────────────────────────────────────────────
 function AccountTab() {
   const [email, setEmail] = useState('');
@@ -385,6 +494,7 @@ export default function SettingsPage() {
     { id: 'store_info', label: '✏️ Store Info',  show: !!store },
     { id: 'employees',  label: '👥 Employees',   show: !!store },
     { id: 'account',    label: '👤 Account',     show: true },
+    { id: 'connector', label: '🔌 Connector' },
   ];
 
   if (!mounted) return null;

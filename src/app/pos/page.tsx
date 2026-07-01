@@ -20,63 +20,157 @@ const fmtTime  = (d: string) => { try { return new Date(d).toLocaleTimeString('e
 type Tab = 'report' | 'checklist' | 'timeline';
 
 // ── Short/Over Box ────────────────────────────────────────────────────────────
-function ShortOverBox({ value, expected, actual }: { value: number; expected: number; actual: number }) {
-  const short = value < -0.5;
-  const over  = value > 0.5;
-  const noActual = actual === 0 && expected > 0 && value === 0;
+function ShortOverBox({ value, expected, actual, reportDate, onUpdate }: {
+  value: number; expected: number; actual: number;
+  reportDate?: string; onUpdate?: () => void;
+}) {
+  const [showCount, setShowCount] = useState(false);
+  const [cashInput, setCashInput] = useState('');
+  const [counting, setCounting] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
-  return (
-    <div className={cn('rounded-2xl border-2 p-5 mb-4',
-      short    ? 'border-red-400 bg-red-50' :
-      over     ? 'border-green-400 bg-green-50' :
-      noActual ? 'border-amber-300 bg-amber-50' :
-      'border-gray-200 bg-gray-50')}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">SHORT / OVER</p>
+  const short   = value < -0.50;
+  const over    = value > 0.50;
+  const noCount = actual === 0 && expected > 0 && value === 0;
 
-      {noActual ? (
-        // Only Store Close uploaded — show expected, prompt for till
-        <div>
-          <p className="text-sm font-bold text-amber-800 mb-2">⚠ Upload till report to calculate</p>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-amber-700 mb-1">POS says drawer should have:</p>
-              <p className="num font-black text-3xl text-amber-800">{fmt.currency(expected)}</p>
-            </div>
-            <div className="text-right text-xs text-amber-700">
-              <p>This is calculated from</p>
-              <p>your Store Close report.</p>
-              <p className="font-bold mt-1">Employee cannot alter this.</p>
-            </div>
+  const submitCount = async () => {
+    if (!cashInput || !reportDate) return;
+    setCounting(true);
+    try {
+      const res = await fetch('/api/count-cash', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate }),
+      });
+      const data = await res.json();
+      setResult(data);
+      if (data.success) onUpdate?.();
+    } catch { setResult({ error: 'Network error' }); }
+    setCounting(false);
+  };
+
+  const CountForm = () => (
+    <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">COUNT YOUR CASH</p>
+      {expected > 0 && (
+        <p className="text-xs text-amber-700 mb-3">
+          POS says drawer should have <span className="num font-black">{fmt.currency(expected)}</span>.
+          Count what is actually in the drawer and enter it below.
+        </p>
+      )}
+      {!result ? (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <input type="number" step="0.01" min="0" value={cashInput}
+              onChange={e => setCashInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submitCount()}
+              placeholder="0.00" autoFocus
+              className="inp num font-black text-2xl text-center flex-1 h-14" />
+            <button onClick={submitCount} disabled={!cashInput || counting}
+              className={cn('btn btn-accent h-14 px-6 text-base font-bold gap-1', counting && 'opacity-60')}>
+              {counting ? 'Checking…' : 'Submit'}
+            </button>
           </div>
+          {!noCount && (
+            <button onClick={() => setShowCount(false)} className="text-xs text-muted hover:text-sub">
+              Cancel
+            </button>
+          )}
+        </div>
+      ) : result.error ? (
+        <div>
+          <p className="text-sm text-red-700">{result.error}</p>
+          <button onClick={() => setResult(null)} className="text-xs text-accent mt-2">Try again</button>
         </div>
       ) : (
-        <div className="flex items-end justify-between">
-          <div>
-            <p className={cn('num font-black text-5xl leading-none',
-              short ? 'text-red-700' : over ? 'text-green-700' : 'text-gray-500')}>
-              {over ? '+' : ''}{fmt.currency(value)}
+        <div>
+          {/* Result box */}
+          <div className={cn('rounded-xl p-4 mb-3 border-2',
+            result.status === 'balanced' ? 'bg-green-50 border-green-400' :
+            result.status === 'short'    ? 'bg-red-50 border-red-400' :
+                                          'bg-blue-50 border-blue-400')}>
+            <p className={cn('num font-black text-4xl leading-none mb-1',
+              result.status === 'balanced' ? 'text-green-700' :
+              result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
+              {(result.short_over || 0) >= 0 ? '+' : ''}{fmt.currency(result.short_over || 0)}
             </p>
-            <p className={cn('text-sm font-semibold mt-2',
-              short ? 'text-red-600' : over ? 'text-green-600' : 'text-gray-500')}>
-              {short ? `⚠ Drawer is ${fmt.currency(Math.abs(value))} short` :
-               over  ? `✓ Drawer is ${fmt.currency(value)} over` :
-               '✓ Drawer balanced perfectly'}
+            <p className={cn('text-sm font-bold',
+              result.status === 'balanced' ? 'text-green-700' :
+              result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
+              {result.status === 'balanced' ? '✓ Drawer is balanced — good job!' :
+               result.status === 'short'    ? `⚠ Drawer is ${fmt.currency(Math.abs(result.short_over || 0))} SHORT` :
+                                              `Drawer is ${fmt.currency(result.short_over || 0)} OVER`}
             </p>
+            <div className="flex gap-4 mt-2 text-xs text-gray-600">
+              <span>You counted: <span className="num font-bold">{fmt.currency(result.counted || 0)}</span></span>
+              <span>POS expected: <span className="num font-bold">{fmt.currency(result.expected || 0)}</span></span>
+            </div>
           </div>
-          {(expected > 0 || actual > 0) && (
-            <div className="text-right space-y-1">
-              <div>
-                <p className="text-xs text-gray-400">POS Expected</p>
-                <p className="num font-bold text-gray-700">{fmt.currency(expected)}</p>
+
+          {/* AI reason */}
+          {result.ai_reason && (
+            <div className="rounded-xl bg-violet-50 border border-violet-200 p-3 mb-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Zap className="h-3.5 w-3.5 text-violet-600" />
+                <p className="text-xs font-bold text-violet-700">AI Analysis</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-400">Employee Counted</p>
-                <p className="num font-bold text-gray-700">{fmt.currency(actual)}</p>
+              <p className="text-xs text-violet-700">{result.ai_reason}</p>
+            </div>
+          )}
+
+          {/* Suggestions */}
+          {result.ai_suggestions?.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs font-bold text-text mb-1.5">What to check:</p>
+              <div className="space-y-1.5">
+                {result.ai_suggestions.map((s: string, i: number) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-gray-700">
+                    <span className="text-accent font-black shrink-0">{i+1}.</span>
+                    <span>{s}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
+          <button onClick={() => { setResult(null); setCashInput(''); }}
+            className="text-xs text-muted hover:text-sub">
+            Count again
+          </button>
         </div>
       )}
+    </div>
+  );
+
+  // No actual cash counted yet — show prompt to count
+  if (noCount || showCount) return <CountForm />;
+
+  // Show short/over result with option to recount
+  return (
+    <div className={cn('rounded-2xl border-2 p-5 mb-4',
+      short ? 'border-red-400 bg-red-50' : over ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50')}>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">SHORT / OVER</p>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className={cn('num font-black text-5xl leading-none',
+            short ? 'text-red-700' : over ? 'text-green-700' : 'text-gray-500')}>
+            {over ? '+' : ''}{fmt.currency(value)}
+          </p>
+          <p className={cn('text-sm font-semibold mt-2',
+            short ? 'text-red-600' : over ? 'text-green-600' : 'text-gray-500')}>
+            {short ? `⚠ Drawer is ${fmt.currency(Math.abs(value))} short` :
+             over  ? `Drawer is ${fmt.currency(value)} over` : '✓ Drawer balanced'}
+          </p>
+          <button onClick={() => setShowCount(true)}
+            className="mt-2 text-xs font-semibold text-accent hover:underline flex items-center gap-1">
+            <DollarSign className="h-3 w-3" />Count cash manually
+          </button>
+        </div>
+        {(expected > 0 || actual > 0) && (
+          <div className="text-right space-y-1.5">
+            <div><p className="text-xs text-gray-400">POS Expected</p><p className="num font-bold text-gray-700">{fmt.currency(expected)}</p></div>
+            {actual > 0 && <div><p className="text-xs text-gray-400">Counted</p><p className="num font-bold text-gray-700">{fmt.currency(actual)}</p></div>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -274,7 +368,7 @@ function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: ()
           </div>
         </div>
 
-        <ShortOverBox value={shortOver} expected={n(report.expected_cash)} actual={n(report.actual_cash)} />
+        <ShortOverBox value={shortOver} expected={n(report.expected_cash)} actual={n(report.actual_cash)} reportDate={report.report_date} onUpdate={onRefresh} />
 
         {warnings.length > 0 && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 mb-3">
