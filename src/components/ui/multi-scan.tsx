@@ -6,6 +6,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, X, Send, Loader2, CheckCircle, AlertCircle, Plus, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 
 interface MultiScanProps {
   endpoint: string;
@@ -64,7 +65,16 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       const res = await fetch(endpoint, { method: 'POST', body: fd });
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      if (!res.ok) {
+        // Make error message user-friendly
+        let errMsg = data.error || 'Upload failed';
+        if (errMsg.includes('string') && errMsg.includes('pattern')) {
+          errMsg = 'Date format error — please try again';
+        } else if (errMsg.includes('not authenticated')) {
+          errMsg = 'Please log in again';
+        }
+        throw new Error(errMsg);
+      }
 
       setState('done');
       setMsg(`${images.length} page${images.length > 1 ? 's' : ''} processed`);

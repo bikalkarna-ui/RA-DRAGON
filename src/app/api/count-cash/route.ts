@@ -23,18 +23,30 @@ export async function POST(request: NextRequest) {
 
     if (!report) return NextResponse.json({ error: 'No report found for this date' }, { status: 404 });
 
-    // Calculate expected cash from POS numbers (ground truth)
+    // Calculate expected cash — for fuel stations most payment is credit/CRIND
+    // Expected = beginning till + cash sales - safe drops - paid outs + paid ins + safe loans
     const beginningTill = n(report.beginning_till);
     const cashSales     = n(report.cash_sales);
     const safeDrops     = n(report.safe_drops);
     const paidOuts      = n(report.paid_outs);
     const paidIns       = n(report.paid_ins);
     const safeLoans     = n(report.safe_loans);
+    const grossSales    = n(report.gross_sales);
+    const creditSales   = n(report.credit_sales);
+    const debitSales    = n(report.debit_sales);
+    const checkSales    = n(report.check_sales);
+    const ebtSales      = n(report.ebt_sales);
+    const crindCash     = n(report.atm_sales);
 
-    // POS expected = what SHOULD be in drawer per POS system
     let expectedCash = n(report.expected_cash);
-    if (!expectedCash && (cashSales > 0 || beginningTill > 0)) {
-      expectedCash = beginningTill + cashSales - safeDrops - paidOuts + paidIns + safeLoans;
+    if (!expectedCash) {
+      if (cashSales > 0 || beginningTill > 0) {
+        expectedCash = beginningTill + cashSales - safeDrops - paidOuts + paidIns + safeLoans;
+      } else if (grossSales > 0) {
+        const nonCash = creditSales + debitSales + ebtSales + checkSales + crindCash;
+        const estCash = Math.max(0, grossSales - nonCash);
+        expectedCash = beginningTill + estCash - safeDrops - paidOuts + paidIns + safeLoans;
+      }
     }
 
     // Short/Over = what employee counted vs what POS says should be there
