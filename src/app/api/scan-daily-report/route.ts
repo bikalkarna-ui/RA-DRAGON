@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const MODEL = 'anthropic/claude-haiku-4-5';
+const MODEL = 'google/gemini-2.0-flash-001';
 
 // ── Safe converters ──────────────────────────────────────────────────────────
 function toNum(v: any): number {
@@ -93,16 +93,28 @@ All amounts positive. null for missing. Never calculate.`
     }
   }
 
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] }),
-  });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0,300)}`);
-  const data = await res.json();
-  let raw = (data?.choices?.[0]?.message?.content ?? '').trim()
-    .replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+  // Try primary model, fall back to secondary if it fails
+  const MODELS = [MODEL, 'anthropic/claude-haiku-4-5', 'openai/gpt-4o-mini'];
+  let raw = '';
+  let lastErr = '';
+  
+  for (const model of MODELS) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: 4000, messages: [{ role: 'user', content }] }),
+      });
+      if (!res.ok) { lastErr = `${model} returned ${res.status}`; continue; }
+      const data = await res.json();
+      const candidate = (data?.choices?.[0]?.message?.content ?? '').trim()
+        .replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+      if (candidate && candidate.includes('{')) { raw = candidate; break; }
+      lastErr = `${model} returned empty response`;
+    } catch (e: any) { lastErr = e.message; }
+  }
+  
+  if (!raw) throw new Error(`All models failed. Last error: ${lastErr}`);
 
   const match = raw.match(/\{[\s\S]*/);
   if (!match) throw new Error(`No JSON found. AI returned: ${raw.slice(0,300)}`);

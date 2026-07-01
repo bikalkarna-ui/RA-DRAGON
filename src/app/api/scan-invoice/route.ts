@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const MODEL = 'anthropic/claude-haiku-4-5';
+const MODEL = 'google/gemini-2.0-flash-001';
 
 function toNum(v: any): number {
   if (v === null || v === undefined || v === '') return 0;
