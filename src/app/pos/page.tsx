@@ -376,6 +376,13 @@ function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: ()
             {warnings.map((w: string, i: number) => <p key={i} className="text-xs text-amber-700">• {w}</p>)}
           </div>
         )}
+        {/* Deliveries logged */}
+        {report.ai_notes && (report.ai_notes.includes('deliv') || report.ai_notes.includes('check') || report.ai_notes.includes('ticket')) && (
+          <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 mb-3">
+            <div className="flex items-center gap-1.5 mb-1"><CheckCircle className="h-4 w-4 text-blue-600" /><p className="text-xs font-bold text-blue-800">Auto-processed from reports</p></div>
+            {report.ai_notes.split(' | ').map((note: string, i: number) => note && <p key={i} className="text-xs text-blue-700">• {note}</p>)}
+          </div>
+        )}
 
         {/* Payment strip */}
         <div className="grid grid-cols-4 gap-2 mb-4">

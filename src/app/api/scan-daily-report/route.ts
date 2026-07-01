@@ -3,57 +3,138 @@ import { createClient } from '@/lib/supabase/server';
 
 const MODEL = 'anthropic/claude-haiku-4-5';
 
-// ── Date normalization — handles ANY format AI might return ──────────────────
+// ── Safe converters ──────────────────────────────────────────────────────────
+function toNum(v: any): number {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = Number(String(v).replace(/[$,\s\-\(\)]/g, '').replace(/−/g, ''));
+  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
+}
+
 function toDate(raw: any, fallback: string): string {
   if (!raw) return fallback;
   const s = String(raw).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   try {
-    // MM/DD/YYYY or MM/DD/YY
     const a = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if (a) { const y = a[3].length===2?'20'+a[3]:a[3]; return `${y}-${a[1].padStart(2,'0')}-${a[2].padStart(2,'0')}`; }
-    // "Jun 29 2026" or "June 29, 2026"
     const M: Record<string,string> = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
-    const b = s.match(/([a-z]{3})\w*\s+(\d{1,2})[,\s]+(\d{4})/i);
+    const b = s.match(/([a-z]{3})\w*[\s,]+(\d{1,2})[\s,]+(\d{4})/i);
     if (b) { const mn=M[b[1].toLowerCase()]; if(mn) return `${b[3]}-${mn}-${b[2].padStart(2,'0')}`; }
     const d = new Date(s); if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
   } catch {}
   return fallback;
 }
 
-// ── Safe number — returns 0 for anything that isn't a real positive-ish number ─
-function toNum(v: any): number {
-  if (v === null || v === undefined || v === '') return 0;
-  const n = Number(String(v).replace(/[$,\s]/g, ''));
-  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
-}
-
-// ── Call AI — send ALL images in one call, get one JSON back ─────────────────
-async function callAI(images: { b64: string; mime: string }[], apiKey: string): Promise<any> {
+// ── AI extraction ────────────────────────────────────────────────────────────
+async function callAI(images: {b64:string;mime:string}[], apiKey: string): Promise<any> {
   const content: any[] = [{
     type: 'text',
-    text: `You are reading gas station close reports. There may be multiple images — read ALL of them.
-Extract every number you can see. Return ONLY this JSON (no markdown, no explanation):
+    text: `You are reading gas station daily close reports for 24 Seven Mart / Texaco.
+Read ALL images carefully. Extract every number exactly as printed.
+Return ONLY this JSON (no markdown, no text before/after):
 
-{"report_type":"store_close","report_date":null,"gross_sales":null,"fuel_sales":null,"inside_sales":null,"non_fuel_sales":null,"taxes":null,"discounts":null,"refunds":null,"transactions":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"crind_cash":null,"safe_drops":null,"paid_outs":null,"paid_ins":null,"safe_loans":null,"beginning_till":null,"ending_till":null,"expected_cash":null,"actual_cash":null,"cashier_short":null,"lottery_sales":null,"scratch_sales":null,"lottery_payouts":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"department_sales":{}}
+{
+  "report_type": "store_close",
+  "report_date": null,
+  "gross_sales": null,
+  "fuel_sales": null,
+  "inside_sales": null,
+  "non_fuel_sales": null,
+  "taxes": null,
+  "discounts": null,
+  "refunds": null,
+  "transactions": null,
+  "customers": null,
+  "cash_sales": null,
+  "credit_sales": null,
+  "debit_sales": null,
+  "ebt_sales": null,
+  "check_sales": null,
+  "crind_credit": null,
+  "crind_debit": null,
+  "crind_cash": null,
+  "safe_drops": null,
+  "safe_loans": null,
+  "paid_ins": null,
+  "paid_outs": null,
+  "beginning_till": null,
+  "cashier_short": null,
+  "cashier_over": null,
+  "lottery_sales": null,
+  "scratch_sales": null,
+  "lottery_payouts": null,
+  "scratch_payouts": null,
+  "lottery_settlements": null,
+  "lottery_commissions": null,
+  "lottery_balance": null,
+  "fuel_unleaded_sales": null,
+  "fuel_midgrade_sales": null,
+  "fuel_premium_sales": null,
+  "fuel_diesel_sales": null,
+  "fuel_unleaded_gallons": null,
+  "fuel_midgrade_gallons": null,
+  "fuel_premium_gallons": null,
+  "fuel_diesel_gallons": null,
+  "department_sales": {},
+  "checks_given": [],
+  "deliveries": [],
+  "tickets_activated": [],
+  "safe_drop_list": [],
+  "paid_out_list": [],
+  "notes": ""
+}
 
-RULES:
-- report_date: ALWAYS output as YYYY-MM-DD. Examples: "Jun 29 2026" → "2026-06-29", "06/29/26" → "2026-06-29", "6/28/2026" → "2026-06-28"
-- report_type: store_close | till | lottery | scratch | department | safe_drop | paid_out | fuel_atg | handwritten | unknown
-- gross_sales: the LARGEST total — "Grand Total Store Sales Reading" or "Total Sales" or "Total Revenue"
-- fuel_sales: "Total Fuel Sales" line
-- inside_sales: "Non Fuel Sales" line  
-- cash_sales: ONLY the "Cash" row in Method of Payment (NOT Cash Acceptor, NOT CRIND)
-- crind_cash: "Cash Acceptor Cash" or "Cash Accpt Chg Due" rows
-- crind_credit: "CRIND CR Local Acct" or "Crind CREDIT" rows
-- check_sales: "Check" row
-- beginning_till: "TILL BEGINNING BALANCE" from till tape
-- cashier_short: "CASHIER SHORT AMOUNT" from till tape (always positive)
-- lottery_settlements: "SETTLEMENTS" line on lottery report
-- lottery_commissions: "COMMISSIONS" line
-- scratch_payouts: "SCRATCH CASHES" line (ignore the minus sign, store as positive)
-- department_sales: object like {"BEER":875.66,"SNACK":439.49} using Gross Sales $ column
-- Use null for fields not visible. Never calculate. Never guess.`
+EXTRACTION RULES:
+
+REPORT DATE: Always YYYY-MM-DD. "Jun 30 2026"="2026-06-30", "06/30/2026"="2026-06-30", "06,30,2026"="2026-06-30"
+
+REPORT TYPE: store_close | till | lottery | scratch | department | handwritten | fuel_atg | unknown
+
+STORE CLOSE (Grand Total line):
+- gross_sales = "Grand Total Store Sales Reading" biggest total
+- fuel_sales = "Total Fuel Sales"
+- inside_sales = "Non Fuel Sales" 
+- taxes = "Total Taxes Collected"
+- fuel_unleaded_sales = Grade 01 UNLEAD REG sales
+- fuel_midgrade_sales = Grade 02 UNL SUP US sales
+- fuel_premium_sales = Grade 03 REG PLS sales
+- fuel_diesel_sales = Grade 04 DIESEL #1 sales
+- fuel_unleaded_gallons = Grade 01 volume
+- check_sales = "Check" row in Method of Payment
+- crind_credit = "CRIND CR Local Acct" row
+- crind_debit = "Crind DEBIT" row
+- discounts = "Other Discounts" or "Fuel Discounts"
+
+TILL REPORT:
+- beginning_till = "TILL BEGINNING BALANCE"
+- cashier_short = "CASHIER SHORT AMOUNT" (store as positive number)
+- cashier_over = "CASHIER OVER AMOUNT" (store as positive number)
+- safe_drops = total of all safe drops (Cashier Safe Drops total)
+- safe_loans = "SAFE LOANS" amount
+- paid_ins = "PAID INS" total
+- paid_outs = "PAID OUTS" total (store as positive)
+- credit_sales = Credit from CASHIER COUNTED section
+- debit_sales = Debit from CASHIER COUNTED section
+
+TEXAS LOTTERY:
+- lottery_sales = "DRAW GM NET SALES" or "DRAW GM GROSS SALES"
+- scratch_payouts = "SCRATCH CASHES" amount (positive, ignore minus sign)
+- lottery_settlements = "SETTLEMENTS" amount
+- lottery_commissions = "COMMISSIONS" amount (positive, ignore minus sign)
+- lottery_balance = "BALANCE" amount
+
+HANDWRITTEN DAILY REPORT (24/7 Mart Daily Report form):
+- safe_drop_list = array of each drop: [{"amount":293,"time":"6:18AM","by":"Shayan"},...]
+- safe_drops = sum of all safe drop amounts
+- paid_ins = total paid in cash
+- paid_outs = total paid out cash
+- checks_given = array: [{"number":"4573","payee":"Tylers Ice","amount":829},...]
+- deliveries = array: [{"vendor":"Pepsi","amount":681.61},...]
+- tickets_activated = array: [{"book":"2739","slot":2,"price":5},...]
+
+DEPARTMENT SALES: {"BEER":820.51,"SNACK":895.47,"SODA":509.62,...} use Gross Sales $ column
+
+Use null for missing fields. Never calculate. Never guess. Read exactly as printed.`
   }];
 
   for (const img of images) {
@@ -67,7 +148,7 @@ RULES:
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 2000, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 3000, messages: [{ role: 'user', content }] }),
   });
 
   if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0,200)}`);
@@ -75,15 +156,13 @@ RULES:
   let raw = (data?.choices?.[0]?.message?.content ?? '').trim()
     .replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
 
-  // Find JSON object
   const match = raw.match(/\{[\s\S]*/);
-  if (!match) throw new Error(`No JSON in response: ${raw.slice(0,200)}`);
+  if (!match) throw new Error(`No JSON found. Got: ${raw.slice(0,200)}`);
   let js = match[0];
 
-  // Try parse as-is
   try { return JSON.parse(js); } catch {}
 
-  // Try to close truncated JSON
+  // Recovery: close truncated JSON
   let depth=0, inStr=false, esc=false;
   for (const ch of js) {
     if (esc) { esc=false; continue; }
@@ -92,150 +171,147 @@ RULES:
     if (!inStr) { if(ch==='{'||ch==='[') depth++; else if(ch==='}'||ch===']') depth--; }
   }
   if (inStr) js+='"';
-  if (depth>0) js+='}'.repeat(depth);
-  try { return JSON.parse(js); } catch {}
-
-  // Last resort — remove last incomplete key-value
-  const clean = js.replace(/,\s*"[^"]*"\s*:\s*[^,}\]]*$/, '') + '}';
-  try { return JSON.parse(clean); } catch { throw new Error(`JSON parse failed after recovery attempt`); }
+  while (depth > 0) { js+='}'; depth--; }
+  try { return JSON.parse(js); } catch { throw new Error(`JSON parse failed`); }
 }
 
-// ── Smart Short/Over — POS is ground truth, not the employee ────────────────
+// ── Merge extracted data into existing report ────────────────────────────────
+function merge(existing: any, u: any): any {
+  const n = toNum;
+  const keep = (f: string) => n(existing?.[f]) || n(u[f]);
+  const sum  = (f: string) => n(existing?.[f]) + n(u[f]);
+  const t = (u.report_type||'unknown').toLowerCase();
+
+  const base = { ...existing };
+
+  if (t === 'store_close') {
+    return { ...base,
+      gross_sales: n(u.gross_sales)||n(base.gross_sales),
+      fuel_sales: n(u.fuel_sales)||n(base.fuel_sales),
+      inside_sales: n(u.inside_sales)||n(u.non_fuel_sales)||n(base.inside_sales),
+      taxes: keep('taxes'), discounts: keep('discounts'), refunds: keep('refunds'),
+      transactions: keep('transactions'), customers: keep('customers'),
+      cash_sales: n(u.cash_sales)||n(base.cash_sales),
+      credit_sales: n(u.credit_sales)+n(u.crind_credit)||n(base.credit_sales),
+      debit_sales: n(u.debit_sales)+n(u.crind_debit)||n(base.debit_sales),
+      ebt_sales: keep('ebt_sales'),
+      check_sales: keep('check_sales'),
+      atm_sales: n(u.crind_cash)||n(base.atm_sales),
+      fuel_unleaded_sales: keep('fuel_unleaded_sales'), fuel_midgrade_sales: keep('fuel_midgrade_sales'),
+      fuel_premium_sales: keep('fuel_premium_sales'), fuel_diesel_sales: keep('fuel_diesel_sales'),
+      fuel_unleaded_gallons: keep('fuel_unleaded_gallons'), fuel_midgrade_gallons: keep('fuel_midgrade_gallons'),
+      fuel_premium_gallons: keep('fuel_premium_gallons'), fuel_diesel_gallons: keep('fuel_diesel_gallons'),
+      department_sales: { ...(base.department_sales||{}), ...(u.department_sales||{}) },
+    };
+  }
+
+  if (t === 'till') {
+    // Multiple till reports merge by summing shorts/overs across registers
+    const newShort = n(u.cashier_short);
+    const newOver  = n(u.cashier_over);
+    const prevShort = n(base.cashier_short);
+    const prevOver  = n(base.cashier_over);
+    return { ...base,
+      beginning_till: keep('beginning_till'),
+      safe_drops: n(u.safe_drops)||n(base.safe_drops),
+      safe_loans: sum('safe_loans'),
+      paid_ins: sum('paid_ins'),
+      paid_outs: sum('paid_outs'),
+      credit_sales: n(u.credit_sales)+n(base.credit_sales)||n(base.credit_sales),
+      debit_sales: n(u.debit_sales)+n(base.debit_sales)||n(base.debit_sales),
+      cashier_short: prevShort + newShort,
+      cashier_over: prevOver + newOver,
+    };
+  }
+
+  if (t === 'lottery') {
+    return { ...base,
+      lottery_sales: keep('lottery_sales'),
+      scratch_sales: keep('scratch_sales'),
+      lottery_payouts: sum('lottery_payouts'),
+      scratch_payouts: n(u.scratch_payouts)||n(base.scratch_payouts),
+      lottery_settlement: n(u.lottery_settlements)||n(base.lottery_settlement),
+      lottery_commission: n(u.lottery_commissions)||n(base.lottery_commission),
+    };
+  }
+
+  if (t === 'handwritten') {
+    return { ...base,
+      safe_drops: n(u.safe_drops)||n(base.safe_drops),
+      paid_ins: sum('paid_ins'),
+      paid_outs: sum('paid_outs'),
+      check_sales: sum('check_sales'),
+      checks_given: [...(base.checks_given||[]), ...(u.checks_given||[])],
+      deliveries: [...(base.deliveries||[]), ...(u.deliveries||[])],
+      tickets_activated: [...(base.tickets_activated||[]), ...(u.tickets_activated||[])],
+    };
+  }
+
+  if (t === 'department') {
+    return { ...base, department_sales: { ...(base.department_sales||{}), ...(u.department_sales||{}) } };
+  }
+
+  // Generic merge
+  const m = { ...base };
+  for (const [k,v] of Object.entries(u)) {
+    if (v !== null && v !== 0 && v !== '' && !['report_type','report_date','notes'].includes(k) && !(m as any)[k]) (m as any)[k] = v;
+  }
+  if (u.department_sales && Object.keys(u.department_sales).length>0)
+    m.department_sales = { ...(base.department_sales||{}), ...(u.department_sales||{}) };
+  return m;
+}
+
+// ── Short/Over calculation — POS is ground truth ─────────────────────────────
 function calcShortOver(r: any) {
   const n = toNum;
+  // Net short/over across ALL registers
+  // cashier_short and cashier_over are summed from all till reports
+  const totalShort = n(r.cashier_short);
+  const totalOver  = n(r.cashier_over);
+  const netShortOver = Math.round((totalOver - totalShort) * 100) / 100;
+
+  // Expected cash from POS
   const beginningTill = n(r.beginning_till);
   const cashSales     = n(r.cash_sales);
   const safeDrops     = n(r.safe_drops);
   const paidOuts      = n(r.paid_outs);
   const paidIns       = n(r.paid_ins);
   const safeLoans     = n(r.safe_loans);
-  const actualCash    = n(r.actual_cash);
-  const cashierShort  = n(r.cashier_short);
-  const grossSales    = n(r.gross_sales);
-  const creditSales   = n(r.credit_sales) + n(r.crind_credit);
-  const debitSales    = n(r.debit_sales)  + n(r.crind_debit);
-  const ebtSales      = n(r.ebt_sales);
-  const checkSales    = n(r.check_sales);
-  const crindCash     = n(r.crind_cash);
 
-  // Step 1: Calculate expected cash from POS Store Close (ground truth)
   let expectedCash = n(r.expected_cash);
-  if (!expectedCash) {
-    if (cashSales > 0 || beginningTill > 0) {
-      // Direct from POS cash flow
-      expectedCash = beginningTill + cashSales - safeDrops - paidOuts + paidIns + safeLoans;
-    } else if (grossSales > 0 && (creditSales + debitSales + checkSales + crindCash) > 0) {
-      // Estimate cash: gross minus all non-cash
-      const nonCash = creditSales + debitSales + ebtSales + checkSales + crindCash;
-      const estCash = Math.max(0, grossSales - nonCash);
-      expectedCash = beginningTill + estCash - safeDrops - paidOuts + paidIns + safeLoans;
-    }
+  if (!expectedCash && (cashSales > 0 || beginningTill > 0)) {
+    expectedCash = beginningTill + cashSales - safeDrops - paidOuts + paidIns + safeLoans;
+  } else if (!expectedCash && n(r.gross_sales) > 0) {
+    const nonCash = n(r.credit_sales)+n(r.debit_sales)+n(r.ebt_sales)+n(r.check_sales)+n(r.atm_sales);
+    const estCash = Math.max(0, n(r.gross_sales)-nonCash);
+    expectedCash = beginningTill + estCash - safeDrops - paidOuts + paidIns + safeLoans;
   }
 
-  // Step 2: Short/Over
-  let shortOver = 0;
-  if (cashierShort > 0) {
-    // POS itself calculated the short — most reliable
-    shortOver = -cashierShort;
-    if (!expectedCash && beginningTill > 0) expectedCash = beginningTill + cashierShort;
-  } else if (actualCash > 0 && expectedCash > 0) {
-    shortOver = actualCash - expectedCash;
-  }
-  // If no actual cash yet — shortOver stays 0 (will be set when employee counts)
-
-  return { shortOver: Math.round(shortOver * 100) / 100, expectedCash };
+  return {
+    shortOver: totalShort > 0 || totalOver > 0 ? netShortOver : 0,
+    expectedCash,
+  };
 }
 
-// ── Build AI reason for short/over ──────────────────────────────────────────
-async function getAIReason(report: any, shortOver: number, expectedCash: number, apiKey: string): Promise<string> {
-  if (Math.abs(shortOver) < 0.50) return '';
-  try {
-    const isShort = shortOver < 0;
-    const prompt = `Gas station daily report analysis:
-- Gross Sales: $${toNum(report.gross_sales).toFixed(2)}
-- Cash Sales (POS): $${toNum(report.cash_sales).toFixed(2)}
-- Beginning Till: $${toNum(report.beginning_till).toFixed(2)}
-- Safe Drops: $${toNum(report.safe_drops).toFixed(2)}
-- Paid Outs: $${toNum(report.paid_outs).toFixed(2)}
-- Paid Ins: $${toNum(report.paid_ins).toFixed(2)}
-- Expected in drawer: $${expectedCash.toFixed(2)}
-- Cashier short from POS: $${toNum(report.cashier_short).toFixed(2)}
-- Drawer is ${isShort ? 'SHORT' : 'OVER'} by $${Math.abs(shortOver).toFixed(2)}
+// ── Apply deliveries to inventory ────────────────────────────────────────────
+async function applyDeliveries(sb: any, storeId: string, deliveries: any[]) {
+  if (!deliveries || deliveries.length === 0) return;
 
-Give a 2-sentence explanation of the most likely reason for this ${isShort ? 'shortage' : 'overage'} at a gas station. Be specific and practical. No fluff.`;
+  for (const d of deliveries) {
+    const vendor = (d.vendor || d.name || '').trim();
+    const amount = toNum(d.amount);
+    if (!vendor) continue;
 
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 150, messages: [{ role: 'user', content: prompt }] }),
-    });
-    const d = await res.json();
-    return (d?.choices?.[0]?.message?.content || '').trim();
-  } catch { return ''; }
-}
-
-// ── Merge extracted data with existing report ────────────────────────────────
-function merge(existing: any, u: any): any {
-  const n = toNum;
-  const keep = (f: string) => n(existing?.[f]) || n(u[f]);
-  const sum  = (f: string) => n(existing?.[f]) + n(u[f]);
-  const t = (u.report_type || 'unknown').toLowerCase();
-
-  if (t === 'store_close') return {
-    ...existing,
-    gross_sales:          n(u.gross_sales) || n(existing?.gross_sales),
-    fuel_sales:           keep('fuel_sales'),
-    inside_sales:         n(u.inside_sales) || n(u.non_fuel_sales) || n(existing?.inside_sales),
-    taxes:                keep('taxes'), discounts: keep('discounts'), refunds: keep('refunds'),
-    transactions:         keep('transactions'),
-    cash_sales:           n(u.cash_sales) || n(existing?.cash_sales),
-    credit_sales:         n(u.credit_sales) + n(u.crind_credit) || n(existing?.credit_sales),
-    debit_sales:          n(u.debit_sales)  + n(u.crind_debit)  || n(existing?.debit_sales),
-    ebt_sales:            keep('ebt_sales'), check_sales: keep('check_sales'),
-    atm_sales:            n(u.crind_cash) || n(existing?.atm_sales),
-    fuel_unleaded_sales:  keep('fuel_unleaded_sales'), fuel_midgrade_sales: keep('fuel_midgrade_sales'),
-    fuel_premium_sales:   keep('fuel_premium_sales'),  fuel_diesel_sales:   keep('fuel_diesel_sales'),
-    fuel_unleaded_gallons:keep('fuel_unleaded_gallons'),fuel_midgrade_gallons:keep('fuel_midgrade_gallons'),
-    fuel_premium_gallons: keep('fuel_premium_gallons'), fuel_diesel_gallons: keep('fuel_diesel_gallons'),
-  };
-
-  if (t === 'till') return {
-    ...existing,
-    cash_sales:     n(u.cash_sales) || n(existing?.cash_sales),
-    credit_sales:   n(u.credit_sales) + n(existing?.credit_sales),
-    debit_sales:    n(u.debit_sales)  + n(existing?.debit_sales),
-    safe_drops:     sum('safe_drops'), paid_outs: sum('paid_outs'),
-    paid_ins:       sum('paid_ins'),   safe_loans: sum('safe_loans'),
-    beginning_till: n(u.beginning_till) || n(existing?.beginning_till),
-    actual_cash:    n(u.actual_cash)    || n(existing?.actual_cash),
-    expected_cash:  n(u.expected_cash)  || n(existing?.expected_cash),
-    cashier_short:  n(u.cashier_short)  || n(existing?.cashier_short),
-  };
-
-  if (t === 'lottery') return {
-    ...existing,
-    lottery_sales:       n(u.lottery_sales) || n(existing?.lottery_sales),
-    scratch_sales:       n(u.scratch_sales) || n(existing?.scratch_sales),
-    lottery_payouts:     sum('lottery_payouts'),
-    scratch_payouts:     n(u.scratch_payouts) || n(existing?.scratch_payouts),
-    lottery_settlement:  n(u.lottery_settlements) || n(existing?.lottery_settlement),
-    lottery_commission:  n(u.lottery_commissions) || n(existing?.lottery_commission),
-  };
-
-  if (t === 'scratch') return { ...existing, scratch_sales: sum('scratch_sales'), scratch_payouts: sum('scratch_payouts') };
-  if (t === 'safe_drop') return { ...existing, safe_drops: sum('safe_drops') };
-  if (t === 'paid_out')  return { ...existing, paid_outs:  sum('paid_outs') };
-  if (t === 'paid_in')   return { ...existing, paid_ins:   sum('paid_ins') };
-  if (t === 'department') return { ...existing, department_sales: { ...(existing?.department_sales||{}), ...(u.department_sales||{}) } };
-
-  // Unknown — pick up anything non-zero
-  const m = { ...existing };
-  for (const [k, v] of Object.entries(u)) {
-    if (v !== null && v !== 0 && v !== '' && typeof v !== 'object' && !m[k]) (m as any)[k] = v;
+    // Log as a purchase order / invoice from connector
+    await sb.from('invoices').insert({
+      store_id: storeId,
+      vendor_name: vendor,
+      total_amount: amount,
+      status: 'NEEDS_REVIEW',
+      source: 'daily_report',
+      invoice_date: new Date().toISOString().split('T')[0],
+    }).catch(() => {});
   }
-  if (u.department_sales && Object.keys(u.department_sales).length > 0)
-    m.department_sales = { ...(existing?.department_sales||{}), ...(u.department_sales||{}) };
-  return m;
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -249,7 +325,7 @@ export async function POST(request: NextRequest) {
     if (!apiKey) return NextResponse.json({ error: 'OPENROUTER_API_KEY not set in Vercel' }, { status: 500 });
 
     const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store found — complete Setup in Settings first' }, { status: 400 });
+    if (!store) return NextResponse.json({ error: 'No store found — complete Setup in Settings' }, { status: 400 });
 
     const formData = await request.formData();
     const reportDateOverride = formData.get('report_date') as string;
@@ -267,7 +343,7 @@ export async function POST(request: NextRequest) {
       mime: f.type || 'image/jpeg',
     })));
 
-    // Extract with AI
+    // AI extraction
     let extracted: any;
     try { extracted = await callAI(images, apiKey); }
     catch (e: any) { return NextResponse.json({ error: `AI extraction failed: ${e.message}` }, { status: 502 }); }
@@ -276,12 +352,12 @@ export async function POST(request: NextRequest) {
     const reportDate = toDate(extracted.report_date, reportDateOverride || today);
     const reportType = (extracted.report_type || 'unknown').toLowerCase();
 
-    // Save upload record safely
+    // Save upload record
     let uploadId: string | null = null;
     try {
       const { data: up } = await sb.from('report_uploads').insert({
         store_id: store.id, report_date: reportDate, report_type: reportType,
-        file_name: files.map(f => f.name || 'photo').join(', '),
+        file_name: files.map(f => f.name||'photo').join(', '),
         status: 'completed', raw_extraction: extracted,
         processed_at: new Date().toISOString(),
       }).select('id').single();
@@ -296,25 +372,30 @@ export async function POST(request: NextRequest) {
     // Calculate short/over
     const { shortOver, expectedCash } = calcShortOver({ ...merged, ...extracted });
 
-    // Get AI reason for short/over
-    const aiReason = await getAIReason({ ...merged, ...extracted }, shortOver, expectedCash, apiKey);
+    // Apply deliveries to invoices queue
+    const deliveries = extracted.deliveries || [];
+    if (deliveries.length > 0) {
+      await applyDeliveries(sb, store.id, deliveries);
+    }
 
-    // Build safe payload — every field explicitly cast, none can fail Postgres type check
-    const payload = {
+    // Build safe payload — every field sanitized
+    const checksTotal = (extracted.checks_given || []).reduce((s: number, c: any) => s + toNum(c.amount), 0);
+
+    const payload: Record<string, any> = {
       store_id:             store.id,
       report_date:          reportDate,
-      status:               'in_progress' as const,
+      status:               'in_progress',
       gross_sales:          toNum(merged.gross_sales),
       net_sales:            toNum(merged.net_sales),
       fuel_sales:           toNum(merged.fuel_sales),
-      inside_sales:         toNum(merged.inside_sales),
+      inside_sales:         toNum(merged.inside_sales)||toNum(merged.non_fuel_sales),
       merchandise_sales:    toNum(merged.merchandise_sales),
       lottery_sales:        toNum(merged.lottery_sales),
       scratch_sales:        toNum(merged.scratch_sales),
       lottery_payouts:      toNum(merged.lottery_payouts),
       scratch_payouts:      toNum(merged.scratch_payouts),
-      lottery_settlement:   toNum(merged.lottery_settlement),
-      lottery_commission:   toNum(merged.lottery_commission),
+      lottery_settlement:   toNum(merged.lottery_settlement)||toNum(merged.lottery_settlements),
+      lottery_commission:   toNum(merged.lottery_commission)||toNum(merged.lottery_commissions),
       taxes:                toNum(merged.taxes),
       discounts:            toNum(merged.discounts),
       refunds:              toNum(merged.refunds),
@@ -324,7 +405,7 @@ export async function POST(request: NextRequest) {
       credit_sales:         toNum(merged.credit_sales),
       debit_sales:          toNum(merged.debit_sales),
       ebt_sales:            toNum(merged.ebt_sales),
-      check_sales:          toNum(merged.check_sales),
+      check_sales:          toNum(merged.check_sales)||checksTotal,
       money_order_sales:    toNum(merged.money_order_sales),
       atm_sales:            toNum(merged.atm_sales),
       safe_drops:           toNum(merged.safe_drops),
@@ -348,16 +429,23 @@ export async function POST(request: NextRequest) {
       department_sales:     merged.department_sales || {},
       validation_warnings:  [],
       ai_validated:         true,
-      ai_notes:             aiReason || null,
+      ai_notes:             [
+        extracted.notes || null,
+        deliveries.length > 0 ? `${deliveries.length} deliveries logged to invoices` : null,
+        (extracted.checks_given||[]).length > 0 ? `${(extracted.checks_given||[]).length} checks recorded` : null,
+        (extracted.tickets_activated||[]).length > 0 ? `${(extracted.tickets_activated||[]).length} lottery tickets activated` : null,
+      ].filter(Boolean).join(' | ') || null,
       updated_at:           new Date().toISOString(),
     };
 
     let savedReport: any = null;
     if (existing) {
-      const { data } = await sb.from('daily_reports').update(payload).eq('id', existing.id).select('*').single();
+      const { data, error } = await sb.from('daily_reports').update(payload).eq('id', existing.id).select('*').single();
+      if (error) return NextResponse.json({ error: `DB update failed: ${error.message}` }, { status: 500 });
       savedReport = data;
     } else {
-      const { data } = await sb.from('daily_reports').insert(payload).select('*').single();
+      const { data, error } = await sb.from('daily_reports').insert(payload).select('*').single();
+      if (error) return NextResponse.json({ error: `DB insert failed: ${error.message}` }, { status: 500 });
       savedReport = data;
     }
 
@@ -365,11 +453,23 @@ export async function POST(request: NextRequest) {
       try { await sb.from('report_uploads').update({ daily_report_id: savedReport.id }).eq('id', uploadId); } catch {}
     }
 
+    // Log timeline events
+    try {
+      if (deliveries.length > 0) {
+        await sb.from('timeline_events').insert({ store_id: store.id, event_date: reportDate, type: 'delivery', title: `${deliveries.length} vendor deliveries received`, description: deliveries.map((d:any)=>d.vendor).join(', ') });
+      }
+    } catch {}
+
     return NextResponse.json({
-      success: true, report: savedReport,
-      reportType, reportDate,
-      shortOver, expectedCash,
-      aiReason,
+      success: true,
+      report: savedReport,
+      reportType,
+      reportDate,
+      shortOver,
+      expectedCash,
+      deliveriesLogged: deliveries.length,
+      checksFound: (extracted.checks_given||[]).length,
+      ticketsActivated: (extracted.tickets_activated||[]).length,
       needsCashCount: toNum(merged.actual_cash) === 0 && expectedCash > 0,
     });
 
