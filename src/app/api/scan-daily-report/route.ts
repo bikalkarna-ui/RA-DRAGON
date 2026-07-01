@@ -43,126 +43,46 @@ function toDate(raw: any, fallback: string): string {
 async function callAI(images: {b64:string;mime:string}[], apiKey: string): Promise<any> {
   const content: any[] = [{
     type: 'text',
-    text: `You are reading gas station daily closing documents for 24 Seven Mart / Texaco stores.
-Read ALL images carefully. There may be multiple report types in the same upload.
-Return ONLY valid JSON - no markdown, no text before or after.
+    text: `Gas station report reader. Read ALL images. Return ONLY raw JSON no markdown.
 
-{
-  "report_type": "store_close",
-  "report_date": null,
-  "gross_sales": null,
-  "fuel_sales": null,
-  "non_fuel_sales": null,
-  "taxes": null,
-  "discounts": null,
-  "fuel_unleaded_sales": null,
-  "fuel_midgrade_sales": null,
-  "fuel_premium_sales": null,
-  "fuel_diesel_sales": null,
-  "fuel_unleaded_gallons": null,
-  "fuel_midgrade_gallons": null,
-  "fuel_premium_gallons": null,
-  "fuel_diesel_gallons": null,
-  "cash_sales": null,
-  "credit_sales": null,
-  "debit_sales": null,
-  "ebt_sales": null,
-  "check_sales": null,
-  "crind_credit": null,
-  "crind_debit": null,
-  "crind_cash": null,
-  "safe_drops": null,
-  "safe_loans": null,
-  "paid_ins": null,
-  "paid_outs": null,
-  "beginning_till": null,
-  "cashier_short": null,
-  "cashier_over": null,
-  "lottery_sales": null,
-  "scratch_sales": null,
-  "scratch_payouts": null,
-  "lottery_settlements": null,
-  "lottery_commissions": null,
-  "lottery_balance": null,
-  "refunds": null,
-  "transactions": null,
-  "customers": null,
-  "department_sales": {},
-  "checks_given": [],
-  "deliveries": [],
-  "tickets_activated": [],
-  "safe_drop_list": [],
-  "notes": ""
-}
+{"report_type":"store_close","report_date":null,"gross_sales":null,"fuel_sales":null,"non_fuel_sales":null,"taxes":null,"discounts":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"crind_cash":null,"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,"beginning_till":null,"cashier_short":null,"cashier_over":null,"lottery_sales":null,"scratch_sales":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"lottery_balance":null,"refunds":null,"transactions":null,"customers":null,"department_sales":{},"checks_given":[],"deliveries":[],"tickets_activated":[],"notes":""}
 
-=== CRITICAL RULES - READ CAREFULLY ===
+RULES:
+report_type: store_close|till|lottery|scratch|department|handwritten|fuel_atg|unknown
+report_date: YYYY-MM-DD always. "Jun 30 2026"=2026-06-30, "06/30/2026"=2026-06-30, "JUL01 2026"=2026-07-01
 
-REPORT DATE: Return as YYYY-MM-DD always.
-  "Jun 30 2026" → "2026-06-30"
-  "06/30/2026" → "2026-06-30"  
-  "06,30,2026" → "2026-06-30"
-  "WED JUL01 2026" → "2026-07-01"
-  "TUE JUN30 2026" → "2026-06-30"
+STORE CLOSE:
+gross_sales=Grand Total Store Sales Reading
+fuel_sales=Total Fuel Sales
+non_fuel_sales=Non Fuel Sales
+taxes=Total Taxes Collected
+fuel_unleaded_sales=Grade 01 Sales, fuel_midgrade_sales=Grade 02 Sales, fuel_premium_sales=Grade 03 Sales, fuel_diesel_sales=Grade 04 Sales
+fuel_unleaded_gallons=Grade 01 Volume, etc
+METHOD OF PAYMENT: cash_sales=Cash row, crind_credit=CRIND CR Local Acct row (MAIN CREDIT ~$6000+), credit_sales=Credit row, crind_debit=Crind DEBIT row, debit_sales=Debit row, check_sales=Check row, crind_cash=Cash Acceptor Cash
+department_sales from page 2 Gross Sales column: {"BEER":820.51,"SNACK":895.47,"NONTAX":1274.00}
 
-REPORT TYPE: Choose ONE: store_close | till | lottery | scratch | department | handwritten | fuel_atg | unknown
+TILL REPORT:
+beginning_till=TILL BEGINNING BALANCE
+cashier_short=CASHIER SHORT AMOUNT (positive)
+cashier_over=CASHIER OVER AMOUNT (positive)
+safe_drops=Cashier Safe Drops total
+safe_loans=SAFE LOANS Cash
+paid_ins=PAID INS total
+paid_outs=PAID OUTS total (positive)
+credit_sales=Credit from System Safe Drops, debit_sales=Debit from System Safe Drops
 
-=== STORE CLOSE REPORT (24 Seven Mart / Texaco format) ===
-- gross_sales = "Grand Total Store Sales Reading" - the SINGLE largest total at top
-- fuel_sales = "Total Fuel Sales" line
-- non_fuel_sales = "Non Fuel Sales" line (NOT fuel discounts)
-- taxes = "Total Taxes Collected"
-- discounts = "Other Discounts" or "Fuel Discounts" (store as negative or positive)
-- fuel_unleaded_sales = Grade 01 UNLEAD REG Sales column
-- fuel_midgrade_sales = Grade 02 UNL SUP US Sales column
-- fuel_premium_sales = Grade 03 REG PLS Sales column
-- fuel_diesel_sales = Grade 04 DIESEL #1 Sales column
-- fuel_unleaded_gallons = Grade 01 Volume column
-- fuel_midgrade_gallons = Grade 02 Volume column
-- fuel_premium_gallons = Grade 03 Volume column
-- fuel_diesel_gallons = Grade 04 Volume column
+LOTTERY:
+lottery_sales=DRW GM NET SALES
+scratch_payouts=SCRATCH CASHES (positive, ignore minus)
+lottery_settlements=SETTLEMENTS, lottery_commissions=COMMISSIONS (positive), lottery_balance=BALANCE
 
-METHOD OF PAYMENT section - READ EACH ROW SEPARATELY:
-- cash_sales = row labeled "Cash" ONLY (usually $0 at fuel stations)
-- crind_cash = "Cash Acceptor Cash" row
-- check_sales = "Check" row (253 count in your store)
-- crind_credit = "CRIND CR Local Acct" row - THIS IS THE MAIN CREDIT (usually $6000+)
-- credit_sales = "Credit" row or "Credit Local Acct" row (usually $0 separate)
-- crind_debit = "Crind DEBIT" row
-- debit_sales = "Debit" row
+HANDWRITTEN (24/7 Mart Daily Report):
+checks_given=[{"number":"4573","payee":"Tylers Ice","amount":829.00}]
+deliveries=[{"vendor":"Pepsi","amount":681.61}]
+safe_drop_list amounts sum into safe_drops
+paid_ins=Paid In total, paid_outs=Paid Out total
 
-DEPARTMENT SALES from store close page 2:
-- Read GROSS SALES $ column only (not Net Sales)
-- department_sales = {"BEER": 820.51, "SNACK": 895.47, "NONTAX": 1274.00, ...}
-- Include ALL departments including negative ones like LOTTO P/O
-
-=== TILL REPORT (register tape) ===
-- beginning_till = "TILL BEGINNING BALANCE" (usually $250 or $250.15)
-- cashier_short = "CASHIER SHORT AMOUNT" - store as POSITIVE number
-- cashier_over = "CASHIER OVER AMOUNT" - store as POSITIVE number
-- safe_drops = Total of Cashier Safe Drops (Cash total only, NOT System Safe Drops)
-- safe_loans = "SAFE LOANS" Cash amount
-- paid_ins = "PAID INS" total
-- paid_outs = "PAID OUTS" total - store as POSITIVE
-- credit_sales = Credit amount from SYSTEM SAFE DROPS section (or CASHIER COUNTED)
-- debit_sales = Debit amount from SYSTEM SAFE DROPS section
-
-=== TEXAS LOTTERY ===
-- lottery_sales = "DRW GM NET SALES" amount
-- scratch_payouts = "SCRATCH CASHES" amount - store as POSITIVE (ignore minus sign)
-- lottery_settlements = "SETTLEMENTS" amount
-- lottery_commissions = "COMMISSIONS" amount - store as POSITIVE (ignore minus sign)
-- lottery_balance = "BALANCE" amount
-
-=== HANDWRITTEN DAILY REPORT (24/7 Mart Daily Report form) ===
-- safe_drop_list = [{"amount": 293, "time": "6:18AM", "by": "Shayan"}, ...]
-- safe_drops = sum all safe drop amounts
-- paid_ins = total Paid In amount
-- paid_outs = total Paid Out amount (sum all, store positive)
-- checks_given = [{"number": "4573", "payee": "Tylers Ice", "amount": 829.00}, ...]
-- deliveries = [{"vendor": "Pepsi", "amount": 681.61}, ...]
-- tickets_activated = [{"book": "2739", "slot": 2, "price": 5}, ...]
-
-Use null for any field not visible. Store all amounts as positive numbers unless otherwise noted. Never calculate - read exactly as printed.`
+All amounts positive. null for missing. Never calculate.`
   }];
 
   for (const img of images) {
@@ -176,7 +96,7 @@ Use null for any field not visible. Store all amounts as positive numbers unless
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 3000, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] }),
   });
 
   if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0,300)}`);
