@@ -340,11 +340,17 @@ function ConnectorTab({ store }: { store: any }) {
   const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const generate = async () => {
     setLoading(true);
-    const res = await fetch('/api/connector/register', { method: 'POST' });
-    const data = await res.json();
-    setResult(data);
+    setError(null);
+    try {
+      const res = await fetch('/api/connector/register', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Failed — check Supabase SQL has been run'); setLoading(false); return; }
+      setResult(data);
+    } catch (e: any) { setError(e.message); }
     setLoading(false);
   };
 
@@ -395,6 +401,12 @@ function ConnectorTab({ store }: { store: any }) {
             className="btn btn-accent btn-full gap-2">
             {loading ? 'Generating…' : '🔑 Generate Connector Key'}
           </button>
+        )}
+        {error && (
+          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 mt-3">
+            <p className="text-sm text-red-700 font-medium">Error: {error}</p>
+            <p className="text-xs text-red-600 mt-1">Make sure you ran the Supabase SQL: <code>alter table stores add column if not exists connector_api_key text;</code></p>
+          </div>
         )}
 
         {result?.success && (
@@ -494,7 +506,7 @@ export default function SettingsPage() {
     { id: 'store_info', label: '✏️ Store Info',  show: !!store },
     { id: 'employees',  label: '👥 Employees',   show: !!store },
     { id: 'account',    label: '👤 Account',     show: true },
-    { id: 'connector', label: '🔌 Connector' },
+    { id: 'connector', label: '🔌 Connector', show: !!store },
   ];
 
   if (!mounted) return null;
@@ -516,6 +528,7 @@ export default function SettingsPage() {
       {tab === 'store_info' && store && <StoreInfoTab store={store} refetch={refetch} />}
       {tab === 'employees'  && store && <EmployeesTab store={store} />}
       {tab === 'account'    && <AccountTab />}
+      {tab === 'connector'  && store && <ConnectorTab store={store} />}
     </Screen>
   );
 }
