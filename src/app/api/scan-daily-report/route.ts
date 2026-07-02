@@ -39,101 +39,87 @@ function toDate(raw: any, fallback: string): string {
   return fallback;
 }
 
-// ── AI extraction - one call reads ALL images ────────────────────────────────
+// ── AI extraction - two pass: numbers first, then lists ────────────────────
 async function callAI(images: {b64:string;mime:string}[], apiKey: string): Promise<any> {
-  const content: any[] = [{
-    type: 'text',
-    text: `Gas station report reader. Read ALL images. Return ONLY raw JSON no markdown.
+  // PASS 1: Extract all numeric fields (small JSON, always fits in tokens)
+  const numericPrompt = `Gas station report reader. Read ALL images. Return ONLY this JSON with no markdown:
+{"report_type":"store_close","report_date":null,"gross_sales":null,"fuel_sales":null,"non_fuel_sales":null,"taxes":null,"discounts":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"crind_cash":null,"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,"beginning_till":null,"cashier_short":null,"cashier_over":null,"lottery_sales":null,"scratch_sales":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"refunds":null,"transactions":null,"customers":null}
 
-{"report_type":"store_close","report_date":null,"gross_sales":null,"fuel_sales":null,"non_fuel_sales":null,"taxes":null,"discounts":null,"fuel_unleaded_sales":null,"fuel_midgrade_sales":null,"fuel_premium_sales":null,"fuel_diesel_sales":null,"fuel_unleaded_gallons":null,"fuel_midgrade_gallons":null,"fuel_premium_gallons":null,"fuel_diesel_gallons":null,"cash_sales":null,"credit_sales":null,"debit_sales":null,"ebt_sales":null,"check_sales":null,"crind_credit":null,"crind_debit":null,"crind_cash":null,"safe_drops":null,"safe_loans":null,"paid_ins":null,"paid_outs":null,"beginning_till":null,"cashier_short":null,"cashier_over":null,"lottery_sales":null,"scratch_sales":null,"scratch_payouts":null,"lottery_settlements":null,"lottery_commissions":null,"lottery_balance":null,"refunds":null,"transactions":null,"customers":null,"department_sales":{},"checks_given":[],"deliveries":[],"tickets_activated":[],"notes":""}
+Rules: report_type=store_close|till|lottery|scratch|department|handwritten|fuel_atg|unknown. report_date=YYYY-MM-DD (Jun 30 2026=2026-06-30, 06/30/2026=2026-06-30, JUL01=2026-07-01). Store Close: gross_sales=Grand Total, fuel_sales=Total Fuel Sales, non_fuel_sales=Non Fuel Sales, taxes=Total Taxes Collected, Grade01=unleaded, Grade02=midgrade, Grade03=premium, Grade04=diesel. Method of Payment: cash_sales=Cash row, crind_credit=CRIND CR Local Acct, credit_sales=Credit row, crind_debit=Crind DEBIT, check_sales=Check row(customer payments only), crind_cash=Cash Acceptor. Till: cashier_short=CASHIER SHORT AMOUNT(positive), cashier_over=CASHIER OVER AMOUNT(positive), safe_drops=Cashier Safe Drops total, paid_ins=PAID INS total, paid_outs=PAID OUTS(positive). Lottery: scratch_payouts=SCRATCH CASHES(positive), lottery_settlements=SETTLEMENTS, lottery_commissions=COMMISSIONS(positive). All positive numbers. null if not visible.`;
 
-RULES:
-report_type: store_close|till|lottery|scratch|department|handwritten|fuel_atg|unknown
-report_date: YYYY-MM-DD always. "Jun 30 2026"=2026-06-30, "06/30/2026"=2026-06-30, "JUL01 2026"=2026-07-01
+  // PASS 2: Extract department sales and lists (separate call)
+  const listsPrompt = `Gas station report reader. Read ALL images. Return ONLY this JSON with no markdown:
+{"department_sales":{},"checks_given":[],"deliveries":[],"tickets_activated":[]}
 
-STORE CLOSE:
-gross_sales=Grand Total Store Sales Reading
-fuel_sales=Total Fuel Sales
-non_fuel_sales=Non Fuel Sales
-taxes=Total Taxes Collected
-fuel_unleaded_sales=Grade 01 Sales, fuel_midgrade_sales=Grade 02 Sales, fuel_premium_sales=Grade 03 Sales, fuel_diesel_sales=Grade 04 Sales
-fuel_unleaded_gallons=Grade 01 Volume, etc
-METHOD OF PAYMENT: cash_sales=Cash row, crind_credit=CRIND CR Local Acct row (MAIN CREDIT ~$6000+), credit_sales=Credit row, crind_debit=Crind DEBIT row, debit_sales=Debit row, check_sales=Check row in Method of Payment (checks received FROM customers as payment, NOT vendor checks), crind_cash=Cash Acceptor Cash
-department_sales from page 2 Gross Sales column: {"BEER":820.51,"SNACK":895.47,"NONTAX":1274.00}
+Rules: department_sales={"BEER":820.51,"SNACK":895.47} from page 2 Gross Sales column, all depts. checks_given=[{"number":"4573","payee":"Tylers Ice","amount":829.00}] from handwritten report vendor checks. deliveries=[{"vendor":"Pepsi","amount":681.61}] from deliveries section. tickets_activated=[{"book":"2739","slot":2,"price":5}]. Empty arrays if not found.`;
 
-TILL REPORT:
-beginning_till=TILL BEGINNING BALANCE
-cashier_short=CASHIER SHORT AMOUNT (positive)
-cashier_over=CASHIER OVER AMOUNT (positive)
-safe_drops=Cashier Safe Drops total
-safe_loans=SAFE LOANS Cash
-paid_ins=PAID INS total
-paid_outs=PAID OUTS total (positive)
-credit_sales=Credit from System Safe Drops, debit_sales=Debit from System Safe Drops
-
-LOTTERY:
-lottery_sales=DRW GM NET SALES
-scratch_payouts=SCRATCH CASHES (positive, ignore minus)
-lottery_settlements=SETTLEMENTS, lottery_commissions=COMMISSIONS (positive), lottery_balance=BALANCE
-
-HANDWRITTEN (24/7 Mart Daily Report):
-checks_given=[{"number":"4573","payee":"Tylers Ice","amount":829.00}]
-deliveries=[{"vendor":"Pepsi","amount":681.61}]
-safe_drop_list amounts sum into safe_drops
-paid_ins=Paid In total, paid_outs=Paid Out total
-
-All amounts positive. null for missing. Never calculate.`
-  }];
-
-  for (const img of images) {
-    if (img.mime === 'application/pdf') {
-      content.push({ type: 'file', file: { filename: 'report.pdf', file_data: `data:application/pdf;base64,${img.b64}` } });
-    } else {
-      content.push({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.b64}` } });
+  const buildContent = (prompt: string) => {
+    const c: any[] = [{ type: 'text', text: prompt }];
+    for (const img of images) {
+      if (img.mime === 'application/pdf') {
+        c.push({ type: 'file', file: { filename: 'report.pdf', file_data: `data:application/pdf;base64,${img.b64}` } });
+      } else {
+        c.push({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.b64}` } });
+      }
     }
-  }
+    return c;
+  };
 
-  // Try primary model, fall back to secondary if it fails
-  const MODELS = [MODEL, 'anthropic/claude-haiku-4-5', 'openai/gpt-4o-mini'];
-  let raw = '';
-  let lastErr = '';
-  
-  for (const model of MODELS) {
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, max_tokens: 4000, messages: [{ role: 'user', content }] }),
-      });
-      if (!res.ok) { lastErr = `${model} returned ${res.status}`; continue; }
-      const data = await res.json();
-      const candidate = (data?.choices?.[0]?.message?.content ?? '').trim()
-        .replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
-      if (candidate && candidate.includes('{')) { raw = candidate; break; }
-      lastErr = `${model} returned empty response`;
-    } catch (e: any) { lastErr = e.message; }
-  }
-  
-  if (!raw) throw new Error(`All models failed. Last error: ${lastErr}`);
+  const tryParse = (raw: string): any => {
+    const clean = raw.trim().replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+    const match = clean.match(/\{[\s\S]*/);
+    if (!match) return null;
+    let js = match[0];
+    try { return JSON.parse(js); } catch {}
+    // Recovery
+    let depth=0, inStr=false, esc=false;
+    for (const ch of js) {
+      if (esc) { esc=false; continue; }
+      if (ch==='\\') { esc=true; continue; }
+      if (ch==='"') { inStr=!inStr; continue; }
+      if (!inStr) { if(ch==='{'||ch==='[') depth++; else if(ch==='}'||ch===']') depth--; }
+    }
+    if (inStr) js+='"';
+    while (depth > 0) { js+='}'; depth--; }
+    try { return JSON.parse(js); } catch { return null; }
+  };
 
-  const match = raw.match(/\{[\s\S]*/);
-  if (!match) throw new Error(`No JSON found. AI returned: ${raw.slice(0,300)}`);
-  let js = match[0];
+  const callModel = async (prompt: string, maxTokens: number): Promise<any> => {
+    const models = ['google/gemini-2.0-flash-001', 'anthropic/claude-haiku-4-5', 'openai/gpt-4o-mini'];
+    for (const model of models) {
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: buildContent(prompt) }] }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const raw = data?.choices?.[0]?.message?.content ?? '';
+        const parsed = tryParse(raw);
+        if (parsed) return parsed;
+      } catch {}
+    }
+    return null;
+  };
 
-  try { return JSON.parse(js); } catch {}
+  // Run both passes in parallel for speed
+  const [numericResult, listsResult] = await Promise.all([
+    callModel(numericPrompt, 1000),
+    callModel(listsPrompt, 2000),
+  ]);
 
-  // Recovery parser for truncated JSON
-  let depth=0, inStr=false, esc=false;
-  for (const ch of js) {
-    if (esc) { esc=false; continue; }
-    if (ch==='\\') { esc=true; continue; }
-    if (ch==='"') { inStr=!inStr; continue; }
-    if (!inStr) { if(ch==='{'||ch==='[') depth++; else if(ch==='}'||ch===']') depth--; }
-  }
-  if (inStr) js+='"';
-  while (depth > 0) { js+='}'; depth--; }
-  try { return JSON.parse(js); } catch { throw new Error(`JSON parse failed after recovery`); }
+  if (!numericResult) throw new Error('AI could not read the report — try a clearer photo or better lighting');
+
+  return {
+    ...numericResult,
+    department_sales: listsResult?.department_sales || {},
+    checks_given: listsResult?.checks_given || [],
+    deliveries: listsResult?.deliveries || [],
+    tickets_activated: listsResult?.tickets_activated || [],
+  };
 }
+
 
 // ── Merge: combine this upload with any existing data ────────────────────────
 function merge(existing: any, u: any): any {
