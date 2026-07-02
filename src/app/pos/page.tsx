@@ -20,154 +20,190 @@ const fmtTime  = (d: string) => { try { return new Date(d).toLocaleTimeString('e
 type Tab = 'report' | 'checklist' | 'timeline';
 
 // ── Short/Over Box ────────────────────────────────────────────────────────────
-function ShortOverBox({ value, expected, actual, reportDate, onUpdate }: {
-  value: number; expected: number; actual: number;
-  reportDate?: string; onUpdate?: () => void;
+function ShortOverBox({ cashSales, safeDrops, reportDate, onUpdate }: {
+  cashSales: number;
+  safeDrops: number;
+  reportDate?: string;
+  onUpdate?: () => void;
 }) {
   const [showCount, setShowCount] = useState(false);
   const [cashInput, setCashInput] = useState('');
   const [counting, setCounting] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const short   = value < -0.50;
-  const over    = value > 0.50;
-  const noCount = actual === 0 && expected > 0 && value === 0;
+  // Safe drop vs cash sales comparison
+  const dropDiff = Math.round((safeDrops - cashSales) * 100) / 100;
+  const dropShort = dropDiff < -0.50;
+  const dropOver  = dropDiff > 0.50;
+  const dropGood  = !dropShort && !dropOver;
+  const hasData   = cashSales > 0 || safeDrops > 0;
 
   const submitCount = async () => {
     if (!cashInput || !reportDate) return;
     setCounting(true);
     try {
       const res = await fetch('/api/count-cash', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate, cash_sales: cashSales }),
       });
       const data = await res.json();
       setResult(data);
       if (data.success) onUpdate?.();
-    } catch { setResult({ error: 'Network error' }); }
+    } catch { setResult({ error: 'Network error — try again' }); }
     setCounting(false);
   };
 
-  const CountForm = () => (
-    <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 mb-4">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">COUNT YOUR CASH</p>
-      {expected > 0 && (
-        <p className="text-xs text-amber-700 mb-3">
-          POS says drawer should have <span className="num font-black">{fmt.currency(expected)}</span>.
-          Count what is actually in the drawer and enter it below.
-        </p>
-      )}
-      {!result ? (
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <input type="number" step="0.01" min="0" value={cashInput}
-              onChange={e => setCashInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submitCount()}
-              placeholder="0.00" autoFocus
-              className="inp num font-black text-2xl text-center flex-1 h-14" />
-            <button onClick={submitCount} disabled={!cashInput || counting}
-              className={cn('btn btn-accent h-14 px-6 text-base font-bold gap-1', counting && 'opacity-60')}>
-              {counting ? 'Checking…' : 'Submit'}
-            </button>
-          </div>
-          {!noCount && (
-            <button onClick={() => setShowCount(false)} className="text-xs text-muted hover:text-sub">
-              Cancel
-            </button>
-          )}
-        </div>
-      ) : result.error ? (
-        <div>
-          <p className="text-sm text-red-700">{result.error}</p>
-          <button onClick={() => setResult(null)} className="text-xs text-accent mt-2">Try again</button>
-        </div>
-      ) : (
-        <div>
-          {/* Result box */}
-          <div className={cn('rounded-xl p-4 mb-3 border-2',
-            result.status === 'balanced' ? 'bg-green-50 border-green-400' :
-            result.status === 'short'    ? 'bg-red-50 border-red-400' :
-                                          'bg-blue-50 border-blue-400')}>
-            <p className={cn('num font-black text-4xl leading-none mb-1',
-              result.status === 'balanced' ? 'text-green-700' :
-              result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
-              {(result.short_over || 0) >= 0 ? '+' : ''}{fmt.currency(result.short_over || 0)}
-            </p>
-            <p className={cn('text-sm font-bold',
-              result.status === 'balanced' ? 'text-green-700' :
-              result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
-              {result.status === 'balanced' ? '✓ Drawer is balanced — good job!' :
-               result.status === 'short'    ? `⚠ Drawer is ${fmt.currency(Math.abs(result.short_over || 0))} SHORT` :
-                                              `Drawer is ${fmt.currency(result.short_over || 0)} OVER`}
-            </p>
-            <div className="flex gap-4 mt-2 text-xs text-gray-600">
-              <span>You counted: <span className="num font-bold">{fmt.currency(result.counted || 0)}</span></span>
-              <span>POS expected: <span className="num font-bold">{fmt.currency(result.expected || 0)}</span></span>
-            </div>
-          </div>
+  return (
+    <div className="mb-4 space-y-3">
 
-          {/* AI reason */}
-          {result.ai_reason && (
-            <div className="rounded-xl bg-violet-50 border border-violet-200 p-3 mb-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Zap className="h-3.5 w-3.5 text-violet-600" />
-                <p className="text-xs font-bold text-violet-700">AI Analysis</p>
+      {/* ── Safe Drop vs Cash Sales ── */}
+      {hasData && (
+        <div className={cn('rounded-2xl border-2 p-4',
+          dropShort ? 'border-red-400 bg-red-50' :
+          dropOver  ? 'border-green-400 bg-green-50' :
+          'border-gray-200 bg-gray-50')}>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">SAFE DROP vs CASH SALES</p>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <p className={cn('num font-black text-4xl leading-none',
+                dropShort ? 'text-red-700' : dropOver ? 'text-green-700' : 'text-gray-500')}>
+                {dropOver ? '+' : ''}{fmt.currency(dropDiff)}
+              </p>
+              <p className={cn('text-sm font-semibold mt-1.5',
+                dropShort ? 'text-red-600' : dropOver ? 'text-green-600' : 'text-gray-500')}>
+                {dropShort ? `⚠ Safe drops are ${fmt.currency(Math.abs(dropDiff))} LESS than cash sales` :
+                 dropOver  ? `Safe drops are ${fmt.currency(dropDiff)} MORE than cash sales` :
+                 '✓ Safe drops match cash sales'}
+              </p>
+            </div>
+            <div className="text-right space-y-1.5 shrink-0 ml-4">
+              <div>
+                <p className="text-xs text-gray-400">POS Cash Sales</p>
+                <p className="num font-black text-text">{fmt.currency(cashSales)}</p>
               </div>
-              <p className="text-xs text-violet-700">{result.ai_reason}</p>
+              <div>
+                <p className="text-xs text-gray-400">Total Safe Drops</p>
+                <p className="num font-bold text-gray-700">{fmt.currency(safeDrops)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Explanation when short/over */}
+          {dropShort && (
+            <div className="rounded-xl bg-red-100 border border-red-200 p-3 text-xs text-red-800 space-y-1">
+              <p className="font-bold">Possible reasons for shortage:</p>
+              <p>• Cash was not dropped and is still in the register</p>
+              <p>• A safe drop was not recorded in the system</p>
+              <p>• Cash was paid out without being logged</p>
+              <p>• Cashier kept cash without dropping it</p>
             </div>
           )}
+          {dropOver && (
+            <div className="rounded-xl bg-green-100 border border-green-200 p-3 text-xs text-green-800 space-y-1">
+              <p className="font-bold">Possible reasons for overage:</p>
+              <p>• A paid out was not recorded in the system</p>
+              <p>• Safe loan amount was dropped extra</p>
+              <p>• Beginning till was included in drops</p>
+            </div>
+          )}
+        </div>
+      )}
 
-          {/* Suggestions */}
-          {result.ai_suggestions?.length > 0 && (
-            <div className="mb-3">
-              <p className="text-xs font-bold text-text mb-1.5">What to check:</p>
-              <div className="space-y-1.5">
+      {/* ── Manual Cash Count ── */}
+      <div className={cn('rounded-2xl border-2 p-4',
+        showCount ? 'border-accent bg-red-50/30' : 'border-dashed border-gray-300 bg-gray-50')}>
+
+        {!showCount && !result && (
+          <button onClick={() => setShowCount(true)}
+            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-accent hover:text-red-700">
+            <DollarSign className="h-4 w-4" />
+            Count cash in safe manually
+          </button>
+        )}
+
+        {showCount && !result && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-1">COUNT CASH IN SAFE</p>
+            {cashSales > 0 && (
+              <p className="text-xs text-gray-500 mb-3">
+                POS shows <span className="num font-black text-text">{fmt.currency(cashSales)}</span> in cash sales.
+                Count all cash physically in the safe and enter below.
+              </p>
+            )}
+            <div className="flex gap-2 mb-2">
+              <input
+                type="number" step="0.01" min="0"
+                value={cashInput}
+                onChange={e => setCashInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && submitCount()}
+                placeholder="0.00"
+                autoFocus
+                className="inp num font-black text-2xl text-center flex-1 h-14"
+              />
+              <button onClick={submitCount} disabled={!cashInput || counting}
+                className={cn('btn btn-accent h-14 px-6 font-bold', counting && 'opacity-60')}>
+                {counting ? 'Checking…' : 'Submit'}
+              </button>
+            </div>
+            <button onClick={() => setShowCount(false)} className="text-xs text-muted hover:text-sub">Cancel</button>
+          </div>
+        )}
+
+        {result && !result.error && (
+          <div>
+            <div className={cn('rounded-xl border-2 p-4 mb-3',
+              result.status === 'balanced' ? 'bg-green-50 border-green-400' :
+              result.status === 'short'    ? 'bg-red-50 border-red-400' :
+                                            'bg-blue-50 border-blue-400')}>
+              <p className={cn('num font-black text-4xl leading-none mb-1',
+                result.status === 'balanced' ? 'text-green-700' :
+                result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
+                {(result.short_over||0) >= 0 ? '+' : ''}{fmt.currency(result.short_over||0)}
+              </p>
+              <p className={cn('text-sm font-bold mb-2',
+                result.status === 'balanced' ? 'text-green-700' :
+                result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
+                {result.status === 'balanced' ? '✓ Cash matches POS perfectly!' :
+                 result.status === 'short'    ? `⚠ ${fmt.currency(Math.abs(result.short_over||0))} SHORT — cash is missing` :
+                                               `${fmt.currency(result.short_over||0)} OVER — extra cash found`}
+              </p>
+              <div className="flex gap-4 text-xs text-gray-600">
+                <span>You counted: <span className="num font-bold">{fmt.currency(result.counted||0)}</span></span>
+                <span>POS cash sales: <span className="num font-bold">{fmt.currency(result.expected||0)}</span></span>
+              </div>
+            </div>
+
+            {result.ai_reason && (
+              <div className="rounded-xl bg-violet-50 border border-violet-200 p-3 mb-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Zap className="h-3.5 w-3.5 text-violet-600" />
+                  <p className="text-xs font-bold text-violet-700">AI Analysis</p>
+                </div>
+                <p className="text-xs text-violet-700">{result.ai_reason}</p>
+              </div>
+            )}
+
+            {result.ai_suggestions?.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs font-bold text-text mb-2">What to check:</p>
                 {result.ai_suggestions.map((s: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-gray-700">
+                  <div key={i} className="flex items-start gap-2 text-xs text-gray-700 mb-1.5">
                     <span className="text-accent font-black shrink-0">{i+1}.</span>
                     <span>{s}</span>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-          <button onClick={() => { setResult(null); setCashInput(''); }}
-            className="text-xs text-muted hover:text-sub">
-            Count again
-          </button>
-        </div>
-      )}
-    </div>
-  );
+            )}
+            <button onClick={() => { setResult(null); setCashInput(''); setShowCount(true); }}
+              className="text-xs text-muted hover:text-sub">Count again</button>
+          </div>
+        )}
 
-  // No actual cash counted yet — show prompt to count
-  if (noCount || showCount) return <CountForm />;
-
-  // Show short/over result with option to recount
-  return (
-    <div className={cn('rounded-2xl border-2 p-5 mb-4',
-      short ? 'border-red-400 bg-red-50' : over ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50')}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">SHORT / OVER</p>
-      <div className="flex items-end justify-between">
-        <div>
-          <p className={cn('num font-black text-5xl leading-none',
-            short ? 'text-red-700' : over ? 'text-green-700' : 'text-gray-500')}>
-            {over ? '+' : ''}{fmt.currency(value)}
-          </p>
-          <p className={cn('text-sm font-semibold mt-2',
-            short ? 'text-red-600' : over ? 'text-green-600' : 'text-gray-500')}>
-            {short ? `⚠ Drawer is ${fmt.currency(Math.abs(value))} short` :
-             over  ? `Drawer is ${fmt.currency(value)} over` : '✓ Drawer balanced'}
-          </p>
-          <button onClick={() => setShowCount(true)}
-            className="mt-2 text-xs font-semibold text-accent hover:underline flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />Count cash manually
-          </button>
-        </div>
-        {(expected > 0 || actual > 0) && (
-          <div className="text-right space-y-1.5">
-            <div><p className="text-xs text-gray-400">POS Expected</p><p className="num font-bold text-gray-700">{fmt.currency(expected)}</p></div>
-            {actual > 0 && <div><p className="text-xs text-gray-400">Counted</p><p className="num font-bold text-gray-700">{fmt.currency(actual)}</p></div>}
+        {result?.error && (
+          <div>
+            <p className="text-sm text-red-700">{result.error}</p>
+            <button onClick={() => setResult(null)} className="text-xs text-accent mt-2">Try again</button>
           </div>
         )}
       </div>
@@ -220,15 +256,35 @@ function ReportFull({ r }: { r: any }) {
       </Section>
 
       {/* Payment Methods */}
-      <Section title="Payment Methods">
+      <Section title="Payment Methods (Money Received)">
         <Row label="Cash"             value={n(r.cash_sales)} />
-        <Row label="Credit Card"      value={n(r.credit_sales)} />
-        <Row label="Debit"            value={n(r.debit_sales)} />
-        <Row label="Checks"           value={n(r.check_sales)} />
+        <Row label="Credit / CRIND"   value={n(r.credit_sales)} />
+        <Row label="Debit / CRIND"    value={n(r.debit_sales)} />
         <Row label="EBT / SNAP"       value={n(r.ebt_sales)} />
+        <Row label="Customer Checks"  value={n(r.check_sales)} />
         <Row label="Money Orders"     value={n(r.money_order_sales)} />
-        <Row label="ATM"              value={n(r.atm_sales)} />
+        <Row label="Pay-at-Pump Cash" value={n(r.atm_sales)} />
       </Section>
+
+      {/* Vendor Checks Paid Out - these are EXPENSES, not payment methods */}
+      {Array.isArray(r.checks_given) && r.checks_given.length > 0 && (
+        <Section title="Checks Written to Vendors (Expenses)">
+          {(r.checks_given as any[]).map((c: any, i: number) => (
+            <div key={i} className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
+              <span className="text-sm text-gray-600">
+                {c.number ? `#${c.number} · ` : ''}{c.payee || 'Vendor'}
+              </span>
+              <span className="num text-sm font-semibold text-red-700">−{fmt.currency(n(c.amount))}</span>
+            </div>
+          ))}
+          <div className="flex justify-between py-1.5 mt-1 border-t-2 border-gray-200">
+            <span className="text-sm font-bold text-text">Total Paid Out</span>
+            <span className="num text-sm font-bold text-red-700">
+              −{fmt.currency((r.checks_given as any[]).reduce((s:number,c:any)=>s+n(c.amount),0))}
+            </span>
+          </div>
+        </Section>
+      )}
 
       {/* Cash Management */}
       {(n(r.actual_cash) + n(r.safe_drops) + n(r.paid_outs) + n(r.paid_ins) + n(r.beginning_till)) > 0 && (
@@ -368,7 +424,7 @@ function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: ()
           </div>
         </div>
 
-        <ShortOverBox value={shortOver} expected={n(report.expected_cash)} actual={n(report.actual_cash)} reportDate={report.report_date} onUpdate={onRefresh} />
+        <ShortOverBox cashSales={n(report.cash_sales)} safeDrops={n(report.safe_drops)} reportDate={report.report_date} onUpdate={onRefresh} />
 
         {warnings.length > 0 && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 mb-3">
@@ -387,10 +443,10 @@ function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: ()
         {/* Payment strip */}
         <div className="grid grid-cols-4 gap-2 mb-4">
           {[
-            { label: 'Cash',    value: n(report.cash_sales) },
-            { label: 'Credit',  value: n(report.credit_sales) },
-            { label: 'Debit',   value: n(report.debit_sales) },
-            { label: 'Checks',  value: n(report.check_sales) },
+            { label: 'Cash',       value: n(report.cash_sales) },
+            { label: 'Credit',     value: n(report.credit_sales) },
+            { label: 'Debit',      value: n(report.debit_sales) },
+            { label: 'Pump Cash',  value: n(report.atm_sales) },
           ].map(s => (
             <div key={s.label} className="rounded-xl bg-surface p-2.5 text-center">
               <p className="text-[10px] text-muted">{s.label}</p>

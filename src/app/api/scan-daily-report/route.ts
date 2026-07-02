@@ -58,7 +58,7 @@ non_fuel_sales=Non Fuel Sales
 taxes=Total Taxes Collected
 fuel_unleaded_sales=Grade 01 Sales, fuel_midgrade_sales=Grade 02 Sales, fuel_premium_sales=Grade 03 Sales, fuel_diesel_sales=Grade 04 Sales
 fuel_unleaded_gallons=Grade 01 Volume, etc
-METHOD OF PAYMENT: cash_sales=Cash row, crind_credit=CRIND CR Local Acct row (MAIN CREDIT ~$6000+), credit_sales=Credit row, crind_debit=Crind DEBIT row, debit_sales=Debit row, check_sales=Check row, crind_cash=Cash Acceptor Cash
+METHOD OF PAYMENT: cash_sales=Cash row, crind_credit=CRIND CR Local Acct row (MAIN CREDIT ~$6000+), credit_sales=Credit row, crind_debit=Crind DEBIT row, debit_sales=Debit row, check_sales=Check row in Method of Payment (checks received FROM customers as payment, NOT vendor checks), crind_cash=Cash Acceptor Cash
 department_sales from page 2 Gross Sales column: {"BEER":820.51,"SNACK":895.47,"NONTAX":1274.00}
 
 TILL REPORT:
@@ -205,15 +205,15 @@ function merge(existing: any, u: any): any {
   }
 
   if (t === 'handwritten') {
-    const checksTotal = (u.checks_given||[]).reduce((s:number,c:any)=>s+absNum(c.amount),0);
     return {
       ...existing,
-      safe_drops:      absNum(u.safe_drops) || absNum(existing?.safe_drops),
-      paid_ins:        absNum(u.paid_ins) + absNum(existing?.paid_ins),
-      paid_outs:       absNum(u.paid_outs) + absNum(existing?.paid_outs),
-      check_sales:     checksTotal + absNum(existing?.check_sales),
-      checks_given:    [...(existing?.checks_given||[]), ...(u.checks_given||[])],
-      deliveries:      [...(existing?.deliveries||[]), ...(u.deliveries||[])],
+      safe_drops:       absNum(u.safe_drops) || absNum(existing?.safe_drops),
+      paid_ins:         absNum(u.paid_ins) + absNum(existing?.paid_ins),
+      paid_outs:        absNum(u.paid_outs) + absNum(existing?.paid_outs),
+      // checks_given = vendor checks paid OUT - these are EXPENSES not sales
+      // DO NOT add to check_sales (which is customer payment checks received)
+      checks_given:     [...(existing?.checks_given||[]), ...(u.checks_given||[])],
+      deliveries:       [...(existing?.deliveries||[]), ...(u.deliveries||[])],
       tickets_activated:[...(existing?.tickets_activated||[]), ...(u.tickets_activated||[])],
     };
   }
@@ -358,7 +358,9 @@ export async function POST(request: NextRequest) {
     await processDeliveries(sb, store.id, deliveries, reportDate);
 
     // Build safe DB payload - every field explicitly sanitized
-    const checksFromHandwritten = (extracted.checks_given||[]).reduce((s:number,c:any)=>s+absNum(c.amount),0);
+    // checks_given = vendor checks paid OUT (expenses), NOT payment method
+    // check_sales = customer checks received as payment (rare at gas stations)
+    // Keep these completely separate
 
     const payload: Record<string, any> = {
       store_id:              store.id,
@@ -384,7 +386,7 @@ export async function POST(request: NextRequest) {
       credit_sales:          absNum(merged.credit_sales),
       debit_sales:           absNum(merged.debit_sales),
       ebt_sales:             absNum(merged.ebt_sales),
-      check_sales:           absNum(merged.check_sales) || checksFromHandwritten,
+      check_sales:           absNum(merged.check_sales),  // Customer payment checks only - NOT vendor checks
       money_order_sales:     absNum(merged.money_order_sales),
       atm_sales:             absNum(merged.atm_sales),
       safe_drops:            absNum(merged.safe_drops),

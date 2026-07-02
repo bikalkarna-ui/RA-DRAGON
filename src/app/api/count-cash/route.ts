@@ -10,71 +10,48 @@ export async function POST(request: NextRequest) {
     const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
     if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
 
-    const { counted_cash, report_date, report_id } = await request.json();
+    const { counted_cash, report_date, cash_sales: clientCashSales } = await request.json();
     const n = (v: any) => Number(v || 0);
     const countedAmount = n(counted_cash);
     const today = report_date || new Date().toISOString().split('T')[0];
 
-    // Get the daily report for this date
+    // Get the daily report
     const { data: report } = await sb.from('daily_reports').select('*')
-      .eq('store_id', store.id)
-      .eq('report_date', today)
-      .maybeSingle();
+      .eq('store_id', store.id).eq('report_date', today).maybeSingle();
 
-    if (!report) return NextResponse.json({ error: 'No report found for this date' }, { status: 404 });
-
-    // Calculate expected cash — for fuel stations most payment is credit/CRIND
-    // Expected = beginning till + cash sales - safe drops - paid outs + paid ins + safe loans
-    const beginningTill = n(report.beginning_till);
-    const cashSales     = n(report.cash_sales);
-    const safeDrops     = n(report.safe_drops);
-    const paidOuts      = n(report.paid_outs);
-    const paidIns       = n(report.paid_ins);
-    const safeLoans     = n(report.safe_loans);
-    const grossSales    = n(report.gross_sales);
-    const creditSales   = n(report.credit_sales);
-    const debitSales    = n(report.debit_sales);
-    const checkSales    = n(report.check_sales);
-    const ebtSales      = n(report.ebt_sales);
-    const crindCash     = n(report.atm_sales);
-
-    let expectedCash = n(report.expected_cash);
-    if (!expectedCash) {
-      if (cashSales > 0 || beginningTill > 0) {
-        expectedCash = beginningTill + cashSales - safeDrops - paidOuts + paidIns + safeLoans;
-      } else if (grossSales > 0) {
-        const nonCash = creditSales + debitSales + ebtSales + checkSales + crindCash;
-        const estCash = Math.max(0, grossSales - nonCash);
-        expectedCash = beginningTill + estCash - safeDrops - paidOuts + paidIns + safeLoans;
-      }
+    // POS cash sales = the ground truth
+    // This is what the POS system says customers paid in cash
+    const cashSales = n(clientCashSales) || n(report?.cash_sales);
+    
+    if (cashSales === 0 && !report) {
+      return NextResponse.json({ error: 'No report found for this date — upload your store close report first' }, { status: 404 });
     }
 
-    // Short/Over = what employee counted vs what POS says should be there
-    const shortOver = Math.round((countedAmount - expectedCash) * 100) / 100;
-    const isShort = shortOver < -0.50;
-    const isOver  = shortOver > 0.50;
-    const isGood  = !isShort && !isOver;
+    // Short/Over = what you counted vs what POS says
+    const shortOver = Math.round((countedAmount - cashSales) * 100) / 100;
+    const isShort   = shortOver < -0.50;
+    const isOver    = shortOver > 0.50;
+    const isGood    = !isShort && !isOver;
 
-    // Ask AI to explain the short/over
+    // AI explains why
     const apiKey = process.env.OPENROUTER_API_KEY!;
     let aiReason = '';
     let aiSuggestions: string[] = [];
 
     try {
-      const prompt = `A gas station cashier counted $${countedAmount.toFixed(2)} in the drawer.
-The POS system says there should be $${expectedCash.toFixed(2)}.
-The difference is ${shortOver >= 0 ? '+' : ''}$${shortOver.toFixed(2)} (${isShort ? 'SHORT' : isOver ? 'OVER' : 'BALANCED'}).
+      const safeDrops = n(report?.safe_drops);
+      const prompt = `Gas station cash count analysis:
+- POS cash sales (ground truth): $${cashSales.toFixed(2)}
+- Owner physically counted: $${countedAmount.toFixed(2)}  
+- Difference: ${shortOver >= 0 ? '+' : ''}$${shortOver.toFixed(2)} (${isShort ? 'SHORT' : isOver ? 'OVER' : 'BALANCED'})
+- Total safe drops recorded: $${safeDrops.toFixed(2)}
+- Paid outs: $${n(report?.paid_outs).toFixed(2)}
+- Paid ins: $${n(report?.paid_ins).toFixed(2)}
 
-Store data:
-- Beginning till: $${beginningTill.toFixed(2)}
-- Cash sales per POS: $${cashSales.toFixed(2)}
-- Safe drops: $${safeDrops.toFixed(2)}
-- Paid outs: $${paidOuts.toFixed(2)}
-- Paid ins: $${paidIns.toFixed(2)}
-
-${isGood ? 'The drawer is balanced. Give a brief confirmation.' :
-`Explain in 2-3 sentences why the drawer might be ${isShort ? 'short' : 'over'} by $${Math.abs(shortOver).toFixed(2)}.
-Then give 3 specific actionable suggestions to investigate. Be direct and practical for a gas station owner.`}
+${isGood ? 'Cash matches POS. Give a brief positive confirmation in one sentence.' :
+`The cash is ${isShort ? 'SHORT' : 'OVER'} by $${Math.abs(shortOver).toFixed(2)}.
+Write 2 sentences explaining the most likely reason at a gas station.
+Then list exactly 3 specific things to check. Be direct and practical.`}
 
 Respond in JSON only: {"reason": "...", "suggestions": ["...", "...", "..."]}`;
 
@@ -93,25 +70,41 @@ Respond in JSON only: {"reason": "...", "suggestions": ["...", "...", "..."]}`;
       const parsed = JSON.parse(raw);
       aiReason = parsed.reason || '';
       aiSuggestions = parsed.suggestions || [];
-    } catch { 
-      aiReason = isGood ? 'Drawer is balanced.' :
-        isShort ? `Drawer is $${Math.abs(shortOver).toFixed(2)} short. Check for missed safe drops, paid outs not recorded, or counting errors.` :
-        `Drawer is $${shortOver.toFixed(2)} over. Check for duplicate paid in entries or miscounted cash.`;
+    } catch {
+      if (isGood) {
+        aiReason = 'Cash matches POS records perfectly.';
+      } else if (isShort) {
+        aiReason = `Cash is $${Math.abs(shortOver).toFixed(2)} short. Most likely a safe drop was missed or cash was paid out without being recorded.`;
+        aiSuggestions = [
+          'Check if all safe drops were entered in the POS system',
+          'Review paid out receipts — any unrecorded payments?',
+          'Check if beginning till amount was accidentally removed'
+        ];
+      } else {
+        aiReason = `Cash is $${shortOver.toFixed(2)} over. Extra cash found that wasn\'t accounted for in sales.`;
+        aiSuggestions = [
+          'Check for any unrecorded paid ins or safe loans',
+          'Verify beginning till amount was not double-counted',
+          'Look for any voided transactions that had cash taken'
+        ];
+      }
     }
 
-    // Update the report with the cash count result
-    await sb.from('daily_reports').update({
-      actual_cash: countedAmount,
-      expected_cash: expectedCash,
-      drawer_difference: shortOver,
-      ai_notes: aiReason,
-      updated_at: new Date().toISOString(),
-    }).eq('id', report.id);
+    // Save result to report
+    if (report) {
+      await sb.from('daily_reports').update({
+        actual_cash: countedAmount,
+        expected_cash: cashSales,
+        drawer_difference: shortOver,
+        ai_notes: aiReason,
+        updated_at: new Date().toISOString(),
+      }).eq('id', report.id);
+    }
 
     return NextResponse.json({
       success: true,
       counted: countedAmount,
-      expected: expectedCash,
+      expected: cashSales,
       short_over: shortOver,
       status: isShort ? 'short' : isOver ? 'over' : 'balanced',
       ai_reason: aiReason,
