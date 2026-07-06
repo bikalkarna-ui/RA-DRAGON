@@ -19,6 +19,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [calDate, setCalDate] = useState(new Date());
+  const [searchDate, setSearchDate] = useState('');
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -77,8 +78,6 @@ export default function ReportsPage() {
       {sub && <p className="text-xs text-muted mt-0.5">{sub}</p>}
     </div>
   );
-
-  const [searchDate, setSearchDate] = useState('');
 
   const TABS = [
     { id: 'today' as Tab, label: 'Today' },
