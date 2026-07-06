@@ -78,12 +78,16 @@ export default function ReportsPage() {
     </div>
   );
 
+  const [searchDate, setSearchDate] = useState('');
+
   const TABS = [
     { id: 'today' as Tab, label: 'Today' },
     { id: 'week' as Tab,  label: '7 Days' },
     { id: 'month' as Tab, label: '30 Days' },
     { id: 'calendar' as Tab, label: '📅 Cal' },
   ];
+
+  const searchResult = searchDate ? reports.find(r => r.report_date === searchDate) : null;
 
   return (
     <Screen title="Reports & P&L" subtitle="Sales analytics and trends"
@@ -100,6 +104,27 @@ export default function ReportsPage() {
           ))}
         </div>
 
+        <div className="flex gap-2">
+          <input type="date" value={searchDate} onChange={e => setSearchDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="inp h-9 text-sm flex-1" />
+          {searchDate && <button onClick={() => setSearchDate('')} className="btn btn-ghost h-9 px-3 text-sm">Clear</button>}
+        </div>
+        {searchDate && (
+          <div className="tile p-5">
+            {searchResult ? (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">{(() => { try { return new Date(searchDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return searchDate; } })()}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="tile p-3 text-center"><p className="text-xs text-muted">Gross Sales</p><p className="num font-black text-text">{fmt.currency(n(searchResult.gross_sales))}</p></div>
+                  <div className="tile p-3 text-center"><p className="text-xs text-muted">Short/Over</p><p className={cn("num font-black", n(searchResult.drawer_difference)<0?"text-red-600":"text-green-600")}>{n(searchResult.drawer_difference)>=0?'+':''}{fmt.currency(n(searchResult.drawer_difference))}</p></div>
+                  <div className="tile p-3 text-center"><p className="text-xs text-muted">Fuel</p><p className="num font-bold text-text">{fmt.currency(n(searchResult.fuel_sales))}</p></div>
+                  <div className="tile p-3 text-center"><p className="text-xs text-muted">Cash</p><p className="num font-bold text-text">{fmt.currency(n(searchResult.cash_sales))}</p></div>
+                </div>
+              </div>
+            ) : <p className="text-center text-gray-500 py-4">No report found for {searchDate}</p>}
+          </div>
+        )}
         {loading && <div className="tile p-10 text-center"><RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" /></div>}
 
         {/* ── TODAY ── */}

@@ -72,3 +72,37 @@ alter table products add column if not exists units_sold_today integer default 0
 alter table products add column if not exists units_sold_week integer default 0;
 alter table products add column if not exists units_sold_month integer default 0;
 alter table products add column if not exists expected_out_date date;
+
+-- Push notification subscriptions
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  store_id uuid references stores(id) on delete cascade,
+  subscription jsonb not null,
+  created_at timestamptz default now(),
+  unique(user_id)
+);
+alter table push_subscriptions enable row level security;
+drop policy if exists "ps_own" on push_subscriptions;
+create policy "ps_own" on push_subscriptions for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Shrink events (if not exists from earlier)
+create table if not exists shrink_events (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references stores(id) on delete cascade,
+  product_id uuid references products(id) on delete set null,
+  product_name text not null,
+  type text not null default 'waste',
+  quantity numeric(10,2) not null,
+  unit_cost numeric(10,2) default 0,
+  total_cost numeric(10,2) default 0,
+  employee_name text,
+  notes text,
+  created_at timestamptz default now()
+);
+alter table shrink_events enable row level security;
+drop policy if exists "se_own" on shrink_events;
+create policy "se_own" on shrink_events for all
+  using (store_id in (select id from stores where owner_id=auth.uid()))
+  with check (store_id in (select id from stores where owner_id=auth.uid()));
