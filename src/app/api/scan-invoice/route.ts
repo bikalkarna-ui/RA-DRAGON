@@ -1,7 +1,7 @@
+// v76 - uses claude-haiku-4-5 only, no gemini
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const MODEL = 'google/gemini-2.0-flash-001';
 
 function toNum(v: any): number {
   if (v === null || v === undefined || v === '') return 0;
@@ -85,7 +85,7 @@ Rules:
     const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 2000, messages: [{ role: 'user', content }] }),
+      body: JSON.stringify({ model: 'anthropic/claude-haiku-4-5', max_tokens: 2000, messages: [{ role: 'user', content }] }),
     });
 
     if (!aiRes.ok) {

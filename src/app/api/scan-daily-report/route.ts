@@ -1,3 +1,4 @@
+// v75-no-gemini
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
@@ -101,7 +102,7 @@ async function aiExtract(imgs: {b64:string;mime:string}[], prompt: string, token
     }
   }
 
-  for (const model of ['google/gemini-2.0-flash-001', 'anthropic/claude-haiku-4-5', 'openai/gpt-4o-mini']) {
+  for (const model of ['anthropic/claude-haiku-4-5', 'openai/gpt-4o-mini', 'anthropic/claude-3-5-haiku']) {
     try {
       const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',

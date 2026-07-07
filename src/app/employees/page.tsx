@@ -48,8 +48,8 @@ export default function EmployeesPage() {
     const weekAgo = new Date(Date.now() - 14 * 86400000).toISOString();
     const [{ data: emps }, { data: active }, { data: hist }] = await Promise.all([
       sb.from('employees').select('*').eq('store_id', store.id).eq('is_active', true).order('name'),
-      sb.from('time_clock').select('*, employees(name,role)').eq('store_id', store.id).is('clock_out', null).order('clock_in'),
-      sb.from('time_clock').select('*, employees(name,role)').eq('store_id', store.id).not('clock_out', 'is', null).gte('clock_in', weekAgo).order('clock_in', { ascending: false }).limit(50),
+      sb.from('time_clock').select('*').eq('store_id', store.id).is('clock_out', null).order('clock_in'),
+      sb.from('time_clock').select('*').eq('store_id', store.id).not('clock_out', 'is', null).gte('clock_in', weekAgo).order('clock_in', { ascending: false }).limit(50),
     ]);
     setEmployees(emps ?? []);
     setClocks(active ?? []);
@@ -69,8 +69,9 @@ export default function EmployeesPage() {
   const submitPIN = async () => {
     if (!store || pin.length < 4) return;
     const sb = createClient();
-    const emp = employees.find(e => e.pin === pin);
-    if (!emp) { setPinMsg({ text: 'Unknown PIN — try again', ok: false }); setPin(''); setTimeout(() => setPinMsg(null), 2500); return; }
+    if (employees.length === 0) { setPinMsg({ text: 'No employees found — add employees in Roster tab first', ok: false }); setPin(''); setTimeout(() => setPinMsg(null), 3000); return; }
+    const emp = employees.find(e => String(e.pin).trim() === String(pin).trim());
+    if (!emp) { setPinMsg({ text: `Wrong PIN (${employees.length} employee${employees.length!==1?'s':''} on file) — check Roster tab`, ok: false }); setPin(''); setTimeout(() => setPinMsg(null), 3000); return; }
     const active = clocks.find(c => c.employee_id === emp.id);
     if (active) {
       const ms = Date.now() - new Date(active.clock_in).getTime();
@@ -80,7 +81,8 @@ export default function EmployeesPage() {
       // Log to timeline
       fetch('/api/timeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'clock_out', title: `${emp.name} clocked out`, description: duration(active.clock_in), employee_name: emp.name }) }).catch(() => {});
     } else {
-      await sb.from('time_clock').insert({ store_id: store.id, employee_id: emp.id, employee_name: emp.name, clock_in: new Date().toISOString() });
+      const { error: clockErr } = await sb.from('time_clock').insert({ store_id: store.id, employee_id: emp.id, employee_name: emp.name, clock_in: new Date().toISOString() });
+      if (clockErr) { setPinMsg({ text: `Error: ${clockErr.message}`, ok: false }); setPin(''); setTimeout(() => setPinMsg(null), 5000); setSaving(false); return; }
       setPinMsg({ text: `✓ ${emp.name} clocked IN`, ok: true });
       fetch('/api/timeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'clock_in', title: `${emp.name} clocked in`, employee_name: emp.name }) }).catch(() => {});
     }
@@ -135,7 +137,7 @@ export default function EmployeesPage() {
   ];
 
   return (
-    <Screen title="Employees" subtitle={`${employees.length} staff · ${clocks.length} clocked in`}
+    <Screen title="Employees" subtitle={`${employees.length} staff · ${clocks.length > 0 ? clocks.length + ' clocked in' : 'none clocked in'}`}
       action={tab === 'roster'
         ? <button onClick={() => { setShowForm(v => !v); setEditId(null); setForm(EMPTY_EMP); }} className={cn('btn text-sm h-9 px-4', showForm ? 'btn-ghost' : 'btn-accent')}>{showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{showForm ? 'Cancel' : 'Add'}</button>
         : tab === 'payroll' ? <button onClick={exportPayroll} className="btn btn-ghost text-sm h-9 px-4"><Download className="h-4 w-4" />Export</button> : null}>
@@ -173,7 +175,7 @@ export default function EmployeesPage() {
                   <button key={String(d)} disabled={!d && d !== 0}
                     onClick={() => {
                       if (d === '⌫') setPin(p => p.slice(0,-1));
-                      else if (pin.length < 4) { const np = pin + String(d); setPin(np); if (np.length === 4) setTimeout(() => { submitPIN(); }, 100); }
+                      else if (pin.length < 4) { const np = pin + String(d); setPin(np); if (np.length === 4) setTimeout(() => { submitPIN(); }, 300); }
                     }}
                     className={cn('flex h-16 items-center justify-center rounded-2xl font-black text-xl transition-all active:scale-95',
                       d === '⌫' ? 'text-muted bg-surface border border-border hover:bg-gray-100' :

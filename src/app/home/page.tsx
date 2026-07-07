@@ -175,6 +175,7 @@ export default function HomePage() {
   ));
 
   const APPS = [
+    { href: '/cashier',     icon: DollarSign, label: 'Cashier Actions', sub: 'Drop · Paid out · Vendor', badge: 0, color: 'bg-green-50 text-green-700' },
     { href: '/pos',         icon: BarChart3,  label: 'Daily Reports',    sub: 'Upload & review',    badge: 0,          color: 'bg-red-50 text-accent' },
     { href: '/invoices',    icon: FileText,   label: 'Invoices',         sub: 'Scan vendor invoices', badge: pendingInv, color: 'bg-pink-50 text-pink-600' },
     { href: '/inventory',   icon: Package,    label: 'Inventory',        sub: 'Stock & movement',   badge: outOfStock,  color: 'bg-blue-50 text-blue-600' },
