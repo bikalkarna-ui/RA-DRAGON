@@ -5,11 +5,15 @@ export const metadata: Metadata = {
   title: 'RYXSOR AI — Smart Store Manager',
   description: 'RYXSOR AI — AI-powered gas station and convenience store management. Auto-read reports, track inventory, manage employees.',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
-  description: 'AI-powered store management',
   manifest: '/manifest.json',
 };
 
