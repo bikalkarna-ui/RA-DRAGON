@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Save to register_syncs using authenticated client
     try {
-      await sb.from('register_syncs').insert({
+      await sb.from('report_uploads').insert({
         store_id: store.id,
         sync_date: parsed.report_date ?? new Date().toISOString().split('T')[0],
         source: 'modisoft',

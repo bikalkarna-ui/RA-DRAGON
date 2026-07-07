@@ -1,5 +1,9 @@
 'use client';
+import { useState, useEffect } from 'react';
 export default function OfflinePage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
       <div className="text-6xl mb-6">📵</div>

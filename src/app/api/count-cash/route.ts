@@ -11,97 +11,98 @@ export async function POST(request: NextRequest) {
 
     const { counted_cash, report_date } = await request.json();
     const abs = (v: any) => Math.abs(Number(v || 0));
-    const countedAmount = abs(counted_cash);
-    const today = report_date || new Date().toISOString().split('T')[0];
+    const counted = abs(counted_cash);
+    const date = report_date || new Date().toISOString().split('T')[0];
 
-    const { data: report } = await sb.from('daily_reports').select('*').eq('store_id', store.id).eq('report_date', today).maybeSingle();
-    if (!report) return NextResponse.json({ error: 'No report found for this date. Upload your store close report first.' }, { status: 404 });
+    const { data: report } = await sb.from('daily_reports').select('*')
+      .eq('store_id', store.id).eq('report_date', date).maybeSingle();
 
-    // CORRECT LOGIC:
-    // Safe drops = total cash dropped by cashiers = what SHOULD be in the safe
-    // Beginning till stays in register - not counted here
-    // Short/Over = what you physically counted vs what safe drops say should be there
-    const safeDrops    = abs(report.safe_drops);
-    const beginningTill = abs(report.beginning_till);
-    const paidOuts     = abs(report.paid_outs);
-    const paidIns      = abs(report.paid_ins);
-    const safeLoans    = abs(report.safe_loans);
-    const cashSales    = abs(report.cash_sales);
-    const grossSales   = abs(report.gross_sales);
-    const credit       = abs(report.credit_sales);
-    const debit        = abs(report.debit_sales);
-    const checks       = abs(report.check_sales);
-    const ebt          = abs(report.ebt_sales);
-    const crind        = abs(report.atm_sales);
-
-    // What should be in safe:
-    // Option A: Safe drops total (most accurate - use if available)
-    // Option B: Cash sales - paid outs + paid ins (if no safe drops recorded)
-    // Option C: Gross - all non-cash - paid outs + paid ins (if fuel station with CRIND)
-    let expectedInSafe = 0;
-    if (safeDrops > 0) {
-      // Use safe drops directly - this is what was physically dropped
-      expectedInSafe = safeDrops;
-    } else if (cashSales > 0) {
-      expectedInSafe = cashSales - paidOuts + paidIns + safeLoans;
-    } else if (grossSales > 0) {
-      // Fuel station: most cash is CRIND, estimate cash portion
-      const nonCash = credit + debit + ebt + checks + crind;
-      const estimatedCash = Math.max(0, grossSales - nonCash);
-      expectedInSafe = estimatedCash - paidOuts + paidIns;
+    if (!report) {
+      return NextResponse.json({
+        error: 'No report found for this date. Upload your till report first so the app knows the safe drop amount.'
+      }, { status: 404 });
     }
 
-    expectedInSafe = Math.round(expectedInSafe * 100) / 100;
+    // SIMPLE LOGIC:
+    // Safe drops (from till report) = total cash physically dropped into safe
+    // You count what is in the safe
+    // Short/Over = what you counted vs safe drops
+    const safeDrops = abs(report.safe_drops);
+    const paidOuts  = abs(report.paid_outs);
+    const paidIns   = abs(report.paid_ins);
 
-    // Short/Over = what you counted vs what should be in safe
-    const shortOver = Math.round((countedAmount - expectedInSafe) * 100) / 100;
-    const isShort   = shortOver < -0.50;
-    const isOver    = shortOver > 0.50;
-    const isGood    = !isShort && !isOver;
+    // Expected in safe = safe drops (what should be there)
+    // Note: paid outs reduce what cashier had, paid ins add to it
+    // Safe drops already accounts for this since cashier drops AFTER paid outs
+    // So expected = safe drops total
+    const expected = safeDrops;
 
-    // AI analysis
+    if (expected === 0) {
+      return NextResponse.json({
+        error: 'No safe drop amount found. Upload your till report first — it shows the cashier safe drops total.'
+      }, { status: 400 });
+    }
+
+    // Short/Over
+    const shortOver = Math.round((counted - expected) * 100) / 100;
+    const isShort = shortOver < -0.50;
+    const isOver  = shortOver > 0.50;
+    const isGood  = !isShort && !isOver;
+
+    // AI explanation
     const apiKey = process.env.OPENROUTER_API_KEY!;
     let aiReason = '';
     let aiSuggestions: string[] = [];
 
     try {
-      const prompt = `Gas station cash count:
-Safe drops total (what should be in safe): $${expectedInSafe.toFixed(2)}
-You counted physically: $${countedAmount.toFixed(2)}
-Difference: ${shortOver >= 0 ? '+' : ''}$${shortOver.toFixed(2)} (${isShort ? 'SHORT' : isOver ? 'OVER' : 'BALANCED'})
-Beginning till (stays in register, not counted): $${beginningTill.toFixed(2)}
-Paid outs: $${paidOuts.toFixed(2)} | Paid ins: $${paidIns.toFixed(2)}
+      const prompt = `Gas station cash safe count:
+- Cashier safe drops total (from till report): $${expected.toFixed(2)}
+- Owner physically counted in safe: $${counted.toFixed(2)}
+- Difference: ${shortOver >= 0 ? '+' : ''}$${shortOver.toFixed(2)} (${isShort ? 'SHORT' : isOver ? 'OVER' : 'BALANCED'})
+- Paid outs: $${paidOuts.toFixed(2)}, Paid ins: $${paidIns.toFixed(2)}
 
-${isGood ? 'Cash matches perfectly. Give brief 1-sentence confirmation.' : `Cash is ${isShort ? 'SHORT' : 'OVER'} by $${Math.abs(shortOver).toFixed(2)}. Give 2 sentences on most likely reason at a gas station. Then list 3 specific things to investigate.`}
+${isGood
+  ? 'Safe matches perfectly. One sentence confirmation.'
+  : `Safe is ${isShort ? 'SHORT' : 'OVER'} by $${Math.abs(shortOver).toFixed(2)}. 
+     Two sentences on most likely reason. Then 3 specific things to check.`}
 
 JSON only: {"reason":"...","suggestions":["...","...","..."]}`;
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'anthropic/claude-haiku-4-5', max_tokens: 350, messages: [{ role: 'user', content: prompt }] })
+        body: JSON.stringify({ model: 'anthropic/claude-haiku-4-5', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
       });
       const d = await res.json();
-      const raw = (d?.choices?.[0]?.message?.content || '').replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim();
+      const raw = (d?.choices?.[0]?.message?.content || '').replace(/```json\s*/i,'').replace(/```/g,'').trim();
       const p = JSON.parse(raw);
       aiReason = p.reason || '';
       aiSuggestions = p.suggestions || [];
     } catch {
       if (isGood) {
         aiReason = 'Safe matches perfectly — all cash accounted for.';
+        aiSuggestions = [];
       } else if (isShort) {
-        aiReason = `Safe is $${Math.abs(shortOver).toFixed(2)} short. Cash was either not fully dropped into the safe or a paid out was not recorded.`;
-        aiSuggestions = ['Check if all safe drops were completed and amounts match receipts', 'Review paid out receipts — any unrecorded payments?', 'Verify cashier dropped beginning till separately from sales cash'];
+        aiReason = `Safe is $${Math.abs(shortOver).toFixed(2)} short of the recorded safe drops. Cash was either not fully dropped or a drop amount was entered incorrectly.`;
+        aiSuggestions = [
+          'Verify all drop receipts match the amounts entered in the POS',
+          'Check if a drop was made but not recorded in the system',
+          'Count again — verify you did not include the beginning till ($250) in your count'
+        ];
       } else {
-        aiReason = `Safe is $${shortOver.toFixed(2)} over. Extra cash found beyond what drops account for.`;
-        aiSuggestions = ['Check if a paid in was not recorded in the system', 'Verify the beginning till amount is correct', 'Look for any deposit from previous shift not cleared'];
+        aiReason = `Safe has $${shortOver.toFixed(2)} more than recorded drops. Extra cash found beyond what was logged.`;
+        aiSuggestions = [
+          'Check if a safe drop was made but not entered in the POS system',
+          'Verify the beginning till amount was not accidentally dropped into safe',
+          'Check for any unrecorded paid ins'
+        ];
       }
     }
 
-    // Save to report
+    // Save result
     await sb.from('daily_reports').update({
-      actual_cash: countedAmount,
-      expected_cash: expectedInSafe,
+      actual_cash: counted,
+      expected_cash: expected,
       drawer_difference: shortOver,
       ai_notes: aiReason,
       updated_at: new Date().toISOString(),
@@ -109,13 +110,13 @@ JSON only: {"reason":"...","suggestions":["...","...","..."]}`;
 
     return NextResponse.json({
       success: true,
-      counted: countedAmount,
-      expected: expectedInSafe,
+      counted,
+      expected,
       short_over: shortOver,
+      safe_drops: safeDrops,
       status: isShort ? 'short' : isOver ? 'over' : 'balanced',
       ai_reason: aiReason,
       ai_suggestions: aiSuggestions,
-      safeDrops,
     });
 
   } catch (err: any) {

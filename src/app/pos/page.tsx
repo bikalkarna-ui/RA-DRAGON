@@ -1,788 +1,597 @@
 'use client';
 export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
-import { MultiScan } from '@/components/ui/multi-scan';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
 import {
-  CheckCircle, Trash2, RefreshCw, ChevronDown, ChevronUp,
-  AlertTriangle, Clock, BarChart3, Plus, Zap, Eye,
-  DollarSign, Check, Circle
+  Loader2, ChevronDown, ChevronUp, Trash2, RefreshCw,
+  DollarSign, Zap, CheckCircle, AlertTriangle, TrendingDown, TrendingUp, Info
 } from 'lucide-react';
+import { MultiScan } from '@/components/ui/multi-scan';
 
-const todayStr = () => new Date().toISOString().split('T')[0];
-const fmtLong  = (d: string) => { try { return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); } catch { return d; } };
-const fmtShort = (d: string) => { try { return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); } catch { return d; } };
-const fmtTime  = (d: string) => { try { return new Date(d).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); } catch { return ''; } };
+// ── helpers ──────────────────────────────────────────────────────────────────
+const n = (v: any) => Number(v || 0);
 
-type Tab = 'report' | 'checklist' | 'timeline';
+function fmtDateShort(d: string) {
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  catch { return d; }
+}
+function fmtDateLong(d: string) {
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
+  catch { return d; }
+}
 
-// ── Short/Over Box ────────────────────────────────────────────────────────────
-function ShortOverBox({ cashSales, safeDrops, reportDate, onUpdate }: {
-  cashSales: number;
-  safeDrops: number;
-  reportDate?: string;
-  onUpdate?: () => void;
+// ── Row component ─────────────────────────────────────────────────────────────
+function Row({ label, value, sub, red, bold, indent }: {
+  label: string; value: number; sub?: string; red?: boolean; bold?: boolean; indent?: boolean;
 }) {
-  const [showCount, setShowCount] = useState(false);
+  if (value === 0) return null;
+  return (
+    <div className={cn('flex items-center justify-between py-2 border-b border-gray-50 last:border-0', indent && 'pl-4')}>
+      <div>
+        <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-600')}>{label}</span>
+        {sub && <p className="text-[10px] text-muted">{sub}</p>}
+      </div>
+      <span className={cn('num text-sm font-bold', bold ? 'text-text' : red ? 'text-red-600' : 'text-gray-800')}>
+        {red ? '-' : ''}{fmt.currency(Math.abs(value))}
+      </span>
+    </div>
+  );
+}
+
+// ── Cash Count + Short/Over ───────────────────────────────────────────────────
+function CashCount({ safeDrops, reportDate, existingCount, onUpdate }: {
+  safeDrops: number; reportDate: string; existingCount: number; onUpdate?: () => void;
+}) {
   const [cashInput, setCashInput] = useState('');
   const [counting, setCounting] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // Safe drop vs cash sales comparison
-  const dropDiff = Math.round((safeDrops - cashSales) * 100) / 100;
-  const dropShort = dropDiff < -0.50;
-  const dropOver  = dropDiff > 0.50;
-  const dropGood  = !dropShort && !dropOver;
-  const hasData   = cashSales > 0 || safeDrops > 0;
+  // Already counted — show result
+  const alreadyCounted = existingCount > 0;
+  const diff = alreadyCounted ? Math.round((existingCount - safeDrops) * 100) / 100 : null;
+  const isShort = diff !== null && diff < -0.50;
+  const isOver  = diff !== null && diff > 0.50;
+  const isGood  = diff !== null && !isShort && !isOver;
 
-  const submitCount = async () => {
+  const submit = async () => {
     if (!cashInput || !reportDate) return;
     setCounting(true);
     try {
       const res = await fetch('/api/count-cash', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate, cash_sales: cashSales }),
+        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate }),
       });
       const data = await res.json();
-      setResult(data);
-      if (data.success) onUpdate?.();
+      if (data.success) { setResult(data); onUpdate?.(); }
+      else setResult({ error: data.error || 'Failed' });
     } catch { setResult({ error: 'Network error — try again' }); }
     setCounting(false);
   };
 
-  return (
-    <div className="mb-4 space-y-3">
+  if (safeDrops === 0) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-gray-200 p-4 text-center">
+        <p className="text-xs text-muted">No safe drops recorded yet</p>
+        <p className="text-xs text-muted">Upload your till report to see safe drop total</p>
+      </div>
+    );
+  }
 
-      {/* ── Safe Drop vs Cash Sales ── */}
-      {hasData && (
-        <div className={cn('rounded-2xl border-2 p-4',
-          dropShort ? 'border-red-400 bg-red-50' :
-          dropOver  ? 'border-green-400 bg-green-50' :
-          'border-gray-200 bg-gray-50')}>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">SAFE DROP vs CASH SALES</p>
-          <div className="flex items-end justify-between mb-3">
-            <div>
-              <p className={cn('num font-black text-4xl leading-none',
-                dropShort ? 'text-red-700' : dropOver ? 'text-green-700' : 'text-gray-500')}>
-                {dropOver ? '+' : ''}{fmt.currency(dropDiff)}
-              </p>
-              <p className={cn('text-sm font-semibold mt-1.5',
-                dropShort ? 'text-red-600' : dropOver ? 'text-green-600' : 'text-gray-500')}>
-                {dropShort ? `⚠ Safe drops are ${fmt.currency(Math.abs(dropDiff))} LESS than cash sales` :
-                 dropOver  ? `Safe drops are ${fmt.currency(dropDiff)} MORE than cash sales` :
-                 '✓ Safe drops match cash sales'}
-              </p>
-            </div>
-            <div className="text-right space-y-1.5 shrink-0 ml-4">
-              <div>
-                <p className="text-xs text-gray-400">POS Cash Sales</p>
-                <p className="num font-black text-text">{fmt.currency(cashSales)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Total Safe Drops</p>
-                <p className="num font-bold text-gray-700">{fmt.currency(safeDrops)}</p>
-              </div>
-            </div>
+  // Show previous count result
+  if (alreadyCounted && !result) {
+    return (
+      <div className={cn('rounded-2xl border-2 p-5',
+        isShort ? 'border-red-400 bg-red-50' :
+        isOver  ? 'border-blue-400 bg-blue-50' :
+                  'border-green-400 bg-green-50')}>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{color: isShort?'#b91c1c':isOver?'#1d4ed8':'#15803d'}}>
+          CASH COUNT RESULT
+        </p>
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <p className={cn('num font-black text-5xl leading-none', isShort?'text-red-700':isOver?'text-blue-700':'text-green-700')}>
+              {isOver?'+':''}{fmt.currency(diff!)}
+            </p>
+            <p className={cn('text-sm font-bold mt-2', isShort?'text-red-600':isOver?'text-blue-600':'text-green-600')}>
+              {isShort ? `⚠ Safe is ${fmt.currency(Math.abs(diff!))} SHORT` :
+               isOver  ? `Safe is ${fmt.currency(diff!)} OVER` :
+               '✓ Cash matches safe drops perfectly'}
+            </p>
           </div>
-
-          {/* Explanation when short/over */}
-          {dropShort && (
-            <div className="rounded-xl bg-red-100 border border-red-200 p-3 text-xs text-red-800 space-y-1">
-              <p className="font-bold">Possible reasons for shortage:</p>
-              <p>• Cash was not dropped and is still in the register</p>
-              <p>• A safe drop was not recorded in the system</p>
-              <p>• Cash was paid out without being logged</p>
-              <p>• Cashier kept cash without dropping it</p>
-            </div>
-          )}
-          {dropOver && (
-            <div className="rounded-xl bg-green-100 border border-green-200 p-3 text-xs text-green-800 space-y-1">
-              <p className="font-bold">Possible reasons for overage:</p>
-              <p>• A paid out was not recorded in the system</p>
-              <p>• Safe loan amount was dropped extra</p>
-              <p>• Beginning till was included in drops</p>
-            </div>
-          )}
+          <div className="text-right space-y-1">
+            <div><p className="text-[10px] text-gray-500">Safe Drops</p><p className="num font-bold">{fmt.currency(safeDrops)}</p></div>
+            <div><p className="text-[10px] text-gray-500">You Counted</p><p className="num font-bold">{fmt.currency(existingCount)}</p></div>
+          </div>
         </div>
-      )}
+        <button onClick={() => { setResult(null); setCashInput(''); }}
+          className="text-xs text-muted hover:text-sub underline">
+          Recount cash
+        </button>
+      </div>
+    );
+  }
 
-      {/* ── Manual Cash Count ── */}
-      <div className={cn('rounded-2xl border-2 p-4',
-        showCount ? 'border-accent bg-red-50/30' : 'border-dashed border-gray-300 bg-gray-50')}>
-
-        {!showCount && !result && (
-          <button onClick={() => setShowCount(true)}
-            className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-accent hover:text-red-700">
-            <DollarSign className="h-4 w-4" />
-            Count cash in safe manually
-          </button>
-        )}
-
-        {showCount && !result && (
+  // Show submitted result
+  if (result && !result.error) {
+    return (
+      <div className={cn('rounded-2xl border-2 p-5',
+        result.status==='balanced' ? 'border-green-400 bg-green-50' :
+        result.status==='short'    ? 'border-red-400 bg-red-50' :
+                                     'border-blue-400 bg-blue-50')}>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
+           style={{color:result.status==='balanced'?'#15803d':result.status==='short'?'#b91c1c':'#1d4ed8'}}>
+          CASH COUNT RESULT
+        </p>
+        <div className="flex items-end justify-between mb-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-1">COUNT CASH IN SAFE</p>
-            {cashSales > 0 && (
-              <p className="text-xs text-gray-500 mb-3">
-                POS shows <span className="num font-black text-text">{fmt.currency(cashSales)}</span> in cash sales.
-                Count all cash physically in the safe and enter below.
-              </p>
-            )}
-            <div className="flex gap-2 mb-2">
-              <input
-                type="number" step="0.01" min="0"
-                value={cashInput}
-                onChange={e => setCashInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submitCount()}
-                placeholder="0.00"
-                autoFocus
-                className="inp num font-black text-2xl text-center flex-1 h-14"
-              />
-              <button onClick={submitCount} disabled={!cashInput || counting}
-                className={cn('btn btn-accent h-14 px-6 font-bold', counting && 'opacity-60')}>
-                {counting ? 'Checking…' : 'Submit'}
-              </button>
+            <p className={cn('num font-black text-5xl leading-none',
+              result.status==='balanced'?'text-green-700':result.status==='short'?'text-red-700':'text-blue-700')}>
+              {(result.short_over||0)>=0?'+':''}{fmt.currency(result.short_over||0)}
+            </p>
+            <p className={cn('text-sm font-bold mt-2',
+              result.status==='balanced'?'text-green-600':result.status==='short'?'text-red-600':'text-blue-600')}>
+              {result.status==='balanced' ? '✓ Perfect — cash matches safe drops!' :
+               result.status==='short'    ? `⚠ Safe is ${fmt.currency(Math.abs(result.short_over||0))} SHORT` :
+                                            `Safe is ${fmt.currency(result.short_over||0)} OVER`}
+            </p>
+          </div>
+          <div className="text-right space-y-1">
+            <div><p className="text-[10px] text-gray-500">Safe Drops</p><p className="num font-bold">{fmt.currency(result.expected||0)}</p></div>
+            <div><p className="text-[10px] text-gray-500">You Counted</p><p className="num font-bold">{fmt.currency(result.counted||0)}</p></div>
+          </div>
+        </div>
+
+        {result.ai_reason && (
+          <div className="rounded-xl bg-white/60 p-3 mb-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Zap className="h-3.5 w-3.5 text-violet-600"/>
+              <p className="text-xs font-bold text-violet-700">AI Analysis</p>
             </div>
-            <button onClick={() => setShowCount(false)} className="text-xs text-muted hover:text-sub">Cancel</button>
+            <p className="text-xs text-gray-700">{result.ai_reason}</p>
           </div>
         )}
 
-        {result && !result.error && (
-          <div>
-            <div className={cn('rounded-xl border-2 p-4 mb-3',
-              result.status === 'balanced' ? 'bg-green-50 border-green-400' :
-              result.status === 'short'    ? 'bg-red-50 border-red-400' :
-                                            'bg-blue-50 border-blue-400')}>
-              <p className={cn('num font-black text-4xl leading-none mb-1',
-                result.status === 'balanced' ? 'text-green-700' :
-                result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
-                {(result.short_over||0) >= 0 ? '+' : ''}{fmt.currency(result.short_over||0)}
-              </p>
-              <p className={cn('text-sm font-bold mb-2',
-                result.status === 'balanced' ? 'text-green-700' :
-                result.status === 'short'    ? 'text-red-700' : 'text-blue-700')}>
-                {result.status === 'balanced' ? '✓ Cash matches POS perfectly!' :
-                 result.status === 'short'    ? `⚠ ${fmt.currency(Math.abs(result.short_over||0))} SHORT — cash is missing` :
-                                               `${fmt.currency(result.short_over||0)} OVER — extra cash found`}
-              </p>
-              <div className="flex gap-4 text-xs text-gray-600">
-                <span>You counted: <span className="num font-bold">{fmt.currency(result.counted||0)}</span></span>
-                <span>POS cash sales: <span className="num font-bold">{fmt.currency(result.expected||0)}</span></span>
+        {result.ai_suggestions?.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-gray-700">What to check:</p>
+            {result.ai_suggestions.map((s:string,i:number) => (
+              <div key={i} className="flex gap-2 text-xs text-gray-600">
+                <span className="font-black text-accent shrink-0">{i+1}.</span><span>{s}</span>
               </div>
-            </div>
-
-            {result.ai_reason && (
-              <div className="rounded-xl bg-violet-50 border border-violet-200 p-3 mb-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Zap className="h-3.5 w-3.5 text-violet-600" />
-                  <p className="text-xs font-bold text-violet-700">AI Analysis</p>
-                </div>
-                <p className="text-xs text-violet-700">{result.ai_reason}</p>
-              </div>
-            )}
-
-            {result.ai_suggestions?.length > 0 && (
-              <div className="mb-3">
-                <p className="text-xs font-bold text-text mb-2">What to check:</p>
-                {result.ai_suggestions.map((s: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-gray-700 mb-1.5">
-                    <span className="text-accent font-black shrink-0">{i+1}.</span>
-                    <span>{s}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button onClick={() => { setResult(null); setCashInput(''); setShowCount(true); }}
-              className="text-xs text-muted hover:text-sub">Count again</button>
+            ))}
           </div>
         )}
 
-        {result?.error && (
-          <div>
-            <p className="text-sm text-red-700">{result.error}</p>
-            <button onClick={() => setResult(null)} className="text-xs text-accent mt-2">Try again</button>
-          </div>
-        )}
+        <button onClick={() => { setResult(null); setCashInput(''); }}
+          className="mt-3 text-xs text-muted hover:text-sub underline">Recount</button>
+      </div>
+    );
+  }
+
+  // Input form
+  return (
+    <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">COUNT YOUR CASH</p>
+      <p className="text-xs text-amber-700 mb-1">
+        Safe drops total: <span className="num font-black text-text">{fmt.currency(safeDrops)}</span>
+      </p>
+      <p className="text-xs text-amber-600 mb-4">
+        Count all cash physically in the safe (safe drops only — don't include the $250 beginning till).
+        Enter what you count below.
+      </p>
+      {result?.error && <p className="text-xs text-red-600 mb-3">{result.error}</p>}
+      <div className="flex gap-2">
+        <input
+          type="number" step="0.01" min="0"
+          value={cashInput}
+          onChange={e => setCashInput(e.target.value)}
+          onKeyDown={e => e.key==='Enter' && submit()}
+          placeholder="0.00" autoFocus
+          className="inp num font-black text-2xl text-center flex-1 h-14"
+        />
+        <button onClick={submit} disabled={!cashInput||counting}
+          className={cn('btn btn-accent h-14 px-6 font-bold gap-2', counting&&'opacity-60')}>
+          {counting ? <><Loader2 className="h-4 w-4 animate-spin"/>Checking…</> : 'Submit'}
+        </button>
       </div>
     </div>
   );
 }
 
 // ── Full Report View ──────────────────────────────────────────────────────────
-function ReportFull({ r }: { r: any }) {
-  const n = (v: any) => Number(v || 0);
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">{title}</p>
-      <div className="space-y-0.5">{children}</div>
-    </div>
-  );
-
-  const Row = ({ label, value, neg, bold, isCurrency = true, color = '' }: any) => {
-    if (value === undefined || value === null) return null;
-    if (value === 0 && !bold) return null;
-    return (
-      <div className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
-        <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-600')}>{label}</span>
-        <span className={cn('num text-sm font-semibold', bold ? 'text-text' : neg ? 'text-accent' : color || 'text-gray-800')}>
-          {neg && value > 0 ? '−' : ''}{isCurrency ? fmt.currency(value) : value.toLocaleString()}
-        </span>
-      </div>
-    );
-  };
-
-  const depts = r.department_sales || {};
-  const deptEntries = Object.entries(depts).filter(([,v]) => Number(v) > 0).sort((a,b) => Number(b[1]) - Number(a[1]));
-
-  return (
-    <div className="space-y-5">
-
-      {/* Sales Summary */}
-      <Section title="Sales Summary">
-        <Row label="Gross Sales"      value={n(r.gross_sales)}        bold />
-        <Row label="Fuel Sales"       value={n(r.fuel_sales)} />
-        <Row label="Inside / Non-Fuel" value={n(r.inside_sales)} />
-        <Row label="Net Sales"        value={n(r.net_sales)} />
-        <Row label="Lottery Sales"    value={n(r.lottery_sales)} />
-        <Row label="Scratch Off"      value={n(r.scratch_sales)} />
-        <Row label="Taxes"            value={n(r.taxes)} />
-        <Row label="Discounts"        value={n(r.discounts)}           neg />
-        <Row label="Refunds"          value={n(r.refunds)}             neg />
-        <Row label="Transactions"     value={n(r.transactions)}        isCurrency={false} />
-      </Section>
-
-      {/* Payment Methods */}
-      <Section title="Payment Methods (Money Received)">
-        <Row label="Cash"             value={n(r.cash_sales)} />
-        <Row label="Credit / CRIND"   value={n(r.credit_sales)} />
-        <Row label="Debit / CRIND"    value={n(r.debit_sales)} />
-        <Row label="EBT / SNAP"       value={n(r.ebt_sales)} />
-        <Row label="Customer Checks"  value={n(r.check_sales)} />
-        <Row label="Money Orders"     value={n(r.money_order_sales)} />
-        <Row label="Pay-at-Pump Cash" value={n(r.atm_sales)} />
-      </Section>
-
-      {/* Vendor Checks Paid Out - these are EXPENSES, not payment methods */}
-      {Array.isArray(r.checks_given) && r.checks_given.length > 0 && (
-        <Section title="Checks Written to Vendors (Expenses)">
-          {(r.checks_given as any[]).map((c: any, i: number) => (
-            <div key={i} className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
-              <span className="text-sm text-gray-600">
-                {c.number ? `#${c.number} · ` : ''}{c.payee || 'Vendor'}
-              </span>
-              <span className="num text-sm font-semibold text-red-700">−{fmt.currency(n(c.amount))}</span>
-            </div>
-          ))}
-          <div className="flex justify-between py-1.5 mt-1 border-t-2 border-gray-200">
-            <span className="text-sm font-bold text-text">Total Paid Out</span>
-            <span className="num text-sm font-bold text-red-700">
-              −{fmt.currency((r.checks_given as any[]).reduce((s:number,c:any)=>s+n(c.amount),0))}
-            </span>
-          </div>
-        </Section>
-      )}
-
-      {/* Cash Management */}
-      {(n(r.actual_cash) + n(r.safe_drops) + n(r.paid_outs) + n(r.paid_ins) + n(r.beginning_till)) > 0 && (
-        <Section title="Cash Management">
-          <Row label="Beginning Till"  value={n(r.beginning_till)} />
-          <Row label="Cash Sales"      value={n(r.cash_sales)} />
-          <Row label="Safe Loans"      value={n(r.safe_loans)} />
-          <Row label="Paid Ins"        value={n(r.paid_ins)} />
-          <Row label="Safe Drops"      value={n(r.safe_drops)}       neg />
-          <Row label="Paid Outs"       value={n(r.paid_outs)}        neg />
-          <Row label="Expected Cash"   value={n(r.expected_cash)} />
-          <Row label="Actual Cash"     value={n(r.actual_cash)} />
-          <Row label="Cash Deposit"    value={n(r.cash_deposit)} />
-          <Row label="Ending Till"     value={n(r.ending_till)} />
-          {/* Short/Over highlighted row */}
-          <div className={cn('flex justify-between items-center px-3 py-2.5 rounded-xl mt-2 border-2 font-black',
-            n(r.drawer_difference) < -0.5 ? 'bg-red-50 border-red-400 text-red-700' :
-            n(r.drawer_difference) > 0.5  ? 'bg-green-50 border-green-400 text-green-700' :
-            'bg-gray-50 border-gray-200 text-gray-600')}>
-            <span>SHORT / OVER</span>
-            <span className="num text-xl">{n(r.drawer_difference) >= 0 ? '+' : ''}{fmt.currency(n(r.drawer_difference))}</span>
-          </div>
-        </Section>
-      )}
-
-      {/* Lottery Detail */}
-      {(n(r.lottery_sales) + n(r.scratch_sales) + n(r.lottery_settlement)) > 0 && (
-        <Section title="Lottery">
-          <Row label="Draw Game Sales"   value={n(r.lottery_sales)} />
-          <Row label="Scratch Off Sales" value={n(r.scratch_sales)} />
-          <Row label="Lottery Payouts"   value={n(r.lottery_payouts)}  neg />
-          <Row label="Scratch Cashes"    value={n(r.scratch_payouts)}  neg />
-          <Row label="Settlements"       value={n(r.lottery_settlement)} />
-          <Row label="Commissions"       value={n(r.lottery_commission)} />
-          {n(r.lottery_settlement) > 0 && (
-            <div className="flex justify-between py-1.5 mt-1 border-t-2 border-gray-200">
-              <span className="text-sm font-bold text-text">Net Balance</span>
-              <span className="num text-sm font-black text-text">
-                {fmt.currency(n(r.lottery_settlement) - n(r.lottery_commission))}
-              </span>
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* Fuel Breakdown */}
-      {n(r.fuel_sales) > 0 && (
-        <Section title="Fuel Sales">
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Unleaded',  sales: n(r.fuel_unleaded_sales), gal: n(r.fuel_unleaded_gallons) },
-              { label: 'Midgrade',  sales: n(r.fuel_midgrade_sales), gal: n(r.fuel_midgrade_gallons) },
-              { label: 'Regular+',  sales: n(r.fuel_premium_sales),  gal: n(r.fuel_premium_gallons) },
-              { label: 'Diesel',    sales: n(r.fuel_diesel_sales),   gal: n(r.fuel_diesel_gallons) },
-            ].filter(f => f.sales > 0 || f.gal > 0).map(f => (
-              <div key={f.label} className="rounded-xl bg-surface border border-border p-3">
-                <p className="text-[10px] text-muted">{f.label}</p>
-                <p className="num font-bold text-text">{fmt.currency(f.sales)}</p>
-                {f.gal > 0 && <p className="text-[10px] text-muted">{f.gal.toFixed(3)} gal</p>}
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Department Sales */}
-      {deptEntries.length > 0 && (
-        <Section title={`Department Sales (${deptEntries.length})`}>
-          <div className="space-y-1">
-            {deptEntries.map(([dept, val]) => {
-              const v = Number(val);
-              const gross = n(r.inside_sales) || n(r.gross_sales);
-              const pct = gross > 0 ? (v / gross * 100) : 0;
-              return (
-                <div key={dept} className="flex items-center gap-2 py-1 border-b border-gray-50 last:border-0">
-                  <span className="text-sm text-gray-700 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
-                  <span className="text-xs text-muted w-10 text-right">{pct.toFixed(1)}%</span>
-                  <span className="num text-sm font-bold text-text w-20 text-right">{fmt.currency(v)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-      )}
-
-    </div>
-  );
-}
-
-// ── Report Card ───────────────────────────────────────────────────────────────
-function ReportCard({ report, onDelete, onRefresh }: { report: any; onDelete: () => void; onRefresh: () => void }) {
+function ReportCard({ report, onDelete, onRefresh }: {
+  report: any; onDelete: ()=>void; onRefresh: ()=>void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [notes, setNotes] = useState(report.store_notes || '');
-  const n = (v: any) => Number(v || 0);
-  const warnings = report.validation_warnings || [];
-  const gross = n(report.gross_sales);
-  const shortOver = n(report.drawer_difference);
-  const isToday = report.report_date === todayStr();
 
-  const handleDelete = async () => {
-    if (!confirm('Delete this daily report? This cannot be undone.')) return;
+  const doDelete = async () => {
+    if (!confirm('Delete this report? This cannot be undone.')) return;
     setDeleting(true);
-    try {
-      const res = await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        alert('Delete failed: ' + (data.error || 'Unknown error'));
-        setDeleting(false);
-        return;
-      }
-      onDelete();
-    } catch (e: any) {
-      alert('Delete failed: ' + e.message);
-      setDeleting(false);
-    }
+    await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' }).catch(()=>{});
+    setDeleting(false);
+    onDelete();
   };
 
+  // All the numbers
+  const grossSales      = n(report.gross_sales);
+  const fuelSales       = n(report.fuel_sales);
+  const insideSales     = n(report.inside_sales);
+  const taxes           = n(report.taxes);
+  const discounts       = n(report.discounts);
+  const lotterySales    = n(report.lottery_sales);
+  const scratchSales    = n(report.scratch_sales);
+  const lotteryPayouts  = n(report.lottery_payouts);
+  const scratchPayouts  = n(report.scratch_payouts);
+  const lotterySettlement = n(report.lottery_settlement);
+  const lotteryCommission = n(report.lottery_commission);
+  const safeDrops       = n(report.safe_drops);
+  const safeLoans       = n(report.safe_loans);
+  const paidOuts        = n(report.paid_outs);
+  const paidIns         = n(report.paid_ins);
+  const creditSales     = n(report.credit_sales);
+  const debitSales      = n(report.debit_sales);
+  const checkSales      = n(report.check_sales); // card settlement
+  const ebtSales        = n(report.ebt_sales);
+  const actualCash      = n(report.actual_cash);
+  const shortOver       = n(report.drawer_difference);
+  const depts           = Object.entries(report.department_sales||{}).filter(([,v])=>Number(v)!==0).sort((a,b)=>Math.abs(Number(b[1]))-Math.abs(Number(a[1])));
+  const checksGiven: any[] = Array.isArray(report.checks_given) ? report.checks_given : [];
+
+  // Status chip
+  const statusColor = shortOver < -0.50 ? 'bg-red-100 text-red-700' :
+                      shortOver > 0.50  ? 'bg-blue-100 text-blue-700' :
+                      actualCash > 0    ? 'chip-green' : 'bg-amber-100 text-amber-700';
+  const statusText  = shortOver < -0.50 ? `⚠ Short ${fmt.currency(Math.abs(shortOver))}` :
+                      shortOver > 0.50  ? `Over ${fmt.currency(shortOver)}` :
+                      actualCash > 0    ? '✓ Balanced' : 'Count cash';
+
   return (
-    <div className={cn('tile overflow-hidden', warnings.length > 0 && 'border-2 border-amber-300')}>
+    <div className="tile overflow-hidden">
+      {/* ── HEADER ─────────────────────────────────────────────────────── */}
       <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <p className="font-black text-text">{isToday ? "Today's Report" : fmtShort(report.report_date)}</p>
-              <span className={cn('chip text-[10px]',
-                report.status === 'completed' ? 'chip-green' : 'chip-gray')}>
-                {report.status === 'completed' ? '✓ Complete' : 'In progress'}
-              </span>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="font-black text-xl text-text">{fmtDateShort(report.report_date)}</p>
+              <span className={cn('chip text-xs font-bold', statusColor)}>{statusText}</span>
             </div>
-            <p className="text-xs text-muted">{fmtLong(report.report_date)}</p>
+            <p className="text-xs text-muted">{fmtDateLong(report.report_date)}</p>
           </div>
           <div className="text-right">
-            <p className="num text-2xl font-black text-text">{fmt.currency(gross)}</p>
+            <p className="num font-black text-3xl text-text">{fmt.currency(grossSales)}</p>
             <p className="text-xs text-muted">Gross Sales</p>
           </div>
         </div>
 
-        <ShortOverBox cashSales={n(report.cash_sales)} safeDrops={n(report.safe_drops)} reportDate={report.report_date} onUpdate={onRefresh} />
-
-        {warnings.length > 0 && (
-          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 mb-3">
-            <div className="flex items-center gap-2 mb-1"><AlertTriangle className="h-4 w-4 text-amber-600" /><p className="text-xs font-bold text-amber-800">AI flagged {warnings.length} issue{warnings.length > 1 ? 's' : ''}</p></div>
-            {warnings.map((w: string, i: number) => <p key={i} className="text-xs text-amber-700">• {w}</p>)}
-          </div>
-        )}
-        {/* Deliveries logged */}
-        {report.ai_notes && (report.ai_notes.includes('deliv') || report.ai_notes.includes('check') || report.ai_notes.includes('ticket')) && (
-          <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 mb-3">
-            <div className="flex items-center gap-1.5 mb-1"><CheckCircle className="h-4 w-4 text-blue-600" /><p className="text-xs font-bold text-blue-800">Auto-processed from reports</p></div>
-            {report.ai_notes.split(' | ').map((note: string, i: number) => note && <p key={i} className="text-xs text-blue-700">• {note}</p>)}
-          </div>
-        )}
-
-        {/* Payment strip */}
+        {/* Top 4 KPIs */}
         <div className="grid grid-cols-4 gap-2 mb-4">
           {[
-            { label: 'Cash',       value: n(report.cash_sales) },
-            { label: 'Credit',     value: n(report.credit_sales) },
-            { label: 'Debit',      value: n(report.debit_sales) },
-            { label: 'Pump Cash',  value: n(report.atm_sales) },
-          ].map(s => (
-            <div key={s.label} className="rounded-xl bg-surface p-2.5 text-center">
-              <p className="text-[10px] text-muted">{s.label}</p>
-              <p className="num font-bold text-text text-sm mt-0.5">{fmt.currency(s.value)}</p>
+            { label: 'Fuel',      value: fuelSales },
+            { label: 'Inside',    value: insideSales },
+            { label: 'Tax',       value: taxes },
+            { label: 'Lottery',   value: lotterySales + scratchSales },
+          ].map(k => (
+            <div key={k.label} className="rounded-xl bg-surface p-2.5 text-center">
+              <p className="text-[10px] text-muted">{k.label}</p>
+              <p className="num font-bold text-text text-sm">{k.value > 0 ? fmt.currency(k.value) : '—'}</p>
             </div>
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <button onClick={() => setExpanded(v => !v)} className="flex-1 btn btn-ghost text-sm py-2.5 gap-1.5">
-            <Eye className="h-4 w-4" />{expanded ? 'Hide' : 'View full report'}
-            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          </button>
-          <button onClick={handleDelete} disabled={deleting}
-            className="flex items-center gap-1.5 rounded-xl bg-red-50 text-accent px-4 py-2.5 text-sm font-semibold hover:bg-red-100 transition-colors">
-            <Trash2 className="h-4 w-4" />{deleting ? 'Deleting…' : 'Delete'}
-          </button>
-        </div>
+        {/* Cash Count — THE ONLY MANUAL STEP */}
+        <CashCount
+          safeDrops={safeDrops}
+          reportDate={report.report_date}
+          existingCount={actualCash}
+          onUpdate={onRefresh}
+        />
       </div>
 
+      {/* ── EXPAND BUTTON ───────────────────────────────────────────────── */}
+      <button onClick={() => setExpanded(v=>!v)}
+        className="w-full flex items-center justify-center gap-2 py-3 border-t border-border text-xs font-semibold text-muted hover:text-sub transition-colors">
+        {expanded ? <><ChevronUp className="h-4 w-4"/>Hide full report</> : <><ChevronDown className="h-4 w-4"/>View full report</>}
+      </button>
+
+      {/* ── FULL DETAIL ─────────────────────────────────────────────────── */}
       {expanded && (
-        <div className="border-t border-border p-5 space-y-5 bg-gray-50/50">
-          <ReportFull r={report} />
-          {report.ai_notes && (
-            <div className="rounded-xl bg-violet-50 border border-violet-200 px-4 py-3">
-              <div className="flex items-center gap-1.5 mb-1"><Zap className="h-3.5 w-3.5 text-violet-600" /><p className="text-xs font-bold text-violet-700">AI Notes</p></div>
-              <p className="text-xs text-violet-700">{report.ai_notes}</p>
+        <div className="border-t border-border">
+
+          {/* IN */}
+          <div className="p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-green-700 bg-green-50 rounded-lg px-3 py-1.5 inline-block mb-4">↑ IN — All Income</p>
+            <Row label="Fuel Amount"           value={fuelSales} bold />
+            <Row label="Total Merchandise"     value={insideSales} bold />
+            <Row label="  Taxable Sales"       value={insideSales - taxes} indent />
+            <Row label="  Non-Taxable Sales"   value={ebtSales} indent />
+            <Row label="Sales Tax Collected"   value={taxes} />
+            <Row label="Lottery Sales"         value={lotterySales} />
+            <Row label="Scratch Off Sales"     value={scratchSales} />
+            <Row label="Lottery Net Settlement" value={lotterySettlement}
+              sub={lotteryCommission > 0 ? `Commission: ${fmt.currency(lotteryCommission)}` : undefined} />
+            <Row label="EBT / Food Stamps"     value={ebtSales} />
+            <Row label="Money From Bank (Safe Loan)" value={safeLoans} />
+            <Row label="Paid In"               value={paidIns} />
+          </div>
+
+          {/* OUT */}
+          <div className="p-5 border-t border-border">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-red-700 bg-red-50 rounded-lg px-3 py-1.5 inline-block mb-4">↓ OUT — All Expenses & Payouts</p>
+            <Row label="Lotto Cashes Paid"     value={lotteryPayouts} red />
+            <Row label="Scratch Off Cashes"    value={scratchPayouts} red />
+            <Row label="Paid Out (Cash)"       value={paidOuts} red />
+            {checksGiven.length > 0 && (
+              <>
+                <p className="text-xs font-bold text-gray-500 mt-3 mb-2">Vendor Checks Written</p>
+                {checksGiven.map((c:any,i:number) => (
+                  <div key={i} className="flex justify-between py-2 border-b border-gray-50">
+                    <span className="text-sm text-gray-600">{c.payee||c.vendor||'Vendor'}{c.number?` #${c.number}`:''}</span>
+                    <span className="num text-sm font-bold text-red-600">-{fmt.currency(Number(c.amount||0))}</span>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Daily Closing — Modisoft style */}
+          <div className="p-5 border-t border-border">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">DAILY CLOSING</p>
+            <div className="space-y-2">
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-sm font-bold text-text">Daily Closing Cash (Safe Drops)</span>
+                <span className="num text-sm font-black text-text">{fmt.currency(safeDrops)}</span>
+              </div>
+              {actualCash > 0 && (
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-sm text-gray-600">You Physically Counted</span>
+                  <span className="num text-sm font-bold">{fmt.currency(actualCash)}</span>
+                </div>
+              )}
+              {checkSales > 0 && (
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-sm text-gray-600">Daily Closing Check (Card Settlement)</span>
+                  <span className="num text-sm font-bold">{fmt.currency(checkSales)}</span>
+                </div>
+              )}
+              {shortOver !== 0 && actualCash > 0 && (
+                <div className={cn('flex justify-between py-3 rounded-xl px-3 mt-2 font-bold',
+                  shortOver < 0 ? 'bg-red-100' : 'bg-green-100')}>
+                  <span className={cn('text-sm', shortOver < 0 ? 'text-red-700' : 'text-green-700')}>
+                    {shortOver < 0 ? '⚠ SHORT / OVER' : 'SHORT / OVER'}
+                  </span>
+                  <span className={cn('num text-sm', shortOver < 0 ? 'text-red-700' : 'text-green-700')}>
+                    {shortOver > 0 ? '+' : ''}{fmt.currency(shortOver)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Methods */}
+          {(creditSales + debitSales + checkSales + ebtSales + safeDrops) > 0 && (
+            <div className="p-5 border-t border-border">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">HOW CUSTOMERS PAID</p>
+              <div className="space-y-0">
+                <Row label="Credit / CRIND (pump + inside)" value={creditSales} />
+                <Row label="Card Settlement (Check)" value={checkSales} sub="Bank ACH batch for all card transactions" />
+                <Row label="Debit" value={debitSales} />
+                <Row label="EBT / Food Stamps" value={ebtSales} />
+                <Row label="Cash (Safe Drops)" value={safeDrops} />
+              </div>
             </div>
           )}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Store Notes</p>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)}
-              onBlur={() => fetch('/api/daily-report', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: report.id, store_notes: notes }) })}
-              className="inp text-sm min-h-20 resize-none" placeholder="Add notes for this day…" />
+
+          {/* Fuel breakdown */}
+          {(n(report.fuel_unleaded_sales)+n(report.fuel_midgrade_sales)+n(report.fuel_premium_sales)+n(report.fuel_diesel_sales)) > 0 && (
+            <div className="p-5 border-t border-border">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">FUEL BY GRADE</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label:'Unleaded', s:n(report.fuel_unleaded_sales), g:n(report.fuel_unleaded_gallons) },
+                  { label:'Midgrade', s:n(report.fuel_midgrade_sales), g:n(report.fuel_midgrade_gallons) },
+                  { label:'Regular+', s:n(report.fuel_premium_sales),  g:n(report.fuel_premium_gallons) },
+                  { label:'Diesel',   s:n(report.fuel_diesel_sales),   g:n(report.fuel_diesel_gallons) },
+                ].filter(g=>g.s>0).map(g=>(
+                  <div key={g.label} className="rounded-xl bg-surface p-3">
+                    <p className="text-[10px] text-muted">{g.label}</p>
+                    <p className="num font-black text-text">{fmt.currency(g.s)}</p>
+                    {g.g>0 && <p className="text-[10px] text-muted">{g.g.toFixed(3)} gal</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Department Sales */}
+          {depts.length > 0 && (
+            <div className="p-5 border-t border-border">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">DEPARTMENT SALES ({depts.length})</p>
+              <div className="space-y-0">
+                {depts.map(([dept,val])=>{
+                  const v = Number(val);
+                  const pct = insideSales > 0 ? (Math.abs(v)/insideSales*100) : 0;
+                  return (
+                    <div key={dept} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0">
+                      <span className="text-sm text-gray-600 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
+                      <span className="text-xs text-muted w-12 text-right">{pct.toFixed(1)}%</span>
+                      <span className={cn('num text-sm font-bold w-20 text-right', v<0?'text-red-600':'text-text')}>{fmt.currency(v)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* AI Notes */}
+          {report.ai_notes && (
+            <div className="p-5 border-t border-border">
+              <div className="rounded-xl bg-violet-50 border border-violet-200 p-4">
+                <div className="flex items-center gap-2 mb-2"><Zap className="h-4 w-4 text-violet-600"/><p className="text-sm font-bold text-violet-800">Auto-Processed</p></div>
+                <p className="text-sm text-violet-700">{report.ai_notes}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Delete */}
+          <div className="p-5 border-t border-border">
+            <button onClick={doDelete} disabled={deleting}
+              className="btn btn-ghost w-full border border-red-200 text-red-500 hover:bg-red-50 gap-2 py-3">
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+              Delete this report
+            </button>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Closing Checklist ─────────────────────────────────────────────────────────
-function ClosingChecklist({ storeId }: { storeId: string }) {
-  const [checklist, setChecklist] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    const res = await fetch('/api/checklist');
-    const data = await res.json();
-    setChecklist(data.checklist || {});
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const toggle = async (field: string) => {
-    const updated = { ...checklist, [field]: !checklist[field] };
-    setChecklist(updated);
-    const allDone = ITEMS.every(i => updated[i.key]);
-    if (allDone) updated.is_closed = true;
-    await fetch('/api/checklist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
-    load();
-  };
-
-  const ITEMS = [
-    { key: 'store_close_done',      label: 'Store close report uploaded',      icon: '📊' },
-    { key: 'lottery_counted',       label: 'Lottery tickets counted',           icon: '🎰' },
-    { key: 'scratch_verified',      label: 'Scratch-offs verified',             icon: '🎟' },
-    { key: 'safe_drops_entered',    label: 'Safe drops entered',                icon: '🔒' },
-    { key: 'paid_outs_entered',     label: 'Paid outs recorded',                icon: '💸' },
-    { key: 'deposit_prepared',      label: 'Deposit prepared',                  icon: '🏦' },
-    { key: 'invoices_uploaded',     label: 'Invoices scanned & uploaded',       icon: '📄' },
-    { key: 'employees_clocked_out', label: 'All employees clocked out',         icon: '👥' },
-  ];
-
-  const done = ITEMS.filter(i => checklist?.[i.key]).length;
-  const pct  = Math.round((done / ITEMS.length) * 100);
-
-  if (loading) return <div className="tile p-8 text-center"><RefreshCw className="h-6 w-6 text-accent animate-spin mx-auto" /></div>;
-
-  return (
-    <div className="space-y-4">
-      {/* Progress */}
-      <div className="tile p-5">
-        <div className="flex items-center justify-between mb-3">
-          <p className="font-bold text-text">Closing Checklist</p>
-          <span className={cn('chip font-bold text-sm', checklist?.is_closed ? 'chip-green' : pct === 100 ? 'chip-green' : 'chip-gray')}>
-            {checklist?.is_closed ? '✓ Store Closed' : `${done}/${ITEMS.length}`}
-          </span>
-        </div>
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-2">
-          <div className={cn('h-full rounded-full transition-all duration-500', pct === 100 ? 'bg-green-500' : 'bg-accent')}
-            style={{ width: `${pct}%` }} />
-        </div>
-        <p className="text-xs text-muted">{pct === 100 ? 'All done! Store can be closed.' : `${ITEMS.length - done} items remaining`}</p>
-      </div>
-
-      {/* Checklist items */}
-      <div className="tile overflow-hidden divide-y divide-border">
-        {ITEMS.map(item => (
-          <button key={item.key} onClick={() => toggle(item.key)}
-            className="w-full flex items-center gap-4 px-5 py-4 hover:bg-surface transition-colors active:scale-[0.98]">
-            <div className={cn('flex h-7 w-7 items-center justify-center rounded-full border-2 shrink-0 transition-all',
-              checklist?.[item.key] ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white')}>
-              {checklist?.[item.key] && <Check className="h-4 w-4 text-white" />}
-            </div>
-            <span className="text-xl">{item.icon}</span>
-            <span className={cn('text-sm font-medium flex-1 text-left',
-              checklist?.[item.key] ? 'text-muted line-through' : 'text-text')}>
-              {item.label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {pct === 100 && !checklist?.is_closed && (
-        <button onClick={() => toggle('is_closed')}
-          className="btn btn-accent btn-full py-4 text-base gap-2">
-          <CheckCircle className="h-5 w-5" />Mark Store Closed for Today
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ── Timeline ──────────────────────────────────────────────────────────────────
-function Timeline() {
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/timeline').then(r => r.json()).then(d => { setEvents(d.events || []); setLoading(false); });
-  }, []);
-
-  const TYPE_ICONS: Record<string, string> = {
-    clock_in: '🕐', clock_out: '🕐', delivery: '🚚', safe_drop: '🔒',
-    paid_out: '💸', invoice: '📄', report_upload: '📊', ai_alert: '🤖',
-    deposit: '🏦', sale: '💰', order: '📦', default: '📍',
-  };
-
-  const TYPE_COLORS: Record<string, string> = {
-    clock_in: 'bg-blue-50 border-blue-200', clock_out: 'bg-blue-50 border-blue-200',
-    delivery: 'bg-green-50 border-green-200', safe_drop: 'bg-gray-50 border-gray-200',
-    paid_out: 'bg-red-50 border-red-200', invoice: 'bg-purple-50 border-purple-200',
-    report_upload: 'bg-accent/5 border-accent/20', ai_alert: 'bg-violet-50 border-violet-200',
-    deposit: 'bg-green-50 border-green-200', default: 'bg-gray-50 border-gray-200',
-  };
-
-  if (loading) return <div className="tile p-8 text-center"><RefreshCw className="h-6 w-6 text-accent animate-spin mx-auto" /></div>;
-
-  return (
-    <div className="space-y-3">
-      {events.length === 0 ? (
-        <div className="tile p-10 text-center">
-          <Clock className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="font-bold text-gray-700 mb-1">No events yet today</p>
-          <p className="text-gray-400 text-sm">Events appear as the day unfolds — clock-ins, deliveries, safe drops, report uploads, and more</p>
-        </div>
-      ) : (
-        <div className="relative pl-8">
-          {/* Timeline line */}
-          <div className="absolute left-3.5 top-0 bottom-0 w-0.5 bg-gray-100" />
-          {events.map((ev, i) => (
-            <div key={ev.id || i} className="relative mb-4">
-              <div className={cn('absolute -left-4.5 flex h-4 w-4 items-center justify-center rounded-full border-2 bg-white', 'border-gray-300')} style={{ top: '50%', transform: 'translateY(-50%)' }}>
-                <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-              </div>
-              <div className={cn('rounded-xl border p-4 ml-2', TYPE_COLORS[ev.type] || TYPE_COLORS.default)}>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{TYPE_ICONS[ev.type] || TYPE_ICONS.default}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-text">{ev.title}</p>
-                      {ev.description && <p className="text-xs text-muted mt-0.5">{ev.description}</p>}
-                      {ev.employee_name && <p className="text-xs text-muted">by {ev.employee_name}</p>}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-muted">{fmtTime(ev.event_time)}</p>
-                    {ev.amount > 0 && <p className="num text-sm font-bold text-text">{fmt.currency(ev.amount)}</p>}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Upload Zone ───────────────────────────────────────────────────────────────
-function UploadZone({ date, onSuccess }: { date: string; onSuccess: (d: any) => void }) {
-  const [uploads, setUploads] = useState<{ type: string; warnings: string[] }[]>([]);
-
-  const handleResult = (data: any) => {
-    setUploads(p => [...p, { type: data.reportType || 'unknown', warnings: data.warnings || [] }]);
-    onSuccess(data);
-    // Auto log to timeline
-    fetch('/api/timeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'report_upload', title: `${(data.reportType || 'Report').replace('_', ' ')} uploaded`, description: data.warnings?.length > 0 ? `${data.warnings.length} issue(s) detected` : 'Processed successfully' }) }).catch(() => {});
-  };
-
-  return (
-    <div className="tile p-5 space-y-4">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
-          <BarChart3 className="h-5 w-5 text-accent" />
-        </div>
-        <div>
-          <p className="font-bold text-text">Upload Reports</p>
-          <p className="text-xs text-muted mt-0.5">AI identifies report type automatically. Upload multiple — everything merges into one daily report.</p>
-        </div>
-      </div>
-      <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5">
-        <p className="text-xs text-blue-700 font-medium">Store Close · Till · Lottery · Scratch Off · Department · Safe Drop · Paid Out · Paid In · Fuel · PLU · Summary</p>
-      </div>
-      <MultiScan endpoint="/api/scan-daily-report" onResult={handleResult}
-        title="Scan or Upload Report" hint="Photo or PDF — AI reads type and all numbers instantly"
-        extraFields={{ report_date: date }} />
-      {uploads.map((u, i) => (
-        <div key={i} className={cn('rounded-xl px-4 py-3 flex items-center gap-2 text-sm',
-          u.warnings.length > 0 ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200')}>
-          {u.warnings.length > 0 ? <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" /> : <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />}
-          <span className={u.warnings.length > 0 ? 'text-amber-800' : 'text-green-800'}>
-            <b className="capitalize">{u.type.replace('_', ' ')}</b> processed
-            {u.warnings.length > 0 && ` · ${u.warnings.length} warning${u.warnings.length > 1 ? 's' : ''}`}
-          </span>
-        </div>
-      ))}
     </div>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
-export default function DailyReportsPage() {
+export default function PosPage() {
   const [mounted, setMounted] = useState(false);
-  const [tab, setTab] = useState<Tab>('report');
-  const [todayReport, setTodayReport] = useState<any>(null);
-  const [prevReports, setPrevReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showAddMore, setShowAddMore] = useState(false);
   const { store } = useStore();
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [scanSuccess, setScanSuccess] = useState<string|null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const loadData = useCallback(async () => {
+  const load = useCallback(async () => {
     if (!store) return;
-    try {
-      const sb = createClient();
-      const today = todayStr();
-      const [{ data: tr }, { data: prev }] = await Promise.all([
-        sb.from('daily_reports').select('*').eq('store_id', store.id).eq('report_date', today).maybeSingle(),
-        sb.from('daily_reports').select('*').eq('store_id', store.id).lt('report_date', today).order('report_date', { ascending: false }).limit(14),
-      ]);
-      setTodayReport(tr || null);
-      setPrevReports(prev || []);
-    } catch (e) { console.error(e); }
+    setLoading(true);
+    const weekAgo = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+    const { data } = await createClient().from('daily_reports').select('*')
+      .eq('store_id', store.id)
+      .gte('report_date', weekAgo)
+      .order('report_date', { ascending: false });
+    setReports(data || []);
     setLoading(false);
-    setRefreshing(false);
   }, [store]);
 
-  useEffect(() => { if (mounted && store) loadData(); }, [mounted, store, loadData]);
+  useEffect(() => { if (mounted && store) load(); }, [mounted, store, load]);
 
   if (!mounted) return null;
 
-  const today = todayStr();
-  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'report',    label: '📊 Reports'   },
-    { id: 'checklist', label: '✅ Checklist'  },
-    { id: 'timeline',  label: '📅 Timeline'  },
-  ];
+  const handleScanResult = (data: any) => {
+    if (data?.success) {
+      const type = data.reportType || 'report';
+      const msg = [
+        `✓ ${type.replace(/_/g,' ')} read for ${data.reportDate}`,
+        data.deliveriesLogged > 0 ? `${data.deliveriesLogged} deliveries → Invoices` : null,
+        data.checksFound > 0 ? `${data.checksFound} vendor checks → Invoices` : null,
+      ].filter(Boolean).join(' · ');
+      setScanSuccess(msg);
+      setTimeout(() => setScanSuccess(null), 5000);
+      if (data.reportDate) setSelectedDate(data.reportDate);
+    }
+    load();
+  };
+
+  const dateReports = reports.filter(r => r.report_date === selectedDate);
+  const otherReports = reports.filter(r => r.report_date !== selectedDate);
 
   return (
-    <Screen title="Daily Reports" subtitle={todayLabel}
-      action={
-        <button onClick={() => { setRefreshing(true); loadData(); }}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
-          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-        </button>
-      }>
+    <Screen title="Daily Reports" subtitle="Scan any report — everything fills in automatically">
       <div className="space-y-5">
-        {/* Tabs */}
-        <div className="flex gap-2">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={cn('flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors border',
-                tab === t.id ? 'bg-accent text-white border-accent' : 'bg-surface text-sub border-border hover:text-text')}>
-              {t.label}
-            </button>
-          ))}
+
+        {/* How it works banner */}
+        <div className="rounded-2xl bg-gradient-to-r from-accent/10 to-violet-500/10 border border-accent/20 p-4">
+          <p className="text-sm font-bold text-text mb-1">How it works</p>
+          <div className="space-y-1">
+            {[
+              { step: '1', text: 'Scan or upload any close report — AI reads all numbers automatically', done: true },
+              { step: '2', text: 'All sections update: Tax, Fuel, Trends, P&L, Inventory', done: true },
+              { step: '3', text: 'Count cash in safe → app shows short or over instantly', done: false },
+            ].map(s => (
+              <div key={s.step} className="flex items-center gap-2.5 text-xs text-gray-700">
+                <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black',
+                  s.done ? 'bg-accent text-white' : 'bg-amber-400 text-white')}>
+                  {s.step}
+                </div>
+                <span>{s.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Report tab */}
-        {tab === 'report' && (
-          loading ? (
-            <div className="tile p-10 text-center"><RefreshCw className="h-8 w-8 text-accent animate-spin mx-auto" /></div>
-          ) : (
-            <>
-              {todayReport ? (
-                <>
-                  <ReportCard report={todayReport}
-                    onDelete={() => { setTodayReport(null); setShowAddMore(false); loadData(); }}
-                    onRefresh={loadData} />
-                  <button onClick={() => setShowAddMore(v => !v)}
-                    className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 py-4 text-sm font-semibold text-muted hover:border-accent hover:text-accent transition-colors">
-                    <Plus className="h-4 w-4" />{showAddMore ? 'Hide upload' : 'Add more reports to today'}
-                  </button>
-                  {showAddMore && <UploadZone date={today} onSuccess={loadData} />}
-                </>
-              ) : (
-                <>
-                  <div className="tile p-8 text-center border-2 border-dashed border-gray-200">
-                    <Clock className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-                    <p className="font-bold text-gray-700 text-lg mb-1">No report yet today</p>
-                    <p className="text-gray-400 text-sm">Upload any close report — AI identifies type and extracts all numbers automatically</p>
-                  </div>
-                  <UploadZone date={today} onSuccess={(data) => { if (data.report) setTodayReport(data.report); loadData(); }} />
-                </>
-              )}
-
-              {prevReports.length > 0 && (
-                <div>
-                  <p className="section-title">Previous Reports</p>
-                  <div className="space-y-3">
-                    {prevReports.map(r => <ReportCard key={r.id} report={r} onDelete={loadData} onRefresh={loadData} />)}
-                  </div>
-                </div>
-              )}
-            </>
-          )
+        {/* Scan success message */}
+        {scanSuccess && (
+          <div className="rounded-2xl bg-green-50 border-2 border-green-400 px-4 py-3 flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+            <p className="text-sm font-semibold text-green-800">{scanSuccess}</p>
+          </div>
         )}
 
-        {tab === 'checklist' && store && <ClosingChecklist storeId={store.id} />}
-        {tab === 'timeline' && <Timeline />}
+        {/* Date picker */}
+        <div className="flex gap-2">
+          <input type="date" value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="inp flex-1 h-10 text-sm" />
+          <button onClick={load} className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+          </button>
+        </div>
+
+        {/* Upload scanner */}
+        <MultiScan
+          endpoint="/api/scan-daily-report"
+          extraFields={{ report_date: selectedDate }}
+          onResult={handleScanResult}
+          title="Upload Reports"
+          hint="Store Close · Till · Lottery · Scratch Off · Department · Handwritten · Fuel · Any format"
+        />
+
+        {/* Info box about what auto-updates */}
+        <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
+          <div className="flex items-start gap-2">
+            <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-blue-800 mb-1">When you upload a report, these update automatically:</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                {['Tax Reports', 'Annual Trends', 'Reports & P&L', 'Fuel Margins',
+                  'Vendor Invoices', 'Bank Reconciliation', 'Home Dashboard', 'AI Ordering'].map(s => (
+                  <p key={s} className="text-[11px] text-blue-700">✓ {s}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading */}
+        {loading && <div className="tile p-8 text-center"><Loader2 className="h-6 w-6 text-accent animate-spin mx-auto" /></div>}
+
+        {/* Selected date report */}
+        {!loading && dateReports.length === 0 && (
+          <div className="tile p-10 text-center">
+            <p className="text-4xl mb-3">📋</p>
+            <p className="font-bold text-text mb-1">
+              No report for {fmtDateShort(selectedDate)}
+            </p>
+            <p className="text-sm text-muted">Upload any report above — AI fills everything automatically</p>
+          </div>
+        )}
+
+        {!loading && dateReports.map(r => (
+          <ReportCard key={r.id} report={r} onDelete={load} onRefresh={load} />
+        ))}
+
+        {/* Previous days */}
+        {!loading && otherReports.length > 0 && (
+          <div className="space-y-4">
+            <p className="section-title">Previous Days</p>
+            {otherReports.map(r => (
+              <ReportCard key={r.id} report={r} onDelete={load} onRefresh={load} />
+            ))}
+          </div>
+        )}
       </div>
     </Screen>
   );
