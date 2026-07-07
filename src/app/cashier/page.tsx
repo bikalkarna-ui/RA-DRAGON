@@ -18,37 +18,24 @@ function SafeDropScreen({ store, onDone }: { store: any; onDone: () => void }) {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
+  const [error, setError] = useState('');
+
   const submit = async () => {
     if (!amount || !name) return;
-    setSaving(true);
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toISOString();
-    const sb = createClient();
-
-    // Save to timeline
-    await sb.from('timeline_events').insert({
-      store_id: store.id,
-      event_date: today,
-      type: 'safe_drop',
-      title: `Safe Drop — ${name}`,
-      description: `$${parseFloat(amount).toFixed(2)} dropped at ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`,
-      amount: parseFloat(amount),
-      created_by: name,
-    }).catch(() => {});
-
-    // Update today's daily report safe drops total
-    const { data: dr } = await sb.from('daily_reports').select('id,safe_drops').eq('store_id', store.id).eq('report_date', today).maybeSingle();
-    const newTotal = (Number(dr?.safe_drops || 0)) + parseFloat(amount);
-
-    if (dr) {
-      await sb.from('daily_reports').update({ safe_drops: newTotal, updated_at: now }).eq('id', dr.id);
-    } else {
-      await sb.from('daily_reports').insert({ store_id: store.id, report_date: today, safe_drops: parseFloat(amount), status: 'in_progress' });
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/cashier-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'safe_drop', amount: parseFloat(amount), name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      setSaving(false); setDone(true);
+      setTimeout(() => { setAmount(''); setName(''); setDone(false); }, 2000);
+    } catch (e: any) {
+      setError(e.message || 'Failed — check internet connection');
+      setSaving(false);
     }
-
-    setSaving(false);
-    setDone(true);
-    setTimeout(() => { setAmount(''); setName(''); setDone(false); }, 2000);
   };
 
   if (done) return (
@@ -88,6 +75,7 @@ function SafeDropScreen({ store, onDone }: { store: any; onDone: () => void }) {
         </div>
       </div>
 
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <button onClick={submit} disabled={!amount || !name || saving}
         className={cn('w-full rounded-2xl py-5 text-xl font-black text-white transition-all',
           amount && name ? 'bg-green-500 active:scale-95' : 'bg-gray-300')}>
@@ -111,27 +99,24 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   const REASONS = ['Vendor payment', 'Store supplies', 'Maintenance', 'Ice', 'Other'];
 
+  const [error, setError] = useState('');
+
   const submit = async () => {
     if (!amount || !reason) return;
-    setSaving(true);
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toISOString();
-    const sb = createClient();
-
-    await sb.from('timeline_events').insert({
-      store_id: store.id, event_date: today, type: 'paid_out',
-      title: `Paid Out — ${reason}`,
-      description: `$${parseFloat(amount).toFixed(2)}${name ? ` by ${name}` : ''} at ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`,
-      amount: parseFloat(amount), created_by: name,
-    }).catch(() => {});
-
-    const { data: dr } = await sb.from('daily_reports').select('id,paid_outs').eq('store_id', store.id).eq('report_date', today).maybeSingle();
-    const newTotal = (Number(dr?.paid_outs || 0)) + parseFloat(amount);
-    if (dr) await sb.from('daily_reports').update({ paid_outs: newTotal, updated_at: now }).eq('id', dr.id);
-    else await sb.from('daily_reports').insert({ store_id: store.id, report_date: today, paid_outs: parseFloat(amount), status: 'in_progress' });
-
-    setSaving(false); setDone(true);
-    setTimeout(() => { setAmount(''); setReason(''); setName(''); setDone(false); }, 2000);
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/cashier-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'paid_out', amount: parseFloat(amount), reason, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      setSaving(false); setDone(true);
+      setTimeout(() => { setAmount(''); setReason(''); setName(''); setDone(false); }, 2000);
+    } catch (e: any) {
+      setError(e.message || 'Failed — check internet connection');
+      setSaving(false);
+    }
   };
 
   if (done) return (
@@ -186,6 +171,7 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
           className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm focus:border-red-400 focus:outline-none" />
       </div>
 
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <button onClick={submit} disabled={!amount || !reason || saving}
         className={cn('w-full rounded-2xl py-5 text-xl font-black text-white transition-all',
           amount && reason ? 'bg-red-500 active:scale-95' : 'bg-gray-300')}>
@@ -343,30 +329,24 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
     setUploading(false);
   };
 
+  const [error, setError] = useState('');
+
   const logDelivery = async () => {
     if (!vendor) return;
-    setSaving(true);
-    const today = new Date().toISOString().split('T')[0];
-    const sb = createClient();
-
-    await sb.from('invoices').insert({
-      store_id: store.id,
-      vendor_name: vendor,
-      total_amount: parseFloat(amount) || null,
-      status: 'NEEDS_REVIEW',
-      source: 'delivery',
-      invoice_date: today,
-    }).catch(() => {});
-
-    await sb.from('timeline_events').insert({
-      store_id: store.id, event_date: today, type: 'delivery',
-      title: `Delivery — ${vendor}`,
-      description: `${amount ? fmt.currency(parseFloat(amount)) : 'Amount unknown'} · ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`,
-      amount: parseFloat(amount) || 0,
-    }).catch(() => {});
-
-    setSaving(false); setDone(true);
-    setTimeout(() => { setVendor(''); setAmount(''); setFile(null); setResult(null); setDone(false); }, 2000);
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/cashier-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'vendor_delivery', vendor, amount: parseFloat(amount) || 0 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      setSaving(false); setDone(true);
+      setTimeout(() => { setVendor(''); setAmount(''); setFile(null); setResult(null); setDone(false); }, 2000);
+    } catch (e: any) {
+      setError(e.message || 'Failed — check internet connection');
+      setSaving(false);
+    }
   };
 
   if (done) return (
@@ -437,6 +417,7 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
         </div>
       </div>
 
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <button onClick={logDelivery} disabled={!vendor || saving}
         className={cn('w-full rounded-2xl py-5 text-xl font-black text-white transition-all',
           vendor ? 'bg-blue-500 active:scale-95' : 'bg-gray-300')}>
