@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     switch (event_type) {
 
       case 'sale': {
-        await sb.from('till_readings').insert({ store_id: store.id, reading_date: today, source: 'connector', raw_data: data }).catch(() => {});
+        await sb.from('till_readings').insert({ store_id: store.id, reading_date: today, source: 'connector', raw_data: data });
         // Also accumulate into daily report
         const { data: dr } = await sb.from('daily_reports').select('*').eq('store_id', store.id).eq('report_date', today).maybeSingle();
         const payload = {
@@ -135,10 +135,10 @@ export async function POST(req: NextRequest) {
                 type: 'sync', quantity: payload.quantity - ex.quantity,
                 quantity_before: ex.quantity, quantity_after: payload.quantity,
                 reference_type: 'connector', reference_label: 'POS auto-sync',
-              }).catch(() => {});
+              });
             }
           } else {
-            await sb.from('products').insert(payload).catch(() => {});
+            await sb.from('products').insert(payload);
           }
         }
         break;
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
           store_id: store.id, vendor_name: data?.vendorName || 'Unknown vendor',
           invoice_number: data?.invoiceNumber ? String(data.invoiceNumber) : null,
           total_amount: n(data?.total), status: 'NEEDS_REVIEW', source: 'connector',
-        }).catch(() => {});
+        });
         break;
       }
 
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
           store_id: store.id, employee_id: data?.employeeId || null,
           employee_name: data?.name || 'Unknown',
           clock_in: timestamp || new Date().toISOString(),
-        }).catch(() => {});
+        });
         break;
       }
 
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
         if (dr) await sb.from('daily_reports').update({ safe_drops: n(dr.safe_drops) + amount }).eq('id', dr.id);
         else await sb.from('daily_reports').insert({ store_id: store.id, report_date: today, safe_drops: amount });
         // Log to timeline
-        await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'safe_drop', title: `Safe drop — ${fmt(amount)}`, amount }).catch(() => {});
+        await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'safe_drop', title: `Safe drop — ${fmt(amount)}`, amount });
         break;
       }
 

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         const { error: e } = await sb.from('daily_reports').insert({ store_id: store.id, report_date: today, safe_drops: amountNum, status: 'in_progress' });
         if (e) return NextResponse.json({ error: e.message }, { status: 500 });
       }
-      await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'safe_drop', title: `Safe Drop — ${name||'Cashier'}`, description: `$${amountNum.toFixed(2)} at ${timeStr}`, amount: amountNum }).catch(()=>{});
+      try { await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'safe_drop', title: `Safe Drop — ${name||'Cashier'}`, description: `$${amountNum.toFixed(2)} at ${timeStr}`, amount: amountNum }); } catch {}
       return NextResponse.json({ success: true, newTotal });
     }
 
@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
         const { error: e } = await sb.from('daily_reports').insert({ store_id: store.id, report_date: today, paid_outs: amountNum, status: 'in_progress' });
         if (e) return NextResponse.json({ error: e.message }, { status: 500 });
       }
-      await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'paid_out', title: `Paid Out — ${reason||'Expense'}`, description: `$${amountNum.toFixed(2)}${name?` by ${name}`:''} at ${timeStr}`, amount: amountNum }).catch(()=>{});
+      try { await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'paid_out', title: `Paid Out — ${reason||'Expense'}`, description: `$${amountNum.toFixed(2)}${name?` by ${name}`:''} at ${timeStr}`, amount: amountNum }); } catch {}
       return NextResponse.json({ success: true, newTotal });
     }
 
     if (action === 'vendor_delivery') {
       const { error: e } = await sb.from('invoices').insert({ store_id: store.id, vendor_name: vendor||'Unknown', total_amount: amountNum||null, status: 'NEEDS_REVIEW', source: 'delivery', invoice_date: today });
       if (e) return NextResponse.json({ error: e.message }, { status: 500 });
-      await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'delivery', title: `Delivery — ${vendor}`, description: amountNum ? `$${amountNum.toFixed(2)}` : 'Amount TBD', amount: amountNum }).catch(()=>{});
+      try { await sb.from('timeline_events').insert({ store_id: store.id, event_date: today, type: 'delivery', title: `Delivery — ${vendor}`, description: amountNum ? `$${amountNum.toFixed(2)}` : 'Amount TBD', amount: amountNum }); } catch {}
       return NextResponse.json({ success: true });
     }
 
