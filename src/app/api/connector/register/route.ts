@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     await sb.from('stores').update({ connector_api_key: apiKey }).eq('id', store.id);
     return NextResponse.json({
       success: true, store_id: store.id, store_name: store.name, api_key: apiKey,
-      cloud_url: process.env.NEXT_PUBLIC_APP_URL || 'https://ra-dragon.vercel.app',
+      cloud_url: process.env.NEXT_PUBLIC_APP_URL || 'https://ryxsor-ai.vercel.app',
     });
   } catch (err: any) { return NextResponse.json({ error: err.message }, { status: 500 }); }
 }

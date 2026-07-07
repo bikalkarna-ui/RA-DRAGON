@@ -2,7 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'RA Solution',
+  title: 'RYXSOR AI — Smart Store Manager',
+  description: 'RYXSOR AI — AI-powered gas station and convenience store management. Auto-read reports, track inventory, manage employees.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   description: 'AI-powered store management',
   manifest: '/manifest.json',
 };

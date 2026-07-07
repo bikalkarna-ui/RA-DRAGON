@@ -91,7 +91,7 @@ export default function OnboardingPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
           <span className="text-white font-black text-lg">R</span>
         </div>
-        <span className="font-black text-xl text-text">RA Dragon</span>
+        <span className="font-black text-xl text-text">RYXSOR AI</span>
       </div>
 
       {/* Step indicators */}
@@ -120,7 +120,7 @@ export default function OnboardingPage() {
               <Store className="h-7 w-7 text-accent" />
             </div>
             <h1 className="text-2xl font-black text-text mb-1">Create Your Store</h1>
-            <p className="text-gray-500 text-sm mb-6">This is how your store appears in RA Dragon</p>
+            <p className="text-gray-500 text-sm mb-6">This is how your store appears in RYXSOR AI</p>
             <div className="space-y-4">
               <div>
                 <label className="lbl">Store name *</label>

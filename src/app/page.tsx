@@ -70,7 +70,7 @@ export default function LandingPage() {
   ];
 
   const testimonials = [
-    { name: 'Ahmed Hassan',  store: 'Quick Stop #1 & #2, Houston TX',    text: 'RA Solution replaced our manual spreadsheets completely. The AI ordering alone saves us hours every week and we haven\'t run out of stock since.', stars: 5 },
+    { name: 'Ahmed Hassan',  store: 'Quick Stop #1 & #2, Houston TX',    text: 'RYXSOR AI replaced our manual spreadsheets completely. The AI ordering alone saves us hours every week and we haven\'t run out of stock since.', stars: 5 },
     { name: 'Maria Lopez',   store: 'Lopez Fuels, San Antonio TX',        text: 'Scanning invoices with my phone and having inventory update automatically is incredible. What used to take 2 hours now takes 5 minutes.', stars: 5 },
     { name: 'David Kim',     store: 'K&D Convenience, Dallas TX',         text: 'The daily report upload is a game changer. I upload my Modisoft report and instantly see my P&L, short/over, and what sold. Perfect.', stars: 5 },
   ];
@@ -84,7 +84,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white font-black text-xl">R</div>
             <div>
-              <span className="font-black text-gray-900 text-xl">RA Solution</span>
+              <span className="font-black text-gray-900 text-xl">RYXSOR AI</span>
               <span className="hidden sm:inline text-xs text-gray-400 ml-2">by RA</span>
             </div>
           </div>
@@ -134,12 +134,12 @@ export default function LandingPage() {
           <span className="text-accent">Not harder.</span>
         </h1>
         <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-          RA Solution sits on top of your existing Modisoft POS. Upload your daily report and AI automatically handles your P&amp;L, inventory, ordering, and invoices — so you can focus on your customers.
+          RYXSOR AI sits on top of your existing Modisoft POS. Upload your daily report and AI automatically handles your P&amp;L, inventory, ordering, and invoices — so you can focus on your customers.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <Link href="/register"
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent text-white font-bold text-lg px-10 py-5 hover:bg-red-700 active:scale-95 transition-all shadow-lg">
-            Launch RA Solution <ArrowRight className="h-5 w-5" />
+            Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
           </Link>
           <Link href="/login"
             className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 text-gray-700 font-bold text-base px-8 py-4 hover:border-gray-300 hover:bg-gray-50 transition-all">
@@ -194,7 +194,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-black text-gray-900 mb-4">How it works</h2>
-            <p className="text-lg text-gray-500">Get your store running on RA Solution in minutes</p>
+            <p className="text-lg text-gray-500">Get your store running on RYXSOR AI in minutes</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
@@ -282,7 +282,7 @@ export default function LandingPage() {
           <div>
             <h2 className="text-4xl font-black text-gray-900 mb-4">Built by people who understand your business</h2>
             <p className="text-gray-500 leading-relaxed mb-4">
-              RA Solution was founded by RA, who grew up working in gas stations and convenience stores. We built the software we always wished existed — one that works with your existing POS, not against it.
+              RYXSOR AI was founded by RA, who grew up working in gas stations and convenience stores. We built the software we always wished existed — one that works with your existing POS, not against it.
             </p>
             <p className="text-gray-500 leading-relaxed mb-4">
               Our mission is simple: give every gas station owner the same tools that big chains use, at a price that works for independent operators.
@@ -293,9 +293,9 @@ export default function LandingPage() {
           </div>
           <div className="bg-gray-900 rounded-3xl p-10 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent text-white font-black text-4xl mx-auto mb-6">R</div>
-            <p className="text-white font-black text-2xl mb-1">RA Solution</p>
+            <p className="text-white font-black text-2xl mb-1">RYXSOR AI</p>
             <p className="text-gray-400 text-sm mb-4">Founded by RA</p>
-            <p className="text-gray-400 text-xs">© 2026 RA Solution. All rights reserved.</p>
+            <p className="text-gray-400 text-xs">© 2026 RYXSOR AI. All rights reserved.</p>
           </div>
         </div>
       </section>
@@ -335,10 +335,10 @@ export default function LandingPage() {
           {/* CTA */}
           <div className="mt-16 text-center rounded-3xl bg-accent p-12">
             <h3 className="text-3xl font-black text-white mb-4">Ready to transform your store?</h3>
-            <p className="text-red-200 mb-8">Join store owners across Texas using RA Solution every day.</p>
+            <p className="text-red-200 mb-8">Join store owners across Texas using RYXSOR AI every day.</p>
             <Link href="/register"
               className="inline-flex items-center gap-2 rounded-2xl bg-white text-accent font-black text-lg px-10 py-4 hover:bg-gray-100 transition-colors">
-              Launch RA Solution <ArrowRight className="h-5 w-5" />
+              Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
             </Link>
             <p className="text-red-200 text-sm mt-4">Free to start · No credit card · Works with Modisoft</p>
           </div>
@@ -351,7 +351,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white font-black text-sm">R</div>
-              <span className="text-gray-400 text-sm">RA Solution — by RA</span>
+              <span className="text-gray-400 text-sm">RYXSOR AI — by RA</span>
             </div>
             <div className="flex items-center gap-6">
               <a href="#features" className="text-gray-500 hover:text-gray-300 text-xs">Features</a>
@@ -360,7 +360,7 @@ export default function LandingPage() {
               <a href="#contact" className="text-gray-500 hover:text-gray-300 text-xs">Contact</a>
               <Link href="/login" className="text-gray-500 hover:text-gray-300 text-xs">Sign In</Link>
             </div>
-            <p className="text-gray-600 text-xs">© 2026 RA Solution. All rights reserved.</p>
+            <p className="text-gray-600 text-xs">© 2026 RYXSOR AI. All rights reserved.</p>
           </div>
         </div>
       </footer>

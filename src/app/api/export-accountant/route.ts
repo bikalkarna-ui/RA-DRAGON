@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (format === 'csv') {
       const rows: string[][] = [
         // Header
-        ['RA Dragon Export', store.name, `${start} to ${end}`, '', '', '', '', '', '', ''],
+        ['RYXSOR AI Export', store.name, `${start} to ${end}`, '', '', '', '', '', '', ''],
         ['', '', '', '', '', '', '', '', '', ''],
         // Daily reports
         ['=== DAILY SALES REPORTS ===', '', '', '', '', '', '', '', '', ''],
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="ra-dragon-export-${start}-${end}.csv"`,
+          'Content-Disposition': `attachment; filename="ryxsor-ai-export-${start}-${end}.csv"`,
         },
       });
     }

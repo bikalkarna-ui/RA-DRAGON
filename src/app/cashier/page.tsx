@@ -461,7 +461,7 @@ export default function CashierPage() {
           </button>
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-600">
-            <span className="text-white font-black text-sm">R</span>
+            <span className="text-white font-black text-[9px] tracking-tight">RX</span>
           </div>
         )}
         <div>

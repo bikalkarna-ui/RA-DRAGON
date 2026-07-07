@@ -102,7 +102,7 @@ export default function LoginPage() {
               R
             </div>
           </Link>
-          <h1 className="text-2xl font-black text-white">RA Solution</h1>
+          <h1 className="text-2xl font-black text-white">RYXSOR AI</h1>
           <p className="text-gray-500 text-sm mt-1">
             {step === 'email' ? 'Sign in to your store' :
              step === 'password' ? `Welcome back` :

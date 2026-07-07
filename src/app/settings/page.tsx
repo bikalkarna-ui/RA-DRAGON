@@ -369,14 +369,14 @@ function ConnectorTab({ store }: { store: any }) {
             <span className="text-accent text-lg font-black">R</span>
           </div>
           <div>
-            <p className="font-bold text-text">RA Dragon Connector</p>
-            <p className="text-xs text-muted">Windows app that auto-syncs your POS to RA Dragon</p>
+            <p className="font-bold text-text">RYXSOR AI Connector</p>
+            <p className="text-xs text-muted">Windows app that auto-syncs your POS to RYXSOR AI</p>
           </div>
         </div>
         <div className="space-y-2 text-sm text-gray-600">
           <p>✓ Installs on your back-office PC (where Gilbarco Passport runs)</p>
           <p>✓ Automatically reads sales, inventory, and reports directly from POS</p>
-          <p>✓ Syncs to your RA Dragon account every 30 seconds</p>
+          <p>✓ Syncs to your RYXSOR AI account every 30 seconds</p>
           <p>✓ Works offline — queues data until internet returns</p>
         </div>
       </div>
@@ -394,7 +394,7 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 2: Generate key */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 2 — Generate Your API Key</p>
-        <p className="text-sm text-gray-600 mb-4">Generate a secret key that connects your store to the RA Dragon connector. Enter this key in the connector's Settings screen.</p>
+        <p className="text-sm text-gray-600 mb-4">Generate a secret key that connects your store to the RYXSOR AI connector. Enter this key in the connector's Settings screen.</p>
 
         {!result && (
           <button onClick={generate} disabled={loading}
@@ -444,7 +444,7 @@ function ConnectorTab({ store }: { store: any }) {
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 3 — Enter in Connector Settings</p>
         <div className="space-y-2 text-sm text-gray-600">
-          <p>1. Open RA Dragon Connector on your store PC</p>
+          <p>1. Open RYXSOR AI Connector on your store PC</p>
           <p>2. Right-click the tray icon → Settings</p>
           <p>3. Paste the Cloud URL, Store ID, and API Key</p>
           <p>4. Click Save — the connector will auto-detect your POS and start syncing</p>

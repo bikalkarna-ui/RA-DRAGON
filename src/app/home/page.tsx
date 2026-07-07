@@ -44,7 +44,7 @@ function AICopilot({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent"><Zap className="h-4 w-4 text-white" /></div>
-            <div><p className="font-black text-text text-sm leading-tight">RA Dragon AI</p><div className="flex items-center gap-1.5 mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /><p className="text-[10px] text-muted font-medium">Knows your store</p></div></div>
+            <div><p className="font-black text-text text-sm leading-tight">RYXSOR AI AI</p><div className="flex items-center gap-1.5 mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /><p className="text-[10px] text-muted font-medium">Knows your store</p></div></div>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><X className="h-4 w-4" /></button>
         </div>
@@ -144,7 +144,7 @@ export default function HomePage() {
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.ready;
         // Show test notification
-        reg.showNotification('RA Dragon', {
+        reg.showNotification('RYXSOR AI', {
           body: 'Notifications enabled! You\'ll get daily store summaries.',
           icon: '/icon-192.png',
         });

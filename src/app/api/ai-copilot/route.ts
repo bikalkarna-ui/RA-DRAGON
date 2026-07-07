@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const avgDaily = recentReports?.length ? totalSales30 / recentReports.length : 0;
 
     const context = `
-You are RA Dragon AI, the business assistant for ${store.name}.
+You are RYXSOR AI AI, the business assistant for ${store.name}.
 Today: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
 
 TODAY'S REPORT:
