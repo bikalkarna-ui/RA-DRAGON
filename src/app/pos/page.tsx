@@ -213,7 +213,19 @@ function ReportCard({ report, onDelete, onRefresh }: {
   const doDelete = async () => {
     if (!confirm('Delete this report? This cannot be undone.')) return;
     setDeleting(true);
-    await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' }).catch(()=>{});
+    try {
+      const res = await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Could not delete report: ${data.error || 'please try again'}`);
+        setDeleting(false);
+        return;
+      }
+    } catch (err: any) {
+      alert(`Could not delete report: ${err?.message || 'please try again'}`);
+      setDeleting(false);
+      return;
+    }
     setDeleting(false);
     onDelete();
   };

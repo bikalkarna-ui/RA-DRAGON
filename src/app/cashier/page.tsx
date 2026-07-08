@@ -200,18 +200,26 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const [errMsg, setErrMsg] = useState('');
+
   const activateBook = async () => {
     if (!bookNum) return;
     setSaving(true);
+    setErrMsg('');
     const today = new Date().toISOString().split('T')[0];
-    await createClient().from('timeline_events').insert({
+    const { error } = await createClient().from('timeline_events').insert({
       store_id: store.id, event_date: today, type: 'lottery_book',
       title: `Book #${bookNum} Activated`,
       description: `$${price} scratch tickets — activated at ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`,
       amount: parseFloat(price),
       metadata: JSON.stringify({ book: bookNum, price: parseFloat(price), status: 'active', tickets_start: 1 }),
-    }).catch(() => {});
+    });
     setSaving(false);
+    if (error) {
+      console.error('activateBook failed:', error);
+      setErrMsg(error.message || 'Could not save — please try again');
+      return;
+    }
     setBookNum(''); setAdding(false);
     load();
   };
@@ -219,11 +227,16 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
   const closeBook = async (book: any) => {
     const sold = prompt('How many tickets sold from this book?');
     if (!sold) return;
-    await createClient().from('timeline_events').update({
+    const { error } = await createClient().from('timeline_events').update({
       title: `Book #${JSON.parse(book.metadata||'{}').book} Closed`,
       description: `${sold} tickets sold · $${(parseInt(sold) * book.amount).toFixed(2)} total`,
       metadata: JSON.stringify({ ...JSON.parse(book.metadata||'{}'), status: 'closed', tickets_sold: parseInt(sold) }),
     }).eq('id', book.id);
+    if (error) {
+      console.error('closeBook failed:', error);
+      alert(`Could not close book: ${error.message || 'please try again'}`);
+      return;
+    }
     load();
   };
 
@@ -261,9 +274,14 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
             </div>
           </div>
           <button onClick={activateBook} disabled={!bookNum || saving}
-            className="w-full rounded-xl bg-amber-500 py-3 text-base font-black text-white">
+            className="w-full rounded-xl bg-amber-500 py-3 text-base font-black text-white disabled:opacity-50">
             {saving ? 'Saving…' : 'Activate Book'}
           </button>
+          {errMsg && (
+            <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              {errMsg}
+            </p>
+          )}
         </div>
       )}
 

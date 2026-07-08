@@ -270,9 +270,9 @@ export default function HomePage() {
             { label: 'Inv. Value',   value: fmt.currency(invValue), color: 'text-text', href: '/inventory', isStr: true },
             { label: 'Week Sales',   value: fmt.currency(weekSales), color: 'text-text', href: '/reports', isStr: true },
           ].map(kpi => (
-            <Link key={kpi.label} href={kpi.href} className="tile p-3 text-center hover:bg-surface transition-colors active:scale-95">
-              <p className={cn('font-black text-2xl', kpi.color)}>{kpi.isStr ? kpi.value : kpi.value}</p>
-              <p className="text-[10px] text-muted font-medium mt-0.5">{kpi.label}</p>
+            <Link key={kpi.label} href={kpi.href} className="tile p-3 text-center hover:bg-surface transition-colors active:scale-95 overflow-hidden">
+              <p className={cn('font-black truncate', kpi.isStr ? 'text-base sm:text-xl' : 'text-2xl', kpi.color)}>{kpi.value}</p>
+              <p className="text-[10px] text-muted font-medium mt-0.5 truncate">{kpi.label}</p>
             </Link>
           ))}
         </div>

@@ -89,12 +89,21 @@ export default function EmployeesPage() {
     setPin(''); loadAll(); setTimeout(() => setPinMsg(null), 3000);
   };
 
+  const [formErr, setFormErr] = useState('');
+
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault(); if (!store) return;
+    setFormErr('');
     const payload = { store_id: store.id, name: form.name.trim(), role: form.role, pin: form.pin.trim(), hourly_rate: parseFloat(form.hourly_rate) || null, phone: form.phone.trim() || null };
     const sb = createClient();
-    if (editId) { await sb.from('employees').update(payload).eq('id', editId); }
-    else { await sb.from('employees').insert({ ...payload, is_active: true }); }
+    const { error } = editId
+      ? await sb.from('employees').update(payload).eq('id', editId)
+      : await sb.from('employees').insert({ ...payload, is_active: true });
+    if (error) {
+      console.error('submitForm failed:', error);
+      setFormErr(error.message || 'Could not save employee — please try again');
+      return;
+    }
     setShowForm(false); setEditId(null); setForm(EMPTY_EMP); loadAll();
   };
 
@@ -234,10 +243,15 @@ export default function EmployeesPage() {
                 <form onSubmit={submitForm} className="space-y-3">
                   <div><label className="lbl">Full name *</label><input required value={form.name} onChange={e => f('name', e.target.value)} className="inp" autoFocus /></div>
                   <div><label className="lbl">Role</label><select value={form.role} onChange={e => f('role', e.target.value)} className="inp">{ROLES.map(r => <option key={r}>{r}</option>)}</select></div>
-                  <div><label className="lbl">PIN (4 digits) *</label><input type="number" required maxLength={4} value={form.pin} onChange={e => f('pin', e.target.value.slice(0,4))} className="inp num" placeholder="4-digit clock-in PIN" /></div>
+                  <div><label className="lbl">PIN (4 digits) *</label><input type="text" inputMode="numeric" pattern="[0-9]*" required maxLength={4} value={form.pin} onChange={e => f('pin', e.target.value.replace(/\D/g,'').slice(0,4))} className="inp num" placeholder="4-digit clock-in PIN" /></div>
                   <div><label className="lbl">Phone</label><input type="tel" value={form.phone} onChange={e => f('phone', e.target.value)} className="inp" /></div>
                   <div><label className="lbl">Hourly rate $</label><input type="number" step="0.01" min="0" value={form.hourly_rate} onChange={e => f('hourly_rate', e.target.value)} className="inp" placeholder="15.00" /></div>
                   <button type="submit" className="btn btn-accent btn-full"><Check className="h-4 w-4" />{editId ? 'Save changes' : 'Add employee'}</button>
+                  {formErr && (
+                    <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                      {formErr}
+                    </p>
+                  )}
                 </form>
               </div>
             )}
