@@ -85,7 +85,7 @@ Rules:
     const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'anthropic/claude-haiku-4-5', max_tokens: 2000, messages: [{ role: 'user', content }] }),
+      body: JSON.stringify({ model: 'anthropic/claude-haiku-4-5', max_tokens: 8000, messages: [{ role: 'user', content }] }),
     });
 
     if (!aiRes.ok) {
