@@ -32,7 +32,7 @@ async function normalizeImage(file: File): Promise<File> {
   if (file.type === 'application/pdf') return file;
   try {
     const bitmap = await createImageBitmap(file);
-    const MAX_DIM = 1800;
+    const MAX_DIM = 1400;
     let { width, height } = bitmap;
     if (width > MAX_DIM || height > MAX_DIM) {
       const scale = MAX_DIM / Math.max(width, height);
@@ -45,7 +45,17 @@ async function normalizeImage(file: File): Promise<File> {
     const ctx = canvas.getContext('2d');
     if (!ctx) return file;
     ctx.drawImage(bitmap, 0, 0, width, height);
-    const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+
+    // Multi-page uploads (multiple photos in one submission) must all fit
+    // together under Vercel's ~4.5MB request limit. Iteratively lower JPEG
+    // quality until each individual photo is comfortably small, so several
+    // pages combined still fit even on stores that submit many photos.
+    let quality = 0.75;
+    let blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    while (blob && blob.size > 700_000 && quality > 0.35) {
+      quality -= 0.15;
+      blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    }
     if (!blob) return file;
     const newName = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
     return new File([blob], newName, { type: 'image/jpeg' });
@@ -105,11 +115,29 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       // Always send store_id so API can find the right store
       if (storeId) fd.append('store_id', storeId);
 
+      // Vercel rejects requests over ~4.5MB before they even reach our code.
+      // Catch this here with a clear message instead of letting it fail
+      // downstream as a cryptic "invalid JSON response" error.
+      const totalBytes = images.reduce((sum, img) => sum + img.file.size, 0);
+      if (totalBytes > 4_000_000) {
+        throw Object.assign(new Error(`These ${images.length} photos are too large to send together (${(totalBytes / 1_000_000).toFixed(1)}MB). Please submit them in 2 smaller batches, or retake with less zoom.`), { friendly: true });
+      }
+
       setProgress('AI reading report…');
       stage = 'sending to server';
       const res = await fetch(endpoint, { method: 'POST', body: fd });
 
       stage = 'reading server response';
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        // Server (or Vercel's platform layer) returned something that isn't
+        // JSON — typically an oversized-request or gateway error page.
+        throw Object.assign(new Error(
+          res.status === 413
+            ? 'These photos are too large for the server to accept. Please submit fewer pages at once.'
+            : `Server returned an unexpected response (status ${res.status}). Please try again with fewer/smaller photos.`
+        ), { friendly: true });
+      }
       const data = await res.json();
 
       if (!res.ok) {
@@ -133,7 +161,9 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
     } catch (err: any) {
       setState('error');
       console.error(`MultiScan failed at stage "${stage}":`, err);
-      const technical = `[${stage}] ${err?.name || 'Error'}: ${err?.message || String(err)}`;
+      const technical = err?.friendly
+        ? err.message
+        : `[${stage}] ${err?.name || 'Error'}: ${err?.message || String(err)}`;
       setMsg(technical);
       setDebugStage(stage);
     }
