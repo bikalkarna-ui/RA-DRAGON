@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
 
     const imgs = await Promise.all(files.map(async f => ({
       b64: Buffer.from(await f.arrayBuffer()).toString('base64'),
-      mime: f.type || 'image/jpeg',
+      mime: ['image/jpeg','image/png','image/webp','image/gif','application/pdf'].includes(f.type) ? f.type : 'image/jpeg',
     })));
 
     // ── PROMPT 1: All numeric fields ─────────────────────────────────────────

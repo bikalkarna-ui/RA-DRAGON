@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       for (const file of files) {
         const buf = Buffer.from(await file.arrayBuffer());
         const b64 = buf.toString('base64');
-        const mime = file.type || 'image/jpeg';
+        const mime = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'].includes(file.type) ? file.type : 'image/jpeg';
         if (mime === 'application/pdf') {
           content.push({ type: 'file', file: { filename: 'report.pdf', file_data: `data:application/pdf;base64,${b64}` } });
         } else {

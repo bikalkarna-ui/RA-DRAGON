@@ -17,6 +17,45 @@ interface MultiScanProps {
   className?: string;
 }
 
+function isInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /FBAN|FBAV|Instagram|Line\/|MicroMessenger|TikTok|LinkedInApp/i.test(ua);
+}
+
+// Convert any captured/selected image (including iPhone HEIC) into a standard
+// JPEG File before upload. Fixes a WebKit bug where FormData uploads of
+// non-standard image types throw "The string did not match the expected
+// pattern", and ensures the AI vision API (which rejects HEIC) always gets a
+// format it accepts. PDFs pass through untouched.
+async function normalizeImage(file: File): Promise<File> {
+  if (file.type === 'application/pdf') return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const MAX_DIM = 1800;
+    let { width, height } = bitmap;
+    if (width > MAX_DIM || height > MAX_DIM) {
+      const scale = MAX_DIM / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    if (!blob) return file;
+    const newName = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], newName, { type: 'image/jpeg' });
+  } catch {
+    // If conversion fails for any reason, fall back to the original file
+    // rather than blocking the upload entirely.
+    return file;
+  }
+}
+
 export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, extraFields, className }: MultiScanProps) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,11 +74,14 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
     } catch { /* ignore */ }
   }, []);
 
-  const addFiles = useCallback((files: FileList | null) => {
+  const addFiles = useCallback(async (files: FileList | null) => {
     if (!files) return;
-    const newImgs = Array.from(files).map(file => ({ url: URL.createObjectURL(file), file }));
+    setProgress('Processing photo…');
+    const normalized = await Promise.all(Array.from(files).map(normalizeImage));
+    const newImgs = normalized.map(file => ({ url: URL.createObjectURL(file), file }));
     setImages(prev => [...prev, ...newImgs]);
     setState('preview');
+    setProgress('');
   }, []);
 
   const remove = (i: number) => {
@@ -85,7 +127,13 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       setImages([]);
     } catch (err: any) {
       setState('error');
-      setMsg(err.message);
+      let errMsg = err.message || 'Upload failed';
+      if (errMsg.toLowerCase().includes('string') && errMsg.toLowerCase().includes('pattern')) {
+        errMsg = isInAppBrowser()
+          ? 'This browser (opened from Facebook/Instagram/etc.) blocks camera uploads. Tap the ⋯ menu and choose "Open in Safari" or "Open in Browser", then try again.'
+          : 'Upload failed due to a browser issue. Please try again, or switch to Safari/Chrome if the problem continues.';
+      }
+      setMsg(errMsg);
     }
   };
 
@@ -102,6 +150,16 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       {/* Hidden inputs */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={e => addFiles(e.target.files)} />
       <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={e => addFiles(e.target.files)} />
+
+      {/* IN-APP BROWSER WARNING */}
+      {typeof navigator !== 'undefined' && isInAppBrowser() && state !== 'loading' && (
+        <div className="rounded-xl border-2 border-yellow-300 bg-yellow-50 px-4 py-3 mb-3">
+          <p className="text-sm font-bold text-yellow-800">⚠️ Camera may not work here</p>
+          <p className="text-xs text-yellow-700 mt-1">
+            You opened this from an app (Facebook/Instagram/etc). Tap the <b>⋯</b> or <b>Share</b> icon and choose <b>"Open in Safari"</b> or <b>"Open in Browser"</b> for scanning to work.
+          </p>
+        </div>
+      )}
 
       {/* IDLE — camera first */}
       {state === 'idle' && (
