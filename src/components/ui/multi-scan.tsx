@@ -64,6 +64,7 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
   const [msg, setMsg] = useState('');
   const [progress, setProgress] = useState('');
   const [storeId, setStoreId] = useState<string | null>(null);
+  const [debugStage, setDebugStage] = useState('');
 
   useEffect(() => {
     try {
@@ -96,6 +97,7 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
     setState('loading');
     setProgress(`Sending ${images.length} page${images.length > 1 ? 's' : ''} to AI…`);
 
+    let stage = 'building upload';
     try {
       const fd = new FormData();
       images.forEach((img, i) => fd.append(i === 0 ? 'file' : `file${i}`, img.file));
@@ -104,7 +106,10 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       if (storeId) fd.append('store_id', storeId);
 
       setProgress('AI reading report…');
+      stage = 'sending to server';
       const res = await fetch(endpoint, { method: 'POST', body: fd });
+
+      stage = 'reading server response';
       const data = await res.json();
 
       if (!res.ok) {
@@ -127,13 +132,10 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       setImages([]);
     } catch (err: any) {
       setState('error');
-      let errMsg = err.message || 'Upload failed';
-      if (errMsg.toLowerCase().includes('string') && errMsg.toLowerCase().includes('pattern')) {
-        errMsg = isInAppBrowser()
-          ? 'This browser (opened from Facebook/Instagram/etc.) blocks camera uploads. Tap the ⋯ menu and choose "Open in Safari" or "Open in Browser", then try again.'
-          : 'Upload failed due to a browser issue. Please try again, or switch to Safari/Chrome if the problem continues.';
-      }
-      setMsg(errMsg);
+      console.error(`MultiScan failed at stage "${stage}":`, err);
+      const technical = `[${stage}] ${err?.name || 'Error'}: ${err?.message || String(err)}`;
+      setMsg(technical);
+      setDebugStage(stage);
     }
   };
 
@@ -143,6 +145,7 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
     setState('idle');
     setMsg('');
     setProgress('');
+    setDebugStage('');
   };
 
   return (
@@ -266,10 +269,10 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
       {state === 'error' && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-red-200 bg-red-50 py-8 px-5">
           <AlertCircle className="h-10 w-10 text-accent" />
-          <div className="text-center">
+          <div className="text-center w-full">
             <p className="font-bold text-accent text-lg">Upload failed</p>
-            <p className="text-red-700 text-sm mt-2 max-w-xs font-medium bg-red-100 rounded-xl px-3 py-2">{msg}</p>
-            <p className="text-gray-400 text-xs mt-2">Check your internet connection and try again</p>
+            <p className="text-red-700 text-xs mt-2 max-w-xs mx-auto font-mono bg-red-100 rounded-xl px-3 py-2 break-words">{msg}</p>
+            <p className="text-gray-500 text-xs mt-2">Screenshot this and send it to support — it shows exactly what went wrong.</p>
           </div>
           <button onClick={reset} className="btn btn-accent text-sm px-8 mt-1">Try again</button>
         </div>
