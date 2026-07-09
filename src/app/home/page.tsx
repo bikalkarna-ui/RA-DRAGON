@@ -293,33 +293,18 @@ export default function HomePage() {
       </div>
 
       <div className="px-4 space-y-5">
-        {/* Hero card */}
-        <div className="rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">TODAY'S GROSS SALES</p>
-              <p className="num font-black text-5xl leading-none mt-1">{fmt.currency(grossSales)}</p>
-              {fuelSales > 0 && <p className="text-xs text-gray-400 mt-1">Fuel: {fmt.currency(fuelSales)}</p>}
-              {!hasReport && <p className="text-xs text-gray-400 mt-1">No report uploaded yet</p>}
-            </div>
-            <div className="text-center">
-              <div className={cn('flex h-16 w-16 items-center justify-center rounded-2xl font-black text-2xl',
-                healthScore >= 80 ? 'bg-green-500' : healthScore >= 60 ? 'bg-amber-500' : 'bg-red-500')}>
-                {healthScore}
-              </div>
-              <p className="text-[10px] text-gray-400 mt-1">{healthScore >= 80 ? 'EXCELLENT' : healthScore >= 60 ? 'GOOD' : 'NEEDS ATTENTION'}</p>
-              <p className="text-[10px] text-gray-400">Store Health</p>
-            </div>
+        {/* Store Health */}
+        <div className="tile p-4 flex items-center gap-4">
+          <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl font-black text-xl text-white',
+            healthScore >= 80 ? 'bg-green-500' : healthScore >= 60 ? 'bg-amber-500' : 'bg-red-500')}>
+            {healthScore}
           </div>
-
-          {/* Short/Over */}
-          {hasReport && (
-            <div className={cn('rounded-2xl px-4 py-3 flex items-center justify-between',
-              isShort ? 'bg-red-500/20' : isOver ? 'bg-green-500/20' : 'bg-white/10')}>
-              <span className="text-sm font-semibold">{isShort ? '⚠ SHORT' : isOver ? '✓ OVER' : '✓ BALANCED'}</span>
-              <span className="num font-black text-xl">{shortOver >= 0 ? '+' : ''}{fmt.currency(shortOver)}</span>
-            </div>
-          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-text leading-tight">
+              {healthScore >= 80 ? 'Excellent' : healthScore >= 60 ? 'Good' : 'Needs Attention'}
+            </p>
+            <p className="text-xs text-muted mt-0.5">Store Health</p>
+          </div>
         </div>
 
         {/* Push notification prompt */}
@@ -333,23 +318,6 @@ export default function HomePage() {
             <ChevronRight className="h-4 w-4 text-violet-400" />
           </button>
         )}
-
-        {/* KPI grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: 'Out of Stock', value: outOfStock, color: outOfStock > 0 ? 'text-red-600' : 'text-text', href: '/inventory' },
-            { label: 'Low Stock',    value: lowStock,   color: lowStock > 0 ? 'text-amber-600' : 'text-text', href: '/inventory' },
-            { label: 'Staff In',     value: staffIn,    color: 'text-text', href: '/employees' },
-            { label: 'Pending Inv.', value: pendingInv, color: pendingInv > 0 ? 'text-amber-600' : 'text-text', href: '/invoices' },
-            { label: 'Inv. Value',   value: fmt.currency(invValue), color: 'text-text', href: '/inventory', isStr: true },
-            { label: 'Week Sales',   value: fmt.currency(weekSales), color: 'text-text', href: '/reports', isStr: true },
-          ].map(kpi => (
-            <Link key={kpi.label} href={kpi.href} className="tile p-3 text-center hover:bg-surface transition-colors active:scale-95 overflow-hidden">
-              <p className={cn('font-black truncate', kpi.isStr ? 'text-base sm:text-xl' : 'text-2xl', kpi.color)}>{kpi.value}</p>
-              <p className="text-[10px] text-muted font-medium mt-0.5 truncate">{kpi.label}</p>
-            </Link>
-          ))}
-        </div>
 
         {/* App grid */}
         <div>
