@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
-import { fmt, cn, VENDORS } from '@/lib/utils';
+import { fmt, cn } from '@/lib/utils';
 import { Brain, Loader2, Check, X, ChevronDown, ChevronUp, Zap, Download, RefreshCw, Package, Plus, Minus } from 'lucide-react';
 
 export default function OrderingPage() {
   const [mounted, setMounted] = useState(false);
   const { store } = useStore();
   const [vendor, setVendor] = useState('');
+  const [vendorList, setVendorList] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
@@ -32,21 +33,33 @@ export default function OrderingPage() {
     setProducts(data ?? []);
   }, [store]);
 
-  useEffect(() => { if (mounted && store) { loadOrders(); loadProducts(); } }, [mounted, store, loadOrders, loadProducts]);
+  // Pull real vendor names from actual inventory instead of a hardcoded list —
+  // this is what was causing "no products assigned" for real vendors.
+  const loadVendors = useCallback(async () => {
+    if (!store) return;
+    const { data } = await createClient().from('products').select('vendor_company').eq('store_id', store.id).eq('is_active', true).not('vendor_company', 'is', null);
+    const unique = Array.from(new Set((data ?? []).map(p => p.vendor_company).filter(Boolean))).sort();
+    setVendorList(unique as string[]);
+  }, [store]);
+
+  useEffect(() => { if (mounted && store) { loadOrders(); loadProducts(); loadVendors(); } }, [mounted, store, loadOrders, loadProducts, loadVendors]);
 
   const generateOrder = async () => {
     if (!store || !vendor) return;
     setGenerating(true);
     setCurrentOrder(null);
     try {
-      const res = await fetch('/api/ai-order', {
+      const res = await fetch('/api/purchase-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_id: store.id, vendor_name: vendor }),
+        body: JSON.stringify({ vendor_name: vendor, vendor_company: vendor }),
       });
       const data = await res.json();
-      if (data.order) { setCurrentOrder(data.order); loadOrders(); }
-      else alert(data.error || 'Failed to generate order');
+      if (data.success && data.orderId) {
+        const { data: full } = await createClient().from('purchase_orders').select('*, purchase_order_items(*)').eq('id', data.orderId).single();
+        setCurrentOrder(full);
+        loadOrders();
+      } else alert(data.error || 'Failed to generate order');
     } catch { alert('Network error'); }
     setGenerating(false);
   };
@@ -101,9 +114,14 @@ export default function OrderingPage() {
             <div><p className="font-bold text-text">Generate AI Purchase Order</p><p className="text-xs text-muted">AI analyzes 30/60/90-day velocity to calculate exact quantities</p></div>
           </div>
           <select value={vendor} onChange={e => setVendor(e.target.value)} className="inp mb-3">
-            <option value="">Select vendor…</option>
-            {VENDORS.map(v => <option key={v} value={v}>{v}</option>)}
+            <option value="">{vendorList.length ? 'Select vendor…' : 'No vendors found on your products yet'}</option>
+            {vendorList.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
+          {vendorList.length === 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">
+              No products have a vendor assigned yet. Set a vendor company for products in Inventory, or scan a vendor invoice — it fills this in automatically.
+            </p>
+          )}
           <button onClick={generateOrder} disabled={!vendor || generating} className="btn btn-accent btn-full gap-2 py-4">
             {generating ? <><Loader2 className="h-5 w-5 animate-spin" />Analyzing sales data…</> : <><Brain className="h-5 w-5" />Generate Order for {vendor || 'vendor'}</>}
           </button>

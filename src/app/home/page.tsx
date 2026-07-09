@@ -283,7 +283,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-3">
             {APPS.map(app => (
               <Link key={app.href} href={app.href}
-                className="tile p-4 flex items-start gap-3 hover:bg-surface transition-colors active:scale-95 relative overflow-hidden">
+                className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-95 relative overflow-hidden">
                 <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', app.color)}>
                   <app.icon className="h-5 w-5" />
                 </div>
@@ -291,6 +291,7 @@ export default function HomePage() {
                   <p className="text-sm font-bold text-text leading-tight">{app.label}</p>
                   <p className="text-xs text-muted mt-0.5 leading-tight">{app.sub}</p>
                 </div>
+                <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
                 {app.badge > 0 && (
                   <span className="absolute top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-black px-1">
                     {app.badge}

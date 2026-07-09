@@ -204,24 +204,33 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   const activateBook = async () => {
     if (!bookNum) return;
+    if (!store) { setErrMsg('Store not loaded yet — please wait a moment and try again'); return; }
     setSaving(true);
     setErrMsg('');
-    const today = new Date().toISOString().split('T')[0];
-    const { error } = await createClient().from('timeline_events').insert({
-      store_id: store.id, event_date: today, type: 'lottery_book',
-      title: `Book #${bookNum} Activated`,
-      description: `$${price} scratch tickets — activated at ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`,
-      amount: parseFloat(price),
-      metadata: JSON.stringify({ book: bookNum, price: parseFloat(price), status: 'active', tickets_start: 1 }),
-    });
-    setSaving(false);
-    if (error) {
-      console.error('activateBook failed:', error);
-      setErrMsg(error.message || 'Could not save — please try again');
-      return;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const priceNum = parseFloat(price);
+      if (!priceNum || isNaN(priceNum)) { setErrMsg('Please enter a valid ticket price'); return; }
+      const { error } = await createClient().from('timeline_events').insert({
+        store_id: store.id, event_date: today, type: 'lottery_book',
+        title: `Book #${bookNum} Activated`,
+        description: `$${price} scratch tickets — activated at ${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`,
+        amount: priceNum,
+        metadata: JSON.stringify({ book: bookNum, price: priceNum, status: 'active', tickets_start: 1 }),
+      });
+      if (error) {
+        console.error('activateBook failed:', error);
+        setErrMsg(error.message || 'Could not save — please try again');
+        return;
+      }
+      setBookNum(''); setAdding(false);
+      load();
+    } catch (err: any) {
+      console.error('activateBook threw:', err);
+      setErrMsg(err?.message || 'Something went wrong — please try again');
+    } finally {
+      setSaving(false);
     }
-    setBookNum(''); setAdding(false);
-    load();
   };
 
   const closeBook = async (book: any) => {

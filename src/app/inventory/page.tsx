@@ -1,12 +1,13 @@
 'use client';
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Screen } from '@/components/layout/screen';
 import { MultiScan } from '@/components/ui/multi-scan';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDORS } from '@/lib/utils';
-import { Search, Plus, X, Check, Pencil, Trash2, Package, Zap, History, ArrowUpCircle, ArrowDownCircle, Filter, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Search, Plus, X, Check, Pencil, Trash2, Package, Zap, History, ArrowUpCircle, ArrowDownCircle, Filter, TrendingUp, TrendingDown, AlertTriangle, Brain, Bell, Download } from 'lucide-react';
 
 const DEPARTMENTS = ['Tobacco/CIG','Beer & Wine','Snacks','Beverages','Candy','Dairy','Frozen','Health & Beauty','Novelty','Vape','Fuel','Lottery','Auto','Other'];
 const EMPTY = { name:'',vendor_company:'',department:'',category:'',sku:'',barcode:'',unit_cost:'',unit_price:'',quantity:'0',min_quantity:'5',max_quantity:'100',case_pack:'1',reorder_qty:'0',location:'',taxable:true,notes:'' };
@@ -176,6 +177,22 @@ export default function InventoryPage() {
             <p className="text-xs text-muted font-medium">Retail Value</p>
             <p className="num font-black text-green-700 text-lg mt-0.5">{fmt.currency(retailVal)}</p>
           </div>
+        </div>
+
+        {/* Related tools */}
+        <div className="grid grid-cols-3 gap-2">
+          <Link href="/ordering" className="tile p-3 text-center hover:bg-surface transition-colors active:scale-95">
+            <Brain className="h-4 w-4 mx-auto text-violet-600 mb-1" />
+            <p className="text-[11px] font-bold text-text">AI Ordering</p>
+          </Link>
+          <Link href="/alerts" className="tile p-3 text-center hover:bg-surface transition-colors active:scale-95">
+            <Bell className="h-4 w-4 mx-auto text-amber-600 mb-1" />
+            <p className="text-[11px] font-bold text-text">Alerts &amp; Pricing</p>
+          </Link>
+          <Link href="/migration" className="tile p-3 text-center hover:bg-surface transition-colors active:scale-95">
+            <Download className="h-4 w-4 mx-auto text-blue-600 mb-1" />
+            <p className="text-[11px] font-bold text-text">Import CSV</p>
+          </Link>
         </div>
 
         {/* Invoice scan */}
