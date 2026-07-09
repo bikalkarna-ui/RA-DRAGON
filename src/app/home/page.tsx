@@ -196,13 +196,87 @@ export default function HomePage() {
     { href: '/settings',    icon: Settings,   label: 'Settings',         sub: 'Store & connector',  badge: 0,           color: 'bg-gray-50 text-gray-500' },
   ];
 
+  const OPS_NAV = [
+    { href: '/cashier',   icon: DollarSign, label: 'Cashier Actions', badge: 0 },
+    { href: '/invoices',  icon: FileText,   label: 'Invoices',        badge: pendingInv },
+    { href: '/inventory', icon: Package,    label: 'Inventory',       badge: outOfStock },
+    { href: '/ordering',  icon: Brain,      label: 'AI Ordering',     badge: 0 },
+    { href: '/reports',   icon: TrendingUp, label: 'Reports & P&L',   badge: 0 },
+    { href: '/employees', icon: Users,      label: 'Employees',       badge: staffIn },
+    { href: '/vendors',   icon: Shield,     label: 'Vendors',         badge: 0 },
+  ];
+  const MGMT_NAV = [
+    { href: '/alerts',    icon: Bell,          label: 'Alerts' },
+    { href: '/shrink',    icon: AlertTriangle, label: 'Shrink & Waste' },
+    { href: '/fuel',      icon: Fuel,          label: 'Fuel Margins' },
+    { href: '/performance', icon: Users,       label: 'Performance' },
+    { href: '/trends',    icon: TrendingUp,    label: 'Annual Trends' },
+    { href: '/tax',       icon: Receipt,       label: 'Tax Reports' },
+    { href: '/deposit',   icon: DollarSign,    label: 'Deposit Slip' },
+    { href: '/bank',      icon: Building2,     label: 'Bank Recon' },
+    { href: '/search',    icon: Brain,         label: 'Search' },
+    { href: '/migration', icon: Download,      label: 'Import Data' },
+    { href: '/settings',  icon: Settings,      label: 'Settings' },
+  ];
+
   return (
-    <div className="pb-24">
-      {/* Header */}
+    <div className="md:flex md:min-h-screen">
+      {/* Desktop sidebar — hidden on phone, shown on tablet/desktop widths */}
+      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-white md:shrink-0">
+        <div className="px-5 py-5 border-b border-border flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white font-black text-sm">RX</div>
+          <div className="min-w-0">
+            <p className="font-black text-text text-sm leading-tight truncate">{storeName}</p>
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          <div>
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Operations</p>
+            <div className="space-y-0.5">
+              {OPS_NAV.map(item => (
+                <Link key={item.href} href={item.href}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold text-sub hover:bg-surface hover:text-text transition-colors">
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                  {item.badge > 0 && <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-black px-1">{item.badge}</span>}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Management</p>
+            <div className="space-y-0.5">
+              {MGMT_NAV.map(item => (
+                <Link key={item.href} href={item.href}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold text-sub hover:bg-surface hover:text-text transition-colors">
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </nav>
+        <div className="px-4 py-4 border-t border-border flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-700 font-bold text-xs shrink-0">
+            {storeName.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-text truncate">{storeName}</p>
+            <p className="text-[11px] text-muted truncate">Store Dashboard</p>
+          </div>
+          <button onClick={logout} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-sub shrink-0">
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content — unchanged on mobile, becomes the right panel on desktop */}
+      <div className="flex-1 pb-24 md:pb-8">
       <div className="px-4 pt-6 pb-4 flex items-start justify-between">
         <div>
           <p className="text-sm text-muted">{greeting}</p>
-          <h1 className="font-black text-2xl text-text leading-tight">{storeName}</h1>
+          <h1 className="font-black text-2xl text-text leading-tight md:hidden">{storeName}</h1>
+          <h1 className="hidden md:block font-black text-2xl text-text leading-tight">Welcome back!</h1>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
@@ -212,7 +286,7 @@ export default function HomePage() {
             <Zap className="h-4 w-4" />
             <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-green-400 border border-white" />
           </button>
-          <button onClick={logout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <button onClick={logout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub md:hidden">
             <LogOut className="h-4 w-4" />
           </button>
         </div>
@@ -301,6 +375,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </div>
       </div>
 
       {showAI && <AICopilot onClose={() => setShowAI(false)} />}

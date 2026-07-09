@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       const v = velocityMap.get(p.id) ?? { v30: 0, v60: 0, v90: 0 };
       const dailySales = v.v30 / 30;
       const daysLeft = dailySales > 0 ? Math.round(p.quantity / dailySales) : 999;
-      return { id: p.id, name: p.name, sku: p.sku, barcode: p.barcode, department: p.department, currentStock: p.quantity, minQty: p.min_quantity, maxQty: p.max_quantity, casePack: p.case_pack || 1, reorderQty: p.reorder_qty, unitCost: p.unit_cost, retailPrice: p.unit_price, v30, v60, v90, daysLeft };
+      return { id: p.id, name: p.name, sku: p.sku, barcode: p.barcode, department: p.department, currentStock: p.quantity, minQty: p.min_quantity, maxQty: p.max_quantity, casePack: p.case_pack || 1, reorderQty: p.reorder_qty, unitCost: p.unit_cost, retailPrice: p.unit_price, v30: v.v30, v60: v.v60, v90: v.v90, daysLeft };
     });
 
     let orderItems: any[] = [];
