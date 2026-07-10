@@ -8,6 +8,8 @@ import {
   TrendingUp, Bell, Users, Check, Mail, Phone,
   Shield, Zap, Clock, Star, Menu, X
 } from 'lucide-react';
+import { ReviewsSection } from '@/components/landing/reviews-section';
+import { ChatWidget } from '@/components/landing/chat-widget';
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
@@ -69,11 +71,6 @@ export default function LandingPage() {
     },
   ];
 
-  const testimonials = [
-    { name: 'Ahmed Hassan',  store: 'Quick Stop #1 & #2, Houston TX',    text: 'RYXSOR AI replaced our manual spreadsheets completely. The AI ordering alone saves us hours every week and we haven\'t run out of stock since.', stars: 5 },
-    { name: 'Maria Lopez',   store: 'Lopez Fuels, San Antonio TX',        text: 'Scanning invoices with my phone and having inventory update automatically is incredible. What used to take 2 hours now takes 5 minutes.', stars: 5 },
-    { name: 'David Kim',     store: 'K&D Convenience, Dallas TX',         text: 'The daily report upload is a game changer. I upload my Modisoft report and instantly see my P&L, short/over, and what sold. Perfect.', stars: 5 },
-  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -153,22 +150,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats bar */}
-      <section className="bg-gray-900 py-12">
-        <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center">
-          {[
-            { num: '200+',   label: 'Gas stations served' },
-            { num: '$2M+',   label: 'Sales tracked daily' },
-            { num: '10min',  label: 'Average setup time' },
-            { num: '99.9%',  label: 'Uptime guaranteed' },
-          ].map(s => (
-            <div key={s.label}>
-              <p className="text-3xl font-black text-white mb-1">{s.num}</p>
-              <p className="text-sm text-gray-400">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Features */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
@@ -184,6 +165,27 @@ export default function LandingPage() {
               </div>
               <h3 className="font-black text-gray-900 text-base mb-2">{f.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* What makes us different */}
+      <section className="max-w-5xl mx-auto px-6 py-24">
+        <div className="text-center mb-14">
+          <h2 className="text-4xl font-black text-gray-900 mb-4">What makes RYXSOR AI different</h2>
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto">We're not another generic inventory app. Here's what actually sets us apart.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {[
+            { title: 'Works with your POS, not against it', desc: "Most tools ask you to switch systems entirely. RYXSOR AI sits on top of Modisoft — you keep what you already use and know." },
+            { title: 'AI reads your paperwork, not the other way around', desc: 'Photograph an invoice or upload your daily report — the AI extracts every number. No manual data entry, no learning a new interface.' },
+            { title: 'Built for gas stations specifically', desc: "Lottery book tracking, fuel margin analysis, vendor-based ordering — features generic retail software doesn't have, because it wasn't built for this industry." },
+            { title: 'Founder who actually worked this job', desc: "Built by someone who grew up working in gas stations, not a generic SaaS template repurposed for a new market." },
+          ].map(d => (
+            <div key={d.title} className="rounded-2xl bg-gray-50 border border-gray-100 p-6">
+              <h3 className="font-black text-gray-900 text-base mb-2">{d.title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{d.desc}</p>
             </div>
           ))}
         </div>
@@ -212,29 +214,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-black text-gray-900 mb-4">Trusted by store owners</h2>
-          <p className="text-lg text-gray-500">Real results from real gas station operators</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {testimonials.map(t => (
-            <div key={t.name} className="rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div className="flex gap-1 mb-4">
-                {Array.from({ length: t.stars }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                ))}
-              </div>
-              <p className="text-gray-700 text-sm leading-relaxed mb-4">"{t.text}"</p>
-              <div>
-                <p className="font-bold text-gray-900 text-sm">{t.name}</p>
-                <p className="text-xs text-gray-400">{t.store}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Reviews */}
+      <ReviewsSection />
 
       {/* Pricing */}
       <section id="pricing" className="bg-gray-50 py-24">
@@ -288,7 +269,7 @@ export default function LandingPage() {
               Our mission is simple: give every gas station owner the same tools that big chains use, at a price that works for independent operators.
             </p>
             <p className="text-gray-500 leading-relaxed">
-              We're based in Texas and support store owners across the United States.
+              We're based in Texas, and we're just getting started — built and run by someone who's actually worked the counter.
             </p>
           </div>
           <div className="bg-gray-900 rounded-3xl p-10 text-center">
@@ -335,7 +316,7 @@ export default function LandingPage() {
           {/* CTA */}
           <div className="mt-16 text-center rounded-3xl bg-accent p-12">
             <h3 className="text-3xl font-black text-white mb-4">Ready to transform your store?</h3>
-            <p className="text-red-200 mb-8">Join store owners across Texas using RYXSOR AI every day.</p>
+            <p className="text-red-200 mb-8">Be one of the first store owners running on RYXSOR AI.</p>
             <Link href="/register"
               className="inline-flex items-center gap-2 rounded-2xl bg-white text-accent font-black text-lg px-10 py-4 hover:bg-gray-100 transition-colors">
               Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
@@ -364,6 +345,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <ChatWidget />
     </div>
   );
 }
