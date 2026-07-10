@@ -272,11 +272,13 @@ export default function HomePage() {
 
       {/* Main content — unchanged on mobile, becomes the right panel on desktop */}
       <div className="flex-1 pb-24 md:pb-8">
-      <div className="px-4 pt-6 pb-4 flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted">{greeting}</p>
-          <h1 className="font-black text-2xl text-text leading-tight md:hidden">{storeName}</h1>
-          <h1 className="hidden md:block font-black text-2xl text-text leading-tight">Welcome back!</h1>
+      <div className="px-4 pt-6 pb-4 flex items-center gap-3 md:hidden bg-white border-b border-gray-200">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600">
+          <span className="text-white font-black text-xs tracking-tight">RX</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-black text-xl text-text leading-tight truncate">{storeName}</h1>
+          <p className="text-xs text-muted">{new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
@@ -286,8 +288,25 @@ export default function HomePage() {
             <Zap className="h-4 w-4" />
             <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-green-400 border border-white" />
           </button>
-          <button onClick={logout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub md:hidden">
+          <button onClick={logout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
             <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop header */}
+      <div className="hidden md:flex px-4 pt-6 pb-4 items-start justify-between">
+        <div>
+          <p className="text-sm text-muted">{greeting}</p>
+          <h1 className="font-black text-2xl text-text leading-tight">Welcome back!</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+          </button>
+          <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white shadow-lg relative">
+            <Zap className="h-4 w-4" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-green-400 border border-white" />
           </button>
         </div>
       </div>
