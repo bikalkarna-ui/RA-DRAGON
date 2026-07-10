@@ -322,7 +322,31 @@ export default function HomePage() {
         {/* App grid */}
         <div>
           <p className="section-title">Quick Access</p>
-          <div className="grid grid-cols-2 gap-3">
+
+          {/* Mobile: vertical stacked cards */}
+          <div className="md:hidden space-y-3">
+            {APPS.map(app => (
+              <Link key={app.href} href={app.href}
+                className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-[0.98] relative">
+                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', app.color)}>
+                  <app.icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-bold text-text leading-tight">{app.label}</p>
+                  <p className="text-sm text-muted mt-0.5 leading-tight">{app.sub}</p>
+                </div>
+                {app.badge > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-black px-1.5 mr-1">
+                    {app.badge}
+                  </span>
+                )}
+                <ChevronRight className="h-5 w-5 text-gray-300 shrink-0" />
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: 2-column grid */}
+          <div className="hidden md:grid md:grid-cols-2 md:gap-3">
             {APPS.map(app => (
               <Link key={app.href} href={app.href}
                 className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-95 relative overflow-hidden">
