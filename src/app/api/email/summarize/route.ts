@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   if (!store) return NextResponse.json({ error: 'No store found' }, { status: 404 });
 
   const gmail = await getValidGmailToken(sb, store.id);
-  if (!gmail) return NextResponse.json({ error: 'Gmail not connected or needs reconnecting', needsReconnect: true }, { status: 400 });
+  if (!gmail.token) return NextResponse.json({ error: gmail.reason || 'Gmail not connected', needsReconnect: true }, { status: 400 });
 
   try {
     // Get the 10 most recent messages in the inbox

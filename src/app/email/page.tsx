@@ -18,16 +18,19 @@ export default function EmailPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  const [callbackErr, setCallbackErr] = useState('');
+
   const load = useCallback(async () => {
     setLoading(true); setErr('');
     try {
       const res = await fetch('/api/email/summarize');
       const data = await res.json();
-      if (data.error === 'not_configured' || res.status === 500 && data.error?.includes('not configured')) {
+      if (data.error === 'not_configured' || (res.status === 500 && data.error?.includes('not configured'))) {
         setNeedsSetup(true); setConnected(false); setLoading(false); return;
       }
       if (data.needsReconnect || !res.ok) {
         setConnected(false);
+        setCallbackErr(data.error || 'Could not load your Gmail connection — please reconnect.');
         setLoading(false);
         return;
       }
@@ -42,7 +45,9 @@ export default function EmailPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    if (params.get('error') === 'not_configured') setNeedsSetup(true);
+    const errorParam = params.get('error');
+    if (errorParam === 'not_configured') setNeedsSetup(true);
+    else if (errorParam) setCallbackErr(errorParam);
     load();
   }, [mounted, load, params]);
 
@@ -63,6 +68,11 @@ export default function EmailPage() {
           <Mail className="h-10 w-10 text-gray-300 mx-auto mb-3" />
           <p className="font-bold text-text mb-2">Connect your Gmail</p>
           <p className="text-sm text-muted mb-5">See AI summaries of your inbox right here — no need to open Gmail separately.</p>
+          {callbackErr && (
+            <p className="text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-4 max-w-sm mx-auto">
+              Connection failed: {callbackErr}
+            </p>
+          )}
           <a href="/api/email/connect" className="btn btn-accent inline-flex px-8">Connect Gmail</a>
         </div>
       ) : (

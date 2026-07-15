@@ -1,19 +1,25 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
-export async function getValidGmailToken(sb: SupabaseClient, storeId: string): Promise<{ token: string; email: string } | null> {
-  const { data: conn } = await sb.from('email_connections').select('*').eq('store_id', storeId).eq('provider', 'google').maybeSingle();
-  if (!conn) return null;
+type GmailResult = { token: string; email: string; reason?: undefined } | { token?: undefined; email?: undefined; reason: string };
+
+export async function getValidGmailToken(sb: SupabaseClient, storeId: string): Promise<GmailResult> {
+  const { data: conn, error: connErr } = await sb.from('email_connections').select('*').eq('store_id', storeId).eq('provider', 'google').maybeSingle();
+  if (connErr) {
+    console.error('email_connections lookup failed:', connErr);
+    return { reason: `Database error looking up your Gmail connection: ${connErr.message}` };
+  }
+  if (!conn) return { reason: 'No Gmail connection found — click Connect Gmail below.' };
 
   const expiresAt = new Date(conn.expires_at).getTime();
   const isExpired = Date.now() > expiresAt - 60_000; // refresh 1 min early
 
   if (!isExpired) return { token: conn.access_token, email: conn.email_address };
 
-  if (!conn.refresh_token) return null; // can't refresh, user needs to reconnect
+  if (!conn.refresh_token) return { reason: 'Your Gmail connection expired and can\'t auto-refresh. Please reconnect.' };
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
+  if (!clientId || !clientSecret) return { reason: 'Gmail integration is not configured on the server (missing credentials).' };
 
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -27,8 +33,9 @@ export async function getValidGmailToken(sb: SupabaseClient, storeId: string): P
   });
 
   if (!res.ok) {
-    console.error('Gmail token refresh failed:', await res.text().catch(() => ''));
-    return null;
+    const errText = await res.text().catch(() => '');
+    console.error('Gmail token refresh failed:', errText);
+    return { reason: 'Could not refresh your Gmail connection — please reconnect.' };
   }
 
   const tokens = await res.json();
