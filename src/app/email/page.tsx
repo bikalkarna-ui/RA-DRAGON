@@ -18,7 +18,17 @@ export default function EmailPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  const [callbackErr, setCallbackErr] = useState('');
+  const [oauthErr, setOauthErr] = useState('');
+  const [loadErr, setLoadErr] = useState('');
+
+  const ERROR_MESSAGES: Record<string, string> = {
+    missing_code: "Google didn't send back an authorization code. Try connecting again.",
+    confirmation_failed: 'Could not verify your Google login. Try connecting again.',
+    token_exchange_failed: "Google rejected the connection request — the Client ID/Secret in Vercel likely don't match Google Cloud Console. Double-check both.",
+    no_store: 'No store found for your account. Contact support.',
+    save_failed: "Connected to Google, but saving the connection to the database failed. Check that the email_connections table and its RLS policy exist.",
+    unknown: 'Something unexpected went wrong connecting Gmail. Try again.',
+  };
 
   const load = useCallback(async () => {
     setLoading(true); setErr('');
@@ -30,7 +40,8 @@ export default function EmailPage() {
       }
       if (data.needsReconnect || !res.ok) {
         setConnected(false);
-        setCallbackErr(data.error || 'Could not load your Gmail connection — please reconnect.');
+        // Don't overwrite a more specific OAuth callback error if one is already showing
+        setLoadErr(prev => prev || data.error || 'Could not load your Gmail connection — please reconnect.');
         setLoading(false);
         return;
       }
@@ -46,10 +57,12 @@ export default function EmailPage() {
   useEffect(() => {
     if (!mounted) return;
     const errorParam = params.get('error');
-    if (errorParam === 'not_configured') setNeedsSetup(true);
-    else if (errorParam) setCallbackErr(errorParam);
+    if (errorParam === 'not_configured') { setNeedsSetup(true); return; }
+    if (errorParam) setOauthErr(ERROR_MESSAGES[errorParam] || `Connection failed: ${errorParam}`);
     load();
   }, [mounted, load, params]);
+
+  const callbackErr = oauthErr || loadErr;
 
   if (!mounted) return null;
 
