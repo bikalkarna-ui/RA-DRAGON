@@ -71,7 +71,7 @@ export default function LoginPage() {
     setLoading(true); setErr('');
     const { error } = await createClient().auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
     if (error) {

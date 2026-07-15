@@ -10,7 +10,7 @@ import {
   BarChart3, Package, Brain, Bell, FileText, TrendingUp, TrendingDown,
   Users, LogOut, RefreshCw, Zap, AlertTriangle, DollarSign, X, Send,
   Fuel, Receipt, PieChart, Shield, Building2, Clock, Download,
-  ChevronRight, Settings
+  ChevronRight, Settings, Mail
 } from 'lucide-react';
 
 // ── AI Copilot ──────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ function AICopilot({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent"><Zap className="h-4 w-4 text-white" /></div>
-            <div><p className="font-black text-text text-sm leading-tight">RYXSOR AI AI</p><div className="flex items-center gap-1.5 mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /><p className="text-[10px] text-muted font-medium">Knows your store</p></div></div>
+            <div><p className="font-black text-text text-sm leading-tight">RYXSOR AI</p><div className="flex items-center gap-1.5 mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /><p className="text-[10px] text-muted font-medium">Knows your store</p></div></div>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><X className="h-4 w-4" /></button>
         </div>
@@ -187,6 +187,8 @@ export default function HomePage() {
     { href: '/shrink',      icon: AlertTriangle, label: 'Shrink & Waste',sub: 'Loss tracking',      badge: 0,           color: 'bg-red-50 text-red-500' },
     { href: '/performance', icon: Users,      label: 'Performance',      sub: 'Employee stats',     badge: 0,           color: 'bg-indigo-50 text-indigo-600' },
     { href: '/trends',      icon: TrendingUp, label: 'Annual Trends',    sub: 'Year over year',     badge: 0,           color: 'bg-teal-50 text-teal-600' },
+    { href: '/email',       icon: Mail,       label: 'Email Reader',     sub: 'AI inbox summaries', badge: 0,           color: 'bg-blue-50 text-blue-600' },
+    { href: '/billing',     icon: Receipt,    label: 'Invoicing',        sub: 'Bill your customers', badge: 0,           color: 'bg-purple-50 text-purple-600' },
     { href: '/tax',         icon: Receipt,    label: 'Tax Reports',      sub: 'Quarterly filing',   badge: 0,           color: 'bg-emerald-50 text-emerald-600' },
     { href: '/deposit',     icon: DollarSign, label: 'Deposit Slip',     sub: 'Auto-generate',      badge: 0,           color: 'bg-green-50 text-green-700' },
     { href: '/bank',        icon: Building2,  label: 'Bank Recon',       sub: 'Match deposits',     badge: 0,           color: 'bg-blue-50 text-blue-700' },
@@ -204,8 +206,10 @@ export default function HomePage() {
     { href: '/reports',   icon: TrendingUp, label: 'Reports & P&L',   badge: 0 },
     { href: '/employees', icon: Users,      label: 'Employees',       badge: staffIn },
     { href: '/vendors',   icon: Shield,     label: 'Vendors',         badge: 0 },
+    { href: '/email',     icon: Mail,       label: 'Email Reader',    badge: 0 },
   ];
   const MGMT_NAV = [
+    { href: '/billing',   icon: Receipt,       label: 'Invoicing' },
     { href: '/alerts',    icon: Bell,          label: 'Alerts' },
     { href: '/shrink',    icon: AlertTriangle, label: 'Shrink & Waste' },
     { href: '/fuel',      icon: Fuel,          label: 'Fuel Margins' },

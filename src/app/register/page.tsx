@@ -22,28 +22,45 @@ export default function RegisterPage() {
     setErr(''); setLoading(true);
     try {
       const sb = createClient();
-      const { data, error } = await sb.auth.signUp({ email, password: pw });
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password: pw,
+        options: {
+          // Store name is stashed here and only turned into a real store
+          // once the user actually confirms their email — see /auth/callback.
+          data: { store_name: store.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
       if (error) { setErr(error.message); setLoading(false); return; }
 
-      if (data.user) {
-        // Create store
-        const { data: newStore } = await sb.from('stores')
-          .insert({ owner_id: data.user.id, name: store.trim() })
-          .select('id').single();
-        if (newStore) {
-          await sb.from('vendors').insert(
-            VENDORS.map((v: string) => ({ store_id: newStore.id, company_name: v, is_preset: true }))
-          );
+      // If a session came back immediately, email confirmation is off for
+      // this Supabase project — create the store right now since there's
+      // no callback step coming.
+      if (data.session && data.user) {
+        const { data: existingStore } = await sb.from('stores').select('id').eq('owner_id', data.user.id).maybeSingle();
+        if (!existingStore) {
+          const { data: newStore, error: storeErr } = await sb.from('stores')
+            .insert({ owner_id: data.user.id, name: store.trim() })
+            .select('id').single();
+          if (storeErr) {
+            console.error('store creation failed:', storeErr);
+            setErr(`Account created, but store setup failed: ${storeErr.message}. Please contact support.`);
+            setLoading(false);
+            return;
+          }
+          if (newStore) {
+            const { error: vendorErr } = await sb.from('vendors').insert(
+              VENDORS.map((v: string) => ({ store_id: newStore.id, company_name: v, is_preset: true }))
+            );
+            if (vendorErr) console.error('preset vendor creation failed (non-fatal):', vendorErr);
+          }
         }
-      }
-
-      // If session exists, go straight to home (email confirmation disabled)
-      if (data.session) {
         window.location.href = '/home';
         return;
       }
 
-      // Otherwise show "check email" 
+      // Otherwise email confirmation is required — show "check email"
       setDone(true);
     } catch (ex: any) {
       setErr(ex?.message || 'Something went wrong.');
