@@ -13,6 +13,29 @@ import {
   ChevronRight, Settings, Mail
 } from 'lucide-react';
 
+// Lightweight formatter — converts any stray **bold** markdown into real
+// bold text and preserves line breaks, so chat never shows raw asterisks
+// even if the model slips despite being told not to use markdown.
+function FormattedMessage({ text }: { text: string }) {
+  const lines = text.split('\n');
+  return (
+    <>
+      {lines.map((line, i) => {
+        const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+        return (
+          <div key={i} className={i > 0 ? 'mt-1' : ''}>
+            {parts.map((part, j) =>
+              part.startsWith('**') && part.endsWith('**')
+                ? <strong key={j} className="font-bold">{part.slice(2, -2)}</strong>
+                : <span key={j}>{part}</span>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 // ── AI Copilot ──────────────────────────────────────────────────────────────
 function AICopilot({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
@@ -52,7 +75,9 @@ function AICopilot({ onClose }: { onClose: () => void }) {
           {messages.map((m, i) => (
             <div key={i} className={cn('flex items-end gap-2', m.role === 'user' ? 'justify-end' : 'justify-start')}>
               {m.role === 'assistant' && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5"><Zap className="h-3.5 w-3.5 text-white" /></div>}
-              <div className={cn('max-w-[80%] px-4 py-3 text-sm leading-relaxed', m.role === 'user' ? 'bg-accent text-white rounded-2xl rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md')}>{m.content}</div>
+              <div className={cn('max-w-[80%] px-4 py-3 text-sm leading-relaxed', m.role === 'user' ? 'bg-accent text-white rounded-2xl rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md')}>
+                {m.role === 'assistant' ? <FormattedMessage text={m.content} /> : m.content}
+              </div>
             </div>
           ))}
           {loading && <div className="flex items-end gap-2"><div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5"><Zap className="h-3.5 w-3.5 text-white" /></div><div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">{[0,1,2].map(i => <div key={i} className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />)}</div></div>}
