@@ -52,7 +52,7 @@ export default function OrderingPage() {
       const res = await fetch('/api/purchase-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vendor_name: vendor, vendor_company: vendor }),
+        body: JSON.stringify({ vendor_name: vendor, vendor_company: vendor, store_id: store.id }),
       });
       const data = await res.json();
       if (data.success && data.orderId) {

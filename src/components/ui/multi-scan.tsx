@@ -80,8 +80,14 @@ export function MultiScan({ endpoint, onResult, title = 'Scan or Upload', hint, 
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('ra_active_store_id') : null;
       if (saved) { setStoreId(saved); return; }
-      createClient().from('stores').select('id').limit(1).maybeSingle()
-        .then(({ data }) => { if (data) setStoreId(data.id); });
+      // No saved selection (new device/session/cleared storage) — fall back
+      // to the oldest store, same tie-break rule useStore() uses, so scans
+      // always land on the same store the rest of the app shows.
+      createClient().auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        createClient().from('stores').select('id').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle()
+          .then(({ data }) => { if (data) setStoreId(data.id); });
+      });
     } catch { /* ignore */ }
   }, []);
 

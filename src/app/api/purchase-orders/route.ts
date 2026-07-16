@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 const MODEL = 'anthropic/claude-haiku-4-5';
 
@@ -8,10 +9,11 @@ export async function POST(request: NextRequest) {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
 
-    const { vendor_name, vendor_company } = await request.json();
+    const { vendor_name, vendor_company, store_id } = await request.json();
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
+
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     // Get products for this vendor
@@ -133,7 +135,8 @@ export async function GET(request: NextRequest) {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ orders: [] });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
+    const storeId = request.nextUrl.searchParams.get('store_id');
+    const { store } = await getActiveStore(sb, user.id, storeId);
     if (!store) return NextResponse.json({ orders: [] });
 
     const { data } = await sb.from('purchase_orders').select('*').eq('store_id', store.id).order('created_at', { ascending: false }).limit(50);

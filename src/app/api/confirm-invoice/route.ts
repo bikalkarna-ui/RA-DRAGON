@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function POST(request: NextRequest) {
   try {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
 
-    const { invoiceId, items } = await request.json();
+    const { invoiceId, items, store_id } = await request.json();
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
 
     const { data: inv, error: invErr } = await sb.from('invoices').select('*').eq('id', invoiceId).single();
     if (invErr || !inv || inv.store_id !== store.id) return NextResponse.json({ error: invErr?.message || 'Invoice not found' }, { status: 404 });

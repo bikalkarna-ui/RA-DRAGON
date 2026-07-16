@@ -100,6 +100,7 @@ export default function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           invoiceId: reviewId,
+          store_id: store?.id,
           items: items.map(li => ({
             id: li.id,
             action: li._action,
