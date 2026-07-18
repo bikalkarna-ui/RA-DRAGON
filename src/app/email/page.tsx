@@ -3,11 +3,13 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Screen } from '@/components/layout/screen';
+import { useStore } from '@/hooks/use-store';
 import { cn } from '@/lib/utils';
 import { Mail, RefreshCw, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 
 export default function EmailPage() {
   const [mounted, setMounted] = useState(false);
+  const { store } = useStore();
   const [connected, setConnected] = useState<boolean | null>(null);
   const [connectedAs, setConnectedAs] = useState('');
   const [emails, setEmails] = useState<any[]>([]);
@@ -33,7 +35,7 @@ export default function EmailPage() {
   const load = useCallback(async () => {
     setLoading(true); setErr('');
     try {
-      const res = await fetch('/api/email/summarize');
+      const res = await fetch(`/api/email/summarize${store ? `?store_id=${store.id}` : ''}`);
       const data = await res.json();
       if (data.error === 'not_configured' || (res.status === 500 && data.error?.includes('not configured'))) {
         setNeedsSetup(true); setConnected(false); setLoading(false); return;
@@ -86,7 +88,7 @@ export default function EmailPage() {
               Connection failed: {callbackErr}
             </p>
           )}
-          <a href="/api/email/connect" className="btn btn-accent inline-flex px-8">Connect Gmail</a>
+          <a href={`/api/email/connect${store ? `?store_id=${store.id}` : ''}`} className="btn btn-accent inline-flex px-8">Connect Gmail</a>
         </div>
       ) : (
         <div className="space-y-4">

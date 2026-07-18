@@ -26,7 +26,7 @@ export default function MigrationPage() {
   const [validRows, setValidRows] = useState<any[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ imported: number; failed: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; failed: number; failureReasons?: string[] } | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
 
   const fetchLogs = useCallback(async () => {
@@ -52,7 +52,7 @@ export default function MigrationPage() {
     rawRows.forEach((row, i) => {
       const name = get(row, 'product_name'); if (!name) { errs.push(`Row ${i + 2}: missing name`); return; }
       const vc = get(row, 'vendor_company'); const mv = vc ? VENDORS.find(v => v.toLowerCase().includes(vc.toLowerCase()) || vc.toLowerCase().includes(v.toLowerCase())) : null;
-      valid.push({ name, sku: get(row, 'sku') || null, barcode: get(row, 'barcode') || null, vendor_company: mv ?? vc ?? null, unit_cost: parseFloat(get(row, 'unit_cost') ?? '0') || 0, unit_price: parseFloat(get(row, 'unit_price') ?? '0') || 0, quantity: parseInt(get(row, 'quantity') ?? '0', 10) || 0, min_quantity: parseInt(get(row, 'min_quantity') ?? '5', 10) || 5, max_quantity: 100, taxable: true });
+      valid.push({ name, sku: get(row, 'sku') || null, barcode: get(row, 'barcode') || null, vendor_company: mv ?? vc ?? null, unit_cost: parseFloat(get(row, 'unit_cost') ?? '0') || 0, unit_price: parseFloat(get(row, 'unit_price') ?? '0') || 0, quantity: parseInt(get(row, 'quantity') ?? '0', 10) || 0, min_quantity: parseInt(get(row, 'min_quantity') ?? '5', 10) || 5, max_quantity: 100, taxable: true, is_active: true });
     });
     setValidRows(valid); setErrors(errs); setStep(3);
   };
@@ -62,9 +62,19 @@ export default function MigrationPage() {
     const sb = createClient();
     const { data: log } = await sb.from('imports').insert({ store_id: store.id, type: 'products', status: 'running', file_name: file?.name, total_rows: validRows.length }).select('id').single();
     let imported = 0, failed = 0;
-    for (const row of validRows) { try { await sb.from('products').upsert({ store_id: store.id, ...row }, { onConflict: 'store_id,sku', ignoreDuplicates: false }); imported++; } catch { failed++; } }
+    const failureReasons: string[] = [];
+    for (const row of validRows) {
+      const { error } = await sb.from('products').upsert({ store_id: store.id, ...row }, { onConflict: 'store_id,sku', ignoreDuplicates: false });
+      if (error) {
+        failed++;
+        if (failureReasons.length < 5) failureReasons.push(`${row.name}: ${error.message}`);
+        console.error(`CSV import row failed for "${row.name}":`, error);
+      } else {
+        imported++;
+      }
+    }
     if (log) await sb.from('imports').update({ status: 'completed', imported_rows: imported, failed_rows: failed, completed_at: new Date().toISOString() }).eq('id', log.id);
-    setImportResult({ imported, failed }); setImporting(false); setStep(5); fetchLogs();
+    setImportResult({ imported, failed, failureReasons }); setImporting(false); setStep(5); fetchLogs();
   };
 
   const reset = () => { setStep(0); setFile(null); setRawRows([]); setHeaders([]); setMapping([]); setValidRows([]); setErrors([]); setImportResult(null); if (fileRef.current) fileRef.current.value = ''; };
@@ -160,6 +170,12 @@ export default function MigrationPage() {
               <div><p className="num text-3xl font-bold text-green-400">{importResult.imported}</p><p className="text-muted text-sm">Imported</p></div>
               <div><p className="num text-3xl font-bold text-accent">{importResult.failed}</p><p className="text-muted text-sm">Failed</p></div>
             </div>
+            {importResult.failureReasons && importResult.failureReasons.length > 0 && (
+              <div className="text-left max-w-md mx-auto mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                <p className="text-xs font-bold text-red-700 mb-1">Some rows failed:</p>
+                {importResult.failureReasons.map((r, i) => <p key={i} className="text-xs text-red-600">{r}</p>)}
+              </div>
+            )}
             <div className="flex gap-3 justify-center">
               <a href="/inventory" className="btn btn-accent px-6">View Inventory</a>
               <button onClick={reset} className="btn btn-ghost">Import More</button>

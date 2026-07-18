@@ -7,16 +7,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const { data: store } = await sb.from('stores').select('id, name').eq('owner_id', user.id).maybeSingle();
-  if (!store) return NextResponse.json({ error: 'No store found' }, { status: 404 });
-
+  // Fetch the invoice first, then verify it belongs to one of this user's
+  // stores (an account can own several) — rather than guessing one store
+  // up front and failing if the invoice happens to be under a different one.
   const { data: invoice, error } = await sb.from('customer_invoices')
-    .select('*, customer_invoice_items(*)')
-    .eq('id', params.id).eq('store_id', store.id).single();
+    .select('*, customer_invoice_items(*), stores!inner(id, name, owner_id)')
+    .eq('id', params.id).eq('stores.owner_id', user.id).single();
 
   if (error || !invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
 
-  const pdfBytes = await buildInvoicePdf(invoice, store.name);
+  const pdfBytes = await buildInvoicePdf(invoice, (invoice as any).stores.name);
 
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {

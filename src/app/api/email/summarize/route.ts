@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 import { getValidGmailToken } from '@/lib/gmail';
 
 function decodeBase64Url(data: string): string {
@@ -28,8 +29,9 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-  if (!store) return NextResponse.json({ error: 'No store found' }, { status: 404 });
+  const storeId = req.nextUrl.searchParams.get('store_id');
+  const { store, error: storeErr } = await getActiveStore(sb, user.id, storeId);
+  if (!store) return NextResponse.json({ error: storeErr || 'No store found' }, { status: 404 });
 
   const gmail = await getValidGmailToken(sb, store.id);
   if (!gmail.token) return NextResponse.json({ error: gmail.reason || 'Gmail not connected', needsReconnect: true }, { status: 400 });

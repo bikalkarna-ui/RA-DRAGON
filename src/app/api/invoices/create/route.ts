@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function GET(req: NextRequest) {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-  if (!store) return NextResponse.json({ error: 'No store found' }, { status: 404 });
+  const storeId = req.nextUrl.searchParams.get('store_id');
+  const { store, error: storeErr } = await getActiveStore(sb, user.id, storeId);
+  if (!store) return NextResponse.json({ error: storeErr || 'No store found' }, { status: 404 });
 
   const { data, error } = await sb.from('customer_invoices')
     .select('*, customer_invoice_items(*)')
@@ -23,11 +25,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const { data: store } = await sb.from('stores').select('id, name').eq('owner_id', user.id).maybeSingle();
-  if (!store) return NextResponse.json({ error: 'No store found' }, { status: 404 });
-
   try {
-    const { customer_name, customer_email, customer_address, due_date, notes, tax_rate, items } = await req.json();
+    const { customer_name, customer_email, customer_address, due_date, notes, tax_rate, items, store_id } = await req.json();
+
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store found' }, { status: 404 });
 
     if (!customer_name?.trim()) return NextResponse.json({ error: 'Customer name is required' }, { status: 400 });
     if (!Array.isArray(items) || items.length === 0) return NextResponse.json({ error: 'At least one line item is required' }, { status: 400 });

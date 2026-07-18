@@ -60,13 +60,14 @@ export async function POST(request: NextRequest) {
       type: 'text',
       text: `Read this vendor invoice. Extract every product line item with its quantity and cost price.
 Return ONLY this JSON (no markdown):
-{"vendor_name":null,"vendor_company":null,"invoice_number":null,"invoice_date":null,"total_amount":null,"line_items":[{"description":"exact product name from invoice","quantity":1,"unit_cost":0.00,"upc":null,"sku":null}]}
+{"vendor_name":null,"vendor_company":null,"invoice_number":null,"invoice_date":null,"total_amount":null,"line_items":[{"description":"clean human-readable product name","quantity":1,"unit_cost":0.00,"upc":null,"sku":null}]}
 
 Rules:
 - invoice_date: YYYY-MM-DD format
 - unit_cost: cost price per unit (what store pays), NOT selling price
 - quantity: number of units received
 - upc/sku: barcode or item code if visible, else null
+- description: write a SHORT, HUMAN-READABLE product name a store owner would recognize at a glance — brand + flavor/variant + size, e.g. "Lay's Classic 1.5oz", "Marlboro Red 100s", "Monster Energy 16oz". Strip out vendor internal codes, case-pack numbers, and long digit strings from the name — those belong in sku/upc, never in description. If the invoice text is genuinely only a cryptic code with no readable brand/flavor printed anywhere, use the raw text as a last resort rather than inventing a name.
 - Extract ALL line items, even if many
 - Never calculate — read numbers exactly as printed`
     }];

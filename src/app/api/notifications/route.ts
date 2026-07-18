@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function GET(request: NextRequest) {
   try {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ notifications: [] });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
+    const storeId = request.nextUrl.searchParams.get('store_id');
+    const { store } = await getActiveStore(sb, user.id, storeId);
     if (!store) return NextResponse.json({ notifications: [] });
 
     // Auto-generate stock notifications from current inventory

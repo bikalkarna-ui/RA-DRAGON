@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
+import { useStore } from '@/hooks/use-store';
 import { fmt, cn } from '@/lib/utils';
 import { Plus, Trash2, Download, Send, X, FileText, Check, Loader2 } from 'lucide-react';
 
@@ -11,6 +12,7 @@ const EMPTY_ITEM: LineItem = { description: '', quantity: '1', unit_price: '' };
 
 export default function BillingPage() {
   const [mounted, setMounted] = useState(false);
+  const { store } = useStore();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -33,7 +35,7 @@ export default function BillingPage() {
   const loadInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/invoices/create');
+      const res = await fetch(`/api/invoices/create${store ? `?store_id=${store.id}` : ''}`);
       const data = await res.json();
       setInvoices(data.invoices ?? []);
     } catch {}
@@ -69,7 +71,7 @@ export default function BillingPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer_name: customerName, customer_email: customerEmail, customer_address: customerAddress,
-          due_date: dueDate || null, notes, tax_rate: taxRate,
+          due_date: dueDate || null, notes, tax_rate: taxRate, store_id: store?.id,
           items: validItems.map(it => ({ description: it.description, quantity: Number(it.quantity) || 1, unit_price: Number(it.unit_price) })),
         }),
       });

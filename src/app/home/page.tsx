@@ -99,6 +99,44 @@ function AICopilot({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Business quotes — new one on every mount/refresh ────────────────────────
+const BUSINESS_QUOTES = [
+  "Revenue is vanity, profit is sanity, cash is king.",
+  "The best time to plant a tree was 20 years ago. The second best time is now.",
+  "Small daily improvements are the key to staggering long-term results.",
+  "Your margin is your business. Protect it like it's your paycheck — because it is.",
+  "Every dollar of shrink is a dollar you already paid for and never sold.",
+  "Inventory sitting on a shelf isn't an asset, it's cash you can't spend.",
+  "The customer in front of you is worth more than the one you're chasing.",
+  "A store that's always 'about to' restock is a store that's always losing sales.",
+  "Cash flow problems rarely start with sales. They start with not knowing your numbers.",
+  "You can't manage what you don't measure — check your report every single day.",
+  "Good employees don't leave bad jobs, they leave bad management.",
+  "The fastest way to grow profit isn't more sales, it's fewer losses.",
+  "A short drawer once is a mistake. A short drawer every week is a system problem.",
+  "Price for the customer you have, not the one you wish you had.",
+  "Vendors respect owners who know their invoices better than the sales rep does.",
+  "The store that tracks everything is the store that's never surprised.",
+  "Slow-moving inventory is a decision you made a while ago that you haven't undone yet.",
+  "You don't lose money on a bad month. You lose it on twelve bad months you never noticed.",
+  "Consistency beats intensity. Show up, check the numbers, every day.",
+  "The owner who knows their fuel margin sleeps better than the one who guesses.",
+  "Every hour you save on paperwork is an hour you can spend on customers.",
+  "A store runs itself only after the owner has run it perfectly first.",
+  "Trust, but verify — especially your own drawer count.",
+  "The best inventory system is the one you actually use.",
+  "Growth hides problems. A slowdown reveals them.",
+  "Your busiest day tells you what you're good at. Your slowest day tells you what to fix.",
+  "Nobody plans to fail. They just fail to plan for shrink, spoilage, and slow season.",
+  "The store that adapts fastest to what's selling wins the season.",
+  "Undercharging isn't generosity, it's a leak in your own boat.",
+  "A well-run gas station is a machine — every part should be checked, not assumed.",
+];
+
+function getRandomQuote(): string {
+  return BUSINESS_QUOTES[Math.floor(Math.random() * BUSINESS_QUOTES.length)];
+}
+
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
@@ -106,6 +144,7 @@ export default function HomePage() {
   const router = useRouter();
   const [showAI, setShowAI] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [quote, setQuote] = useState(getRandomQuote);
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [kpis, setKpis] = useState({
     grossSales: 0, shortOver: 0, outOfStock: 0, lowStock: 0,
@@ -161,19 +200,56 @@ export default function HomePage() {
   }, [mounted]);
 
   const enableNotifications = async () => {
-    if (!('Notification' in window)) return;
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Push notifications aren\'t supported in this browser.');
+      return;
+    }
     const perm = await Notification.requestPermission();
-    if (perm === 'granted') {
-      setNotifEnabled(true);
-      // Register push subscription
-      if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.ready;
-        // Show test notification
-        reg.showNotification('RYXSOR AI', {
-          body: 'Notifications enabled! You\'ll get daily store summaries.',
-          icon: '/icon-192.png',
+    if (perm !== 'granted') return;
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        console.error('NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set — cannot create a real push subscription.');
+        alert('Notifications aren\'t fully set up yet on the server. Contact support.');
+        return;
+      }
+
+      const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const raw = window.atob(base64);
+        return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+      };
+
+      let subscription = await reg.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
       }
+
+      const res = await fetch('/api/push-subscribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription, store_id: store?.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('push-subscribe failed:', data);
+        alert(`Could not enable notifications: ${data.error || 'please try again'}`);
+        return;
+      }
+
+      setNotifEnabled(true);
+      reg.showNotification('RYXSOR AI', {
+        body: 'Notifications enabled! You\'ll get alerts for low stock, short drawers, and daily summaries.',
+        icon: '/icon-192.png',
+      });
+    } catch (err: any) {
+      console.error('enableNotifications failed:', err);
+      alert(`Could not enable notifications: ${err?.message || 'please try again'}`);
     }
   };
 
@@ -301,6 +377,9 @@ export default function HomePage() {
 
       {/* Main content — unchanged on mobile, becomes the right panel on desktop */}
       <div className="flex-1 pb-24 md:pb-8">
+      <div className="px-4 pt-3 pb-1">
+        <p className="text-[11px] italic text-muted leading-snug">"{quote}"</p>
+      </div>
       <div className="px-4 pt-6 pb-4 flex items-center gap-3 md:hidden bg-white border-b border-gray-200">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600">
           <span className="text-white font-black text-xs tracking-tight">RX</span>
@@ -310,7 +389,7 @@ export default function HomePage() {
           <p className="text-xs text-muted">{new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
             <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </button>
           <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white shadow-lg relative">
@@ -330,7 +409,7 @@ export default function HomePage() {
           <h1 className="font-black text-2xl text-text leading-tight">Welcome back!</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { setRefreshing(true); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
             <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </button>
           <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white shadow-lg relative">

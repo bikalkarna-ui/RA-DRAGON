@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get('code');
-  const userId = searchParams.get('state');
+  const state = searchParams.get('state');
+  const [userId, stateStoreId] = (state || '').split(':');
 
   if (!code || !userId) {
     return NextResponse.redirect(`${origin}/email?error=missing_code`);
@@ -50,7 +52,7 @@ export async function GET(req: NextRequest) {
     });
     const profile = profileRes.ok ? await profileRes.json() : {};
 
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, stateStoreId);
     if (!store) return NextResponse.redirect(`${origin}/email?error=no_store`);
 
     const expiresAt = new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString();

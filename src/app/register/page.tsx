@@ -20,6 +20,18 @@ export default function RegisterPage() {
   const submit = async (e: any) => {
     e.preventDefault();
     setErr(''); setLoading(true);
+
+    if (pw.length < 8) {
+      setErr('Password must be at least 8 characters.');
+      setLoading(false);
+      return;
+    }
+    if (!/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) {
+      setErr('Password must include at least one letter and one number.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const sb = createClient();
       const { data, error } = await sb.auth.signUp({
@@ -121,8 +133,8 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password (min 6 characters)</label>
-              <input type="password" required minLength={6} value={pw} onChange={e => setPw(e.target.value)}
-                placeholder="Create a strong password"
+              <input type="password" required minLength={8} value={pw} onChange={e => setPw(e.target.value)}
+                placeholder="At least 8 characters, with a letter and number"
                 className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />
             </div>
 

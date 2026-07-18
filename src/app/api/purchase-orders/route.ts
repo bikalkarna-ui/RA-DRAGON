@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     // Get products for this vendor
-    const { data: products } = await sb.from('products').select('id,name,barcode,sku,department,quantity,min_quantity,max_quantity,unit_cost,unit_price,case_pack,reorder_qty').eq('store_id', store.id).eq('is_active', true).eq('vendor_company', vendor_name);
+    const { data: products, error: productsErr } = await sb.from('products').select('id,name,barcode,sku,department,quantity,min_quantity,max_quantity,unit_cost,unit_price,case_pack,reorder_qty,vendor_company').eq('store_id', store.id).eq('is_active', true).ilike('vendor_company', vendor_name.trim());
+    if (productsErr) return NextResponse.json({ error: productsErr.message }, { status: 500 });
 
     if (!products?.length) return NextResponse.json({ error: `No products assigned to ${vendor_name}` }, { status: 400 });
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     let aiNotes = '';
 
     if (apiKey) {
-      const prompt = `You are an expert gas station inventory manager. Analyze these products for ${vendor_name} and create an optimal purchase order.
+      const prompt = `You are helping a gas station OWNER (not an employee) decide what to reorder from ${vendor_name}. Analyze these products and create a purchase order.
 
 Products data (JSON): ${JSON.stringify(productData.slice(0, 30))}
 
@@ -63,8 +64,10 @@ Consider:
 - Flag slow movers (v90 < 5)
 - Flag fast movers (v30 > v60/2)
 
+Write "reason" the way you'd talk to a busy owner glancing at their phone — short and plain, not technical. Say what's actually happening, not statistics. Good: "Almost out, sells fast". Bad: "v30=42, daysLeft=3, velocity indicates high demand". One short phrase, no jargon, no raw numbers unless it's the day count.
+
 Return ONLY valid JSON:
-{"ai_notes":"brief summary","items":[{"product_id":"uuid","order_qty":0,"cases":0,"reason":"why","priority":"high|medium|low|skip","days_of_supply":0}]}`;
+{"ai_notes":"brief summary","items":[{"product_id":"uuid","order_qty":0,"cases":0,"reason":"short plain-language reason","priority":"high|medium|low|skip","days_of_supply":0}]}`;
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',

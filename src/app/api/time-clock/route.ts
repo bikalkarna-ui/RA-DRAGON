@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function POST(request: NextRequest) {
   try {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
 
-    const { action, employee_id, employee_name, notes } = await request.json();
+    const { action, employee_id, employee_name, notes, store_id } = await request.json();
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
 
     if (action === 'clock_in') {
       // Check not already clocked in

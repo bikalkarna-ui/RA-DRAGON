@@ -1,6 +1,7 @@
 // v75-no-gemini
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendStoreNotification } from '@/lib/send-notification';
 
 // ── 100% safe number - handles every format ──────────────────────────────────
 function toNum(v: any): number {
@@ -250,10 +251,20 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return NextResponse.json({ error: 'API key missing — contact support' }, { status: 500 });
 
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
+    const formData = await request.formData();
+    const formStoreId = formData.get('store_id') as string | null;
+
+    let store: { id: string; name: string } | null = null;
+    if (formStoreId) {
+      const { data } = await sb.from('stores').select('id, name').eq('id', formStoreId).eq('owner_id', user.id).maybeSingle();
+      store = data;
+    }
+    if (!store) {
+      const { data } = await sb.from('stores').select('id, name').eq('owner_id', user.id).order('created_at').limit(1).maybeSingle();
+      store = data;
+    }
     if (!store) return NextResponse.json({ error: 'No store found — complete setup in Settings' }, { status: 400 });
 
-    const formData = await request.formData();
     const dateOverride = (formData.get('report_date') as string) || '';
 
     const files: File[] = [];
@@ -535,6 +546,30 @@ Return empty arrays/objects if section not visible.`;
           invoice_date: reportDate,
         });
       } catch {}
+    }
+
+    // Notify the owner's devices about today's numbers — short/over and
+    // stock issues are exactly what an owner wants to know the moment a
+    // report comes in, not just when they happen to open the app.
+    if (savedReport && reportDate === new Date().toISOString().split('T')[0]) {
+      try {
+        const { data: lowProducts } = await sb.from('products').select('quantity,min_quantity').eq('store_id', store.id).eq('is_active', true);
+        const outOfStockCount = (lowProducts || []).filter((p: any) => p.quantity === 0).length;
+        const lowStockCount = (lowProducts || []).filter((p: any) => p.quantity > 0 && p.quantity <= p.min_quantity).length;
+        const isShortNotif = shortOver < -0.50;
+        const isOverNotif = shortOver > 0.50;
+
+        let notifBody = `Sales: $${Number(savedReport.gross_sales || 0).toFixed(2)}`;
+        if (isShortNotif) notifBody += ` · ⚠ $${Math.abs(shortOver).toFixed(2)} SHORT`;
+        else if (isOverNotif) notifBody += ` · +$${shortOver.toFixed(2)} over`;
+        else notifBody += ' · ✓ Balanced';
+        if (outOfStockCount > 0) notifBody += ` · ${outOfStockCount} out of stock`;
+        if (lowStockCount > 0) notifBody += ` · ${lowStockCount} low`;
+
+        sendStoreNotification(sb, store.id, `${store.name || 'Your store'} — Report Ready`, notifBody).catch(() => {});
+      } catch (notifErr) {
+        console.error('daily report notification trigger failed (non-fatal):', notifErr);
+      }
     }
 
     return NextResponse.json({

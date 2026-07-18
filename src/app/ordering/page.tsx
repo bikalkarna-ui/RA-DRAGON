@@ -38,8 +38,17 @@ export default function OrderingPage() {
   const loadVendors = useCallback(async () => {
     if (!store) return;
     const { data } = await createClient().from('products').select('vendor_company').eq('store_id', store.id).eq('is_active', true).not('vendor_company', 'is', null);
-    const unique = Array.from(new Set((data ?? []).map(p => p.vendor_company).filter(Boolean))).sort();
-    setVendorList(unique as string[]);
+    // Dedupe case-insensitively (AI-scanned invoices can produce slightly
+    // different casing/spacing for the same vendor) — keep the first-seen
+    // spelling as the canonical display form.
+    const seen = new Map<string, string>();
+    for (const p of data ?? []) {
+      const raw = (p.vendor_company || '').trim();
+      if (!raw) continue;
+      const key = raw.toLowerCase();
+      if (!seen.has(key)) seen.set(key, raw);
+    }
+    setVendorList(Array.from(seen.values()).sort());
   }, [store]);
 
   useEffect(() => { if (mounted && store) { loadOrders(); loadProducts(); loadVendors(); } }, [mounted, store, loadOrders, loadProducts, loadVendors]);

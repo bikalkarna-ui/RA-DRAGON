@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function POST(request: NextRequest) {
   try {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
 
     const body = await request.json();
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, body.store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
+
     const { product_id, type, quantity, reference_type, reference_id, reference_label, employee_name, notes, unit_cost, unit_price } = body;
 
     // Get current stock
