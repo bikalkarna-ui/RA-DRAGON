@@ -8,7 +8,16 @@ import { cn, VENDORS } from '@/lib/utils';
 import { Upload, Check, X, ArrowRight, Brain, Database, RefreshCw, FileText } from 'lucide-react';
 
 const FIELDS = ['product_name', 'sku', 'barcode', 'vendor_company', 'unit_cost', 'unit_price', 'quantity', 'min_quantity', '(skip)'];
-const AUTO: Record<string, string> = { 'item name': 'product_name', 'product name': 'product_name', name: 'product_name', description: 'product_name', sku: 'sku', 'item code': 'sku', barcode: 'barcode', upc: 'barcode', vendor: 'vendor_company', company: 'vendor_company', cost: 'unit_cost', 'unit cost': 'unit_cost', 'cost price': 'unit_cost', price: 'unit_price', 'sell price': 'unit_price', 'retail price': 'unit_price', qty: 'quantity', quantity: 'quantity', 'qty on hand': 'quantity', stock: 'quantity', 'on hand': 'quantity' };
+const AUTO: Record<string, string> = {
+  'item name': 'product_name', 'product name': 'product_name', 'product_name': 'product_name', name: 'product_name', description: 'product_name',
+  sku: 'sku', 'item code': 'sku', 'item_code': 'sku',
+  barcode: 'barcode', upc: 'barcode',
+  vendor: 'vendor_company', company: 'vendor_company', 'vendor_company': 'vendor_company', 'vendor company': 'vendor_company', 'vendor name': 'vendor_company',
+  cost: 'unit_cost', 'unit cost': 'unit_cost', 'unit_cost': 'unit_cost', 'cost price': 'unit_cost',
+  price: 'unit_price', 'sell price': 'unit_price', 'retail price': 'unit_price', 'unit_price': 'unit_price', 'unit price': 'unit_price',
+  qty: 'quantity', quantity: 'quantity', 'qty on hand': 'quantity', stock: 'quantity', 'on hand': 'quantity',
+  'min_quantity': 'min_quantity', 'min quantity': 'min_quantity', 'min qty': 'min_quantity', 'minimum quantity': 'min_quantity', reorder: 'min_quantity',
+};
 
 const parseCSV = (text: string): string[][] => text.split('\n').filter(l => l.trim()).map(line => { const r: string[] = []; let cur = '', q = false; for (let i = 0; i < line.length; i++) { if (line[i] === '"') { q = !q; continue; } if (line[i] === ',' && !q) { r.push(cur.trim()); cur = ''; continue; } cur += line[i]; } r.push(cur.trim()); return r; });
 

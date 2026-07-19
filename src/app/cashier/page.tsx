@@ -26,7 +26,7 @@ function SafeDropScreen({ store, onDone }: { store: any; onDone: () => void }) {
     try {
       const res = await fetch('/api/cashier-action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'safe_drop', amount: parseFloat(amount), name }),
+        body: JSON.stringify({ action: 'safe_drop', amount: parseFloat(amount), name, store_id: store?.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save');
@@ -107,7 +107,7 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
     try {
       const res = await fetch('/api/cashier-action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'paid_out', amount: parseFloat(amount), reason, name }),
+        body: JSON.stringify({ action: 'paid_out', amount: parseFloat(amount), reason, name, store_id: store?.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save');
@@ -364,7 +364,7 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
     try {
       const res = await fetch('/api/cashier-action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'vendor_delivery', vendor, amount: parseFloat(amount) || 0 }),
+        body: JSON.stringify({ action: 'vendor_delivery', vendor, amount: parseFloat(amount) || 0, store_id: store?.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save');

@@ -43,8 +43,8 @@ function Row({ label, value, sub, red, bold, indent }: {
 }
 
 // ── Cash Count + Short/Over ───────────────────────────────────────────────────
-function CashCount({ safeDrops, reportDate, existingCount, onUpdate }: {
-  safeDrops: number; reportDate: string; existingCount: number; onUpdate?: () => void;
+function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: {
+  safeDrops: number; reportDate: string; existingCount: number; onUpdate?: () => void; storeId?: string;
 }) {
   const [cashInput, setCashInput] = useState('');
   const [counting, setCounting] = useState(false);
@@ -64,7 +64,7 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate }: {
       const res = await fetch('/api/count-cash', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate }),
+        body: JSON.stringify({ counted_cash: parseFloat(cashInput), report_date: reportDate, store_id: storeId }),
       });
       const data = await res.json();
       if (data.success) { setResult(data); onUpdate?.(); }
@@ -204,8 +204,8 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate }: {
 }
 
 // ── Full Report View ──────────────────────────────────────────────────────────
-function ReportCard({ report, onDelete, onRefresh }: {
-  report: any; onDelete: ()=>void; onRefresh: ()=>void;
+function ReportCard({ report, onDelete, onRefresh, storeId }: {
+  report: any; onDelete: ()=>void; onRefresh: ()=>void; storeId?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -214,7 +214,7 @@ function ReportCard({ report, onDelete, onRefresh }: {
     if (!confirm('Delete this report? This cannot be undone.')) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/daily-report?id=${report.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/daily-report?id=${report.id}${storeId ? `&store_id=${storeId}` : ''}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         alert(`Could not delete report: ${data.error || 'please try again'}`);
@@ -302,6 +302,7 @@ function ReportCard({ report, onDelete, onRefresh }: {
           reportDate={report.report_date}
           existingCount={actualCash}
           onUpdate={onRefresh}
+          storeId={report.store_id ?? storeId}
         />
       </div>
 
@@ -592,7 +593,7 @@ export default function PosPage() {
         )}
 
         {!loading && dateReports.map(r => (
-          <ReportCard key={r.id} report={r} onDelete={load} onRefresh={load} />
+          <ReportCard key={r.id} report={r} onDelete={load} onRefresh={load} storeId={r.store_id ?? store?.id} />
         ))}
 
         {/* Previous days */}
@@ -600,7 +601,7 @@ export default function PosPage() {
           <div className="space-y-4">
             <p className="section-title">Previous Days</p>
             {otherReports.map(r => (
-              <ReportCard key={r.id} report={r} onDelete={load} onRefresh={load} />
+              <ReportCard key={r.id} report={r} onDelete={load} onRefresh={load} storeId={r.store_id ?? store?.id} />
             ))}
           </div>
         )}

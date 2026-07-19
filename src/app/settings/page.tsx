@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
+import { RoleGuard } from '@/components/role-guard';
 import { fmt, cn } from '@/lib/utils';
 import {
   Check, Plus, Building2, Users, ChevronRight,
@@ -162,7 +163,7 @@ function EmployeesTab({ store }: { store: any }) {
 // ─── Store Info form ─────────────────────────────────────────────────────────
 function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
   const [form, setForm] = useState({
-    name: '', owner_name: '', address: '', city: '', state: '', phone: '', email: '', tax_rate: '8.25'
+    name: '', owner_name: '', owner_pin: '', address: '', city: '', state: '', phone: '', email: '', tax_rate: '8.25'
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -171,7 +172,8 @@ function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
 
   useEffect(() => {
     if (store) setForm({
-      name: store.name, owner_name: store.owner_name ?? '', address: store.address ?? '', city: store.city ?? '',
+      name: store.name, owner_name: store.owner_name ?? '', owner_pin: store.owner_pin ?? '',
+      address: store.address ?? '', city: store.city ?? '',
       state: store.state ?? '', phone: store.phone ?? '', email: store.email ?? '',
       tax_rate: String(Number(store.tax_rate) * 100),
     });
@@ -179,8 +181,12 @@ function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setErr('');
+    if (form.owner_pin && !/^\d{4}$/.test(form.owner_pin)) {
+      setSaving(false); setErr('Owner PIN must be exactly 4 digits'); return;
+    }
     const { error } = await createClient().from('stores').update({
-      name: form.name, owner_name: form.owner_name || null, address: form.address || null, city: form.city || null,
+      name: form.name, owner_name: form.owner_name || null, owner_pin: form.owner_pin || null,
+      address: form.address || null, city: form.city || null,
       state: form.state || null, phone: form.phone || null, email: form.email || null,
       tax_rate: parseFloat(form.tax_rate) / 100,
     }).eq('id', store.id);
@@ -221,6 +227,15 @@ function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
           <p className="mt-1 text-xs text-muted">Added to taxable items at POS · Current: {form.tax_rate}%</p>
         </div>
       </div>
+
+      <div className="tile p-5">
+        <p className="font-bold text-text mb-1">Owner PIN</p>
+        <p className="text-xs text-muted mb-3">Used to return to full Owner access after switching to Manager or Employee view.</p>
+        <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={4}
+          value={form.owner_pin} onChange={e => f('owner_pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
+          placeholder="4-digit PIN" className="inp num" />
+      </div>
+
       {err && <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">{err}</p>}
       <button type="submit" disabled={saving} className="btn btn-accent btn-full py-4">
         {saved ? <><CheckCircle className="h-5 w-5" />Saved!</>
@@ -521,6 +536,7 @@ export default function SettingsPage() {
   if (!mounted) return null;
 
   return (
+    <RoleGuard allow={['owner']}>
     <Screen title="Settings" subtitle={store?.name}>
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
@@ -539,5 +555,6 @@ export default function SettingsPage() {
       {tab === 'account'    && <AccountTab />}
       {tab === 'connector'  && store && <ConnectorTab store={store} />}
     </Screen>
+    </RoleGuard>
   );
 }

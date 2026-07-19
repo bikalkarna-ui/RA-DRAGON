@@ -37,7 +37,7 @@ function FormattedMessage({ text }: { text: string }) {
 }
 
 // ── AI Copilot ──────────────────────────────────────────────────────────────
-function AICopilot({ onClose }: { onClose: () => void }) {
+function AICopilot({ onClose, storeId }: { onClose: () => void; storeId?: string }) {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
     { role: 'assistant', content: "Hi! Ask me anything about your store — sales, inventory, deposits, short/over, employees, or anything else." }
   ]);
@@ -53,7 +53,7 @@ function AICopilot({ onClose }: { onClose: () => void }) {
     const next = [...messages, { role: 'user', content: msg }];
     setMessages(next); setLoading(true);
     try {
-      const res = await fetch('/api/ai-copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, history: messages }) });
+      const res = await fetch('/api/ai-copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, history: messages, store_id: storeId }) });
       const data = await res.json();
       setMessages([...next, { role: 'assistant', content: data.reply || data.error || 'Something went wrong.' }]);
     } catch { setMessages([...next, { role: 'assistant', content: 'Connection error.' }]); }
@@ -100,6 +100,8 @@ function AICopilot({ onClose }: { onClose: () => void }) {
 }
 
 import { AgryxIntro } from '@/components/agryx-intro';
+import { RoleSwitcher } from '@/components/role-switcher';
+import { useRole } from '@/hooks/use-role';
 
 // ── Business quotes — new one on every mount/refresh ────────────────────────
 const BUSINESS_QUOTES = [
@@ -316,6 +318,16 @@ export default function HomePage() {
     { href: '/settings',    icon: Settings,   label: 'Settings',         sub: 'Store & connector',  badge: 0,           color: 'bg-gray-50 text-gray-500' },
   ];
 
+  const { role } = useRole();
+  const MANAGER_PAGES = ['/pos', '/invoices', '/inventory', '/ordering', '/alerts', '/cashier'];
+  const EMPLOYEE_PAGES = ['/cashier', '/pos'];
+  const visibleApps = APPS.filter(app => {
+    if (role === 'owner') return true;
+    if (role === 'manager') return MANAGER_PAGES.includes(app.href);
+    return EMPLOYEE_PAGES.includes(app.href);
+  });
+
+
   const OPS_NAV = [
     { href: '/cashier',   icon: DollarSign, label: 'Cashier Actions', badge: 0 },
     { href: '/invoices',  icon: FileText,   label: 'Invoices',        badge: pendingInv },
@@ -341,6 +353,9 @@ export default function HomePage() {
     { href: '/settings',  icon: Settings,      label: 'Settings' },
   ];
 
+  const visibleOps = OPS_NAV.filter(item => role === 'owner' || (role === 'manager' ? MANAGER_PAGES.includes(item.href) : EMPLOYEE_PAGES.includes(item.href)));
+  const visibleMgmt = role === 'owner' ? MGMT_NAV : [];
+
   return (
     <div className="md:flex md:min-h-screen">
       {/* Desktop sidebar — hidden on phone, shown on tablet/desktop widths */}
@@ -355,7 +370,7 @@ export default function HomePage() {
           <div>
             <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Operations</p>
             <div className="space-y-0.5">
-              {OPS_NAV.map(item => (
+              {visibleOps.map(item => (
                 <Link key={item.href} href={item.href}
                   className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold text-sub hover:bg-surface hover:text-text transition-colors">
                   <item.icon className="h-4 w-4 shrink-0" />
@@ -368,7 +383,7 @@ export default function HomePage() {
           <div>
             <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Management</p>
             <div className="space-y-0.5">
-              {MGMT_NAV.map(item => (
+              {visibleMgmt.map(item => (
                 <Link key={item.href} href={item.href}
                   className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold text-sub hover:bg-surface hover:text-text transition-colors">
                   <item.icon className="h-4 w-4 shrink-0" />
@@ -406,6 +421,7 @@ export default function HomePage() {
           <p className="text-xs text-muted">{new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
         </div>
         <div className="flex items-center gap-2">
+          <RoleSwitcher storeId={store?.id} />
           <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
             <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </button>
@@ -426,6 +442,7 @@ export default function HomePage() {
           <h1 className="font-black text-2xl text-text leading-tight">Welcome back!</h1>
         </div>
         <div className="flex items-center gap-2">
+          <RoleSwitcher storeId={store?.id} />
           <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
             <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </button>
@@ -469,7 +486,7 @@ export default function HomePage() {
 
           {/* Mobile: vertical stacked cards */}
           <div className="md:hidden space-y-3">
-            {APPS.map(app => (
+            {visibleApps.map(app => (
               <Link key={app.href} href={app.href}
                 className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-[0.98] relative">
                 <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', app.color)}>
@@ -491,7 +508,7 @@ export default function HomePage() {
 
           {/* Desktop: 2-column grid */}
           <div className="hidden md:grid md:grid-cols-2 md:gap-3">
-            {APPS.map(app => (
+            {visibleApps.map(app => (
               <Link key={app.href} href={app.href}
                 className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-95 relative overflow-hidden">
                 <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', app.color)}>
@@ -528,7 +545,7 @@ export default function HomePage() {
           onDismiss={() => setShowAgryx(false)}
         />
       )}
-      {showAI && <AICopilot onClose={() => setShowAI(false)} />}
+      {showAI && <AICopilot onClose={() => setShowAI(false)} storeId={store?.id} />}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -7,10 +8,10 @@ export async function DELETE(request: NextRequest) {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
-
     const { searchParams } = new URL(request.url);
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, searchParams.get('store_id'));
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
+
     const reportId = searchParams.get('id');
     const reportDate = searchParams.get('date');
 
@@ -43,9 +44,9 @@ export async function PATCH(request: NextRequest) {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
-    const { id, store_notes, status } = await request.json();
+    const { id, store_notes, status, store_id } = await request.json();
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
     const { data, error } = await sb.from('daily_reports')
       .update({ store_notes, status, updated_at: new Date().toISOString() })
       .eq('id', id).eq('store_id', store.id).select('*').single();

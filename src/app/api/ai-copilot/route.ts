@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 const MODEL = 'anthropic/claude-haiku-4-5';
 
@@ -9,13 +10,13 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const { message, history = [] } = await request.json();
+    const { message, history = [], store_id } = await request.json();
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
 
     // Get store
-    const { data: store } = await sb.from('stores').select('*').eq('owner_id', user.id).limit(1).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store found' }, { status: 400 });
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store found' }, { status: 400 });
 
     // Gather business context
     const today = new Date().toISOString().split('T')[0];

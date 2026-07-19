@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function GET(request: NextRequest) {
   try {
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const { data: store } = await sb.from('stores').select('id,name').eq('owner_id', user.id).limit(1).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store' }, { status: 400 });
-
     const { searchParams } = new URL(request.url);
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, searchParams.get('store_id'));
+    if (!store) return NextResponse.json({ error: storeErr || 'No store' }, { status: 400 });
+
     const start = searchParams.get('start') || new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
     const end   = searchParams.get('end')   || new Date().toISOString().split('T')[0];
     const format = searchParams.get('format') || 'csv';

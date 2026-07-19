@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveStore } from '@/lib/get-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,11 +8,11 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-    const { data: store } = await sb.from('stores').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
-    if (!store) return NextResponse.json({ error: 'No store found' }, { status: 400 });
-
     const body = await request.json();
-    const { action, amount, name, reason, vendor } = body;
+    const { action, amount, name, reason, vendor, store_id } = body;
+    const { store, error: storeErr } = await getActiveStore(sb, user.id, store_id);
+    if (!store) return NextResponse.json({ error: storeErr || 'No store found' }, { status: 400 });
+
     const today = new Date().toISOString().split('T')[0];
     const now = new Date().toISOString();
     const amountNum = Math.abs(parseFloat(amount) || 0);
