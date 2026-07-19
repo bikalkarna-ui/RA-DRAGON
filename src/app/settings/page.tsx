@@ -162,29 +162,36 @@ function EmployeesTab({ store }: { store: any }) {
 // ─── Store Info form ─────────────────────────────────────────────────────────
 function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
   const [form, setForm] = useState({
-    name: '', address: '', city: '', state: '', phone: '', email: '', tax_rate: '8.25'
+    name: '', owner_name: '', address: '', city: '', state: '', phone: '', email: '', tax_rate: '8.25'
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState('');
   const f = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   useEffect(() => {
     if (store) setForm({
-      name: store.name, address: store.address ?? '', city: store.city ?? '',
+      name: store.name, owner_name: store.owner_name ?? '', address: store.address ?? '', city: store.city ?? '',
       state: store.state ?? '', phone: store.phone ?? '', email: store.email ?? '',
       tax_rate: String(Number(store.tax_rate) * 100),
     });
   }, [store]);
 
   const save = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true);
-    await createClient().from('stores').update({
-      name: form.name, address: form.address || null, city: form.city || null,
+    e.preventDefault(); setSaving(true); setErr('');
+    const { error } = await createClient().from('stores').update({
+      name: form.name, owner_name: form.owner_name || null, address: form.address || null, city: form.city || null,
       state: form.state || null, phone: form.phone || null, email: form.email || null,
       tax_rate: parseFloat(form.tax_rate) / 100,
     }).eq('id', store.id);
+    setSaving(false);
+    if (error) {
+      console.error('store settings save failed:', error);
+      setErr(error.message || 'Could not save — please try again');
+      return;
+    }
     await refetch();
-    setSaving(false); setSaved(true);
+    setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
@@ -193,6 +200,7 @@ function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
       <div className="tile p-5">
         <p className="font-bold text-text mb-4">Store Information</p>
         {[
+          { k: 'owner_name', l: 'Your name (used for greetings)' },
           { k: 'name', l: 'Store name *', req: true },
           { k: 'address', l: 'Street address' },
           { k: 'city', l: 'City' },
@@ -213,6 +221,7 @@ function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
           <p className="mt-1 text-xs text-muted">Added to taxable items at POS · Current: {form.tax_rate}%</p>
         </div>
       </div>
+      {err && <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">{err}</p>}
       <button type="submit" disabled={saving} className="btn btn-accent btn-full py-4">
         {saved ? <><CheckCircle className="h-5 w-5" />Saved!</>
           : saving ? <><Loader2 className="h-5 w-5 animate-spin" />Saving…</>

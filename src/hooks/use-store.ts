@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { VENDORS } from '@/lib/utils';
 
 export interface Store {
-  id: string; owner_id: string; name: string; address: string | null;
+  id: string; owner_id: string; name: string; owner_name: string | null; address: string | null;
   city: string | null; state: string | null; phone: string | null;
   email: string | null; tax_rate: number; plan: string;
 }
@@ -25,12 +25,14 @@ export function useStore() {
   const [stores, setStores] = useState<Store[]>([]);
   const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const fetchStores = useCallback(async () => {
     try {
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
       if (!user) { setLoading(false); return; }
+      setUserEmail(user.email ?? null);
 
       const { data, error } = await sb.from('stores').select('*').eq('owner_id', user.id).order('created_at');
       if (error) throw error;
@@ -101,5 +103,5 @@ export function useStore() {
 
   const refetch = fetchStores;
 
-  return { store, stores, loading, switchStore, createStore, refetch };
+  return { store, stores, loading, switchStore, createStore, refetch, userEmail };
 }

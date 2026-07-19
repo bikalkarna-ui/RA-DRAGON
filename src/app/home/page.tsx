@@ -99,6 +99,8 @@ function AICopilot({ onClose }: { onClose: () => void }) {
   );
 }
 
+import { AgryxIntro } from '@/components/agryx-intro';
+
 // ── Business quotes — new one on every mount/refresh ────────────────────────
 const BUSINESS_QUOTES = [
   "Revenue is vanity, profit is sanity, cash is king.",
@@ -140,11 +142,25 @@ function getRandomQuote(): string {
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
-  const { store, storeData } = useStore();
+  const { store, userEmail } = useStore();
   const router = useRouter();
   const [showAI, setShowAI] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [quote, setQuote] = useState(getRandomQuote);
+  const [showAgryx, setShowAgryx] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const key = 'agryx_greeted_' + today;
+      if (!sessionStorage.getItem(key)) {
+        setShowAgryx(true);
+        sessionStorage.setItem(key, '1');
+      }
+    } catch { /* private browsing — just skip the greeting */ }
+  }, [mounted]);
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [kpis, setKpis] = useState({
     grossSales: 0, shortOver: 0, outOfStock: 0, lowStock: 0,
@@ -186,6 +202,7 @@ export default function HomePage() {
         fuelSales: n(dr?.fuel_sales),
         hasReport: !!dr,
       });
+      setDataReady(true);
     } catch (e) { console.error(e); }
     setRefreshing(false);
   }, [store]);
@@ -265,7 +282,7 @@ export default function HomePage() {
   const isOver  = shortOver > 0.50;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const storeName = storeData?.name || 'Your Store';
+  const storeName = store?.name || 'Your Store';
 
   const healthScore = Math.max(0, Math.min(100, 80
     - (outOfStock * 5)
@@ -497,6 +514,20 @@ export default function HomePage() {
       </div>
       </div>
 
+      {showAgryx && dataReady && (
+        <AgryxIntro
+          ownerName={store?.owner_name || (userEmail ? userEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') : 'there')}
+          storeName={storeName}
+          grossSales={grossSales}
+          weekSales={weekSales}
+          outOfStock={outOfStock}
+          lowStock={lowStock}
+          shortOver={shortOver}
+          hasReport={hasReport}
+          healthScore={healthScore}
+          onDismiss={() => setShowAgryx(false)}
+        />
+      )}
       {showAI && <AICopilot onClose={() => setShowAI(false)} />}
     </div>
   );
