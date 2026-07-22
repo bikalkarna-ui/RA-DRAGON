@@ -29,10 +29,10 @@
 
   /* Cards */
   .tile {
-    @apply bg-white rounded-xl2 shadow-card border border-border;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    @apply bg-white rounded-xl2 shadow-card border border-border/60;
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   }
-  .tile-hover:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.10); transform: translateY(-1px); }
+  .tile-hover:hover { @apply shadow-lifted border-border; transform: translateY(-2px); }
 
   /* Buttons */
   .btn {
@@ -40,17 +40,17 @@
     -webkit-tap-highlight-color: transparent;
   }
   .btn-accent { @apply btn bg-accent text-white shadow-red; }
-  .btn-accent:hover { @apply bg-accent2; }
+  .btn-accent:hover { @apply bg-accent2 shadow-lifted; }
   .btn-accent:active { transform: scale(0.98); }
-  .btn-ghost { @apply btn bg-surface text-sub border border-border hover:text-text hover:border-gray-300; }
+  .btn-ghost { @apply btn bg-surface text-sub border border-border/70 hover:text-text hover:border-gray-300 hover:shadow-soft; }
   .btn-full { @apply w-full justify-center; }
 
   /* Inputs */
   .inp {
-    @apply w-full rounded-xl bg-surface border border-border px-4 py-3 text-[15px] text-text placeholder:text-dim transition-all;
+    @apply w-full rounded-xl bg-surface border border-border/70 px-4 py-3 text-[15px] text-text placeholder:text-dim transition-all;
     outline: none;
   }
-  .inp:focus { @apply border-accent bg-white; box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+  .inp:focus { @apply border-accent bg-white shadow-soft; box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
   .lbl { @apply block text-sm font-medium text-sub mb-1.5; }
 
   /* Badges / chips */

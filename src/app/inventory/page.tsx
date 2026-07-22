@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Screen } from '@/components/layout/screen';
 import { MultiScan } from '@/components/ui/multi-scan';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn, VENDORS } from '@/lib/utils';
@@ -289,7 +290,15 @@ export default function InventoryPage() {
         {/* Product list */}
         <div className="tile overflow-hidden">
           {loading && <p className="py-10 text-center text-muted">Loading…</p>}
-          {!loading && filtered.length === 0 && <div className="py-12 text-center"><Package className="mx-auto h-10 w-10 text-dim mb-3" /><p className="text-muted">No products found</p></div>}
+          {!loading && filtered.length === 0 && (
+            <EmptyState
+              icon={Package}
+              title={search || filter !== 'all' ? 'No matching products' : 'No products yet'}
+              description={search || filter !== 'all' ? 'Try a different search or filter.' : 'Add your first product, scan a vendor invoice, or import a CSV to get started.'}
+              color="blue"
+              action={!search && filter === 'all' ? { label: 'Add a product', onClick: () => setShowForm(true) } : undefined}
+            />
+          )}
           <div className="divide-y divide-border/50">
             {filtered.map(p => {
               const st = getStatus(p);

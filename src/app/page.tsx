@@ -135,7 +135,7 @@ export default function LandingPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <Link href="/register"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent text-white font-bold text-lg px-10 py-5 hover:bg-red-700 active:scale-95 transition-all shadow-lg">
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent text-white font-bold text-lg px-10 py-5 hover:bg-red-700 active:scale-95 transition-all shadow-[0_2px_8px_rgba(192,57,43,0.18),0_8px_20px_rgba(192,57,43,0.16)] hover:shadow-[0_4px_12px_rgba(192,57,43,0.22),0_12px_32px_rgba(192,57,43,0.2)]">
             Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
           </Link>
           <Link href="/login"
@@ -159,7 +159,7 @@ export default function LandingPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map(f => (
-            <div key={f.title} className="rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow">
+            <div key={f.title} className="rounded-2xl border border-gray-100 p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.04)] hover:shadow-[0_4px_12px_rgba(16,24,40,0.06),0_12px_32px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl mb-4" style={{ background: f.bg }}>
                 <f.icon className="h-6 w-6" style={{ color: f.color }} />
               </div>
@@ -183,7 +183,7 @@ export default function LandingPage() {
             { title: 'Built for gas stations specifically', desc: "Lottery book tracking, fuel margin analysis, vendor-based ordering — features generic retail software doesn't have, because it wasn't built for this industry." },
             { title: 'Founder who actually worked this job', desc: "Built by someone who grew up working in gas stations, not a generic SaaS template repurposed for a new market." },
           ].map(d => (
-            <div key={d.title} className="rounded-2xl bg-gray-50 border border-gray-100 p-6">
+            <div key={d.title} className="rounded-2xl bg-gray-50 border border-gray-100 p-6 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
               <h3 className="font-black text-gray-900 text-base mb-2">{d.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{d.desc}</p>
             </div>
@@ -227,7 +227,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {plans.map(plan => (
               <div key={plan.name}
-                className={`rounded-2xl border-2 p-8 relative ${plan.color} ${plan.dark ? 'text-white' : ''}`}>
+                className={`rounded-2xl border-2 p-8 relative shadow-[0_2px_8px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.04)] ${plan.color} ${plan.dark ? 'text-white' : ''}`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1.5 rounded-full">
                     Most Popular

@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
@@ -215,7 +216,7 @@ export default function AlertsPage() {
               <button onClick={markAllRead} className="btn btn-ghost btn-full text-sm gap-2"><Check className="h-4 w-4" />Mark all read</button>
             )}
             {notifs.length === 0 ? (
-              <div className="tile p-10 text-center"><Zap className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-700">No AI alerts yet</p><p className="text-muted text-sm mt-1">Alerts appear when AI detects issues in your store data</p></div>
+              <div className="tile"><EmptyState icon={Zap} title="No AI alerts yet" description="Alerts appear when AI detects issues in your store data." color="amber" /></div>
             ) : (
               <div className="tile overflow-hidden divide-y divide-border/50">
                 {notifs.map(n => (

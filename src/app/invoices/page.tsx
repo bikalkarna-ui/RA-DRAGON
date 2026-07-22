@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useEffect, useState, useCallback } from 'react';
 import { Screen } from '@/components/layout/screen';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
@@ -369,10 +370,13 @@ export default function InvoicesPage() {
           {loading && <div className="tile p-8 text-center"><Loader2 className="h-6 w-6 text-accent animate-spin mx-auto" /></div>}
 
           {!loading && invoices.length === 0 && (
-            <div className="tile p-10 text-center">
-              <FileText className="mx-auto h-10 w-10 text-dim mb-3" />
-              <p className="font-bold text-text mb-1">No invoices yet</p>
-              <p className="text-muted text-sm">Scan your first vendor invoice above — AI reads everything automatically</p>
+            <div className="tile">
+              <EmptyState
+                icon={FileText}
+                title="No invoices yet"
+                description="Scan your first vendor invoice above — AI reads everything automatically."
+                color="red"
+              />
             </div>
           )}
 
