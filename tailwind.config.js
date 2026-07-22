@@ -26,9 +26,11 @@ module.exports = {
         xl4: '24px',
       },
       boxShadow: {
-        card: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)',
-        lifted: '0 4px 24px rgba(0,0,0,0.10)',
-        red: '0 4px 16px rgba(192,57,43,0.25)',
+        card: '0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.04)',
+        soft: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.05)',
+        lifted: '0 4px 12px rgba(16,24,40,0.06), 0 12px 32px rgba(16,24,40,0.08)',
+        red: '0 2px 8px rgba(192,57,43,0.18), 0 8px 20px rgba(192,57,43,0.16)',
+        inner: 'inset 0 1px 2px rgba(16,24,40,0.04)',
       },
       animation: {
         'fade-up': 'fadeUp 0.4s ease both',
