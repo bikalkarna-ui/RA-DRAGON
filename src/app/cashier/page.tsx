@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
+import { MobileNav } from '@/components/layout/mobile-nav';
 import {
   DollarSign, Package, FileText, CheckSquare, Clock,
   Loader2, Check, ChevronRight, ArrowLeft, Camera,
@@ -462,7 +463,16 @@ export default function CashierPage() {
   const [screen, setScreen] = useState<Screen>('menu');
   const { store } = useStore();
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const requested = params.get('screen');
+      if (requested && ['drop', 'paidout', 'vendor', 'lottery'].includes(requested)) {
+        setScreen(requested as Screen);
+      }
+    } catch { /* ignore */ }
+  }, []);
   if (!mounted) return null;
 
   const ACTIONS = [
@@ -541,6 +551,7 @@ export default function CashierPage() {
       {screen === 'paidout' && <PaidOutScreen   store={store} onDone={() => setScreen('menu')} />}
       {screen === 'vendor'  && <VendorScreen    store={store} onDone={() => setScreen('menu')} />}
       {screen === 'lottery' && <LotteryScreen   store={store} onDone={() => setScreen('menu')} />}
+      <MobileNav />
     </div>
   );
 }

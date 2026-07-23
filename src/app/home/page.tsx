@@ -100,6 +100,7 @@ function AICopilot({ onClose, storeId }: { onClose: () => void; storeId?: string
 }
 
 import { AgryxIntro } from '@/components/agryx-intro';
+import { MobileNav } from '@/components/layout/mobile-nav';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { useRole } from '@/hooks/use-role';
 
@@ -561,6 +562,7 @@ export default function HomePage() {
         />
       )}
       {showAI && <AICopilot onClose={() => setShowAI(false)} storeId={store?.id} />}
+      <MobileNav />
     </div>
   );
 }

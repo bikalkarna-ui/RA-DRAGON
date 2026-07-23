@@ -1,6 +1,7 @@
 'use client';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MobileNav } from './mobile-nav';
 
 interface ScreenProps {
   title: string;
@@ -27,8 +28,9 @@ export function Screen({ title, subtitle, back = true, action, children, classNa
           <h1 className="text-[28px] font-black text-text leading-tight">{title}</h1>
           {subtitle && <p className="text-sub text-sm mt-1">{subtitle}</p>}
         </div>
-        <div className={cn('pb-20', className)}>{children}</div>
+        <div className={cn('pb-24', className)}>{children}</div>
       </div>
+      <MobileNav />
     </div>
   );
 }
