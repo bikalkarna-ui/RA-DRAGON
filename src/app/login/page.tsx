@@ -140,7 +140,7 @@ export default function LoginPage() {
                 ) : 'Continue →'}
               </button>
 
-              <p className="text-center text-sm text-gray-600">
+              <p className="text-center text-sm text-gray-400">
                 No account?{' '}
                 <Link href="/register" className="text-accent font-semibold hover:text-red-400">
                   Start free trial
@@ -159,7 +159,7 @@ export default function LoginPage() {
                   {email.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-white text-sm font-medium flex-1 text-left truncate">{email}</span>
-                <span className="text-gray-600 text-xs group-hover:text-gray-400">Change ↩</span>
+                <span className="text-gray-400 text-xs group-hover:text-gray-400">Change ↩</span>
               </button>
 
               <div>
@@ -230,7 +230,7 @@ export default function LoginPage() {
         </div>
 
         {/* Security badge */}
-        <div className="flex items-center justify-center gap-2 mt-6 text-gray-600 text-xs">
+        <div className="flex items-center justify-center gap-2 mt-6 text-gray-400 text-xs">
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>

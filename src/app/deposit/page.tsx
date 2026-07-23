@@ -65,8 +65,8 @@ export default function DepositPage() {
                     { label: 'Cash Sales (POS)', amount: n(report.cash_sales) },
                     { label: 'Less: Safe Loans', amount: -n(report.safe_loans) },
                   ].map(row => (
-                    <div key={row.label} className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">{row.label}</span>
+                    <div key={row.label} className="flex justify-between py-2 border-b border-white/10">
+                      <span className="text-sm text-gray-400">{row.label}</span>
                       <span className={cn("num text-sm font-semibold", row.amount < 0 ? 'text-red-600' : 'text-text')}>
                         {row.amount < 0 ? '-' : ''}{fmt.currency(Math.abs(row.amount))}
                       </span>
@@ -84,12 +84,12 @@ export default function DepositPage() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Checks</p>
                   {(report.checks_given || []).map((c: any, i: number) => (
-                    <div key={i} className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">#{c.number} {c.payee}</span>
+                    <div key={i} className="flex justify-between py-2 border-b border-white/10">
+                      <span className="text-sm text-gray-400">#{c.number} {c.payee}</span>
                       <span className="num text-sm font-semibold">{fmt.currency(c.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between py-2 border-b border-gray-200">
+                  <div className="flex justify-between py-2 border-b border-white/10">
                     <span className="text-sm font-bold text-text">Check Total</span>
                     <span className="num text-sm font-bold text-text">{fmt.currency(checkTotal)}</span>
                   </div>

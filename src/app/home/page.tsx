@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useStore } from '@/hooks/use-store';
 import { createClient } from '@/lib/supabase/client';
 import { fmt, cn } from '@/lib/utils';
@@ -62,35 +62,35 @@ function AICopilot({ onClose, storeId }: { onClose: () => void; storeId?: string
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-white rounded-t-3xl shadow-2xl border-t border-gray-200" style={{ height: '72vh', maxWidth: 680, margin: '0 auto' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-white rounded-t-3xl shadow-2xl border-t border-white/10" style={{ height: '72vh', maxWidth: 680, margin: '0 auto' }}>
         <div className="flex justify-center pt-3 pb-1"><div className="h-1 w-10 rounded-full bg-gray-300" /></div>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent"><Zap className="h-4 w-4 text-white" /></div>
             <div><p className="font-black text-text text-sm leading-tight">RYXSOR AI</p><div className="flex items-center gap-1.5 mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /><p className="text-[10px] text-muted font-medium">Knows your store</p></div></div>
           </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gray-500 hover:bg-gray-200"><X className="h-4 w-4" /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={cn('flex items-end gap-2', m.role === 'user' ? 'justify-end' : 'justify-start')}>
               {m.role === 'assistant' && <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5"><Zap className="h-3.5 w-3.5 text-white" /></div>}
-              <div className={cn('max-w-[80%] px-4 py-3 text-sm leading-relaxed', m.role === 'user' ? 'bg-accent text-white rounded-2xl rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md')}>
+              <div className={cn('max-w-[80%] px-4 py-3 text-sm leading-relaxed', m.role === 'user' ? 'bg-accent text-white rounded-2xl rounded-br-md' : 'bg-white/10 text-white rounded-2xl rounded-bl-md')}>
                 {m.role === 'assistant' ? <FormattedMessage text={m.content} /> : m.content}
               </div>
             </div>
           ))}
-          {loading && <div className="flex items-end gap-2"><div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5"><Zap className="h-3.5 w-3.5 text-white" /></div><div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">{[0,1,2].map(i => <div key={i} className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />)}</div></div>}
+          {loading && <div className="flex items-end gap-2"><div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent mb-0.5"><Zap className="h-3.5 w-3.5 text-white" /></div><div className="bg-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">{[0,1,2].map(i => <div key={i} className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />)}</div></div>}
           <div ref={bottomRef} />
         </div>
         {messages.length <= 1 && (
           <div className="px-4 pb-2 flex gap-2 overflow-x-auto">
-            {SUGGESTIONS.map(s => <button key={s} onClick={() => send(s)} className="flex-none text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap">{s}</button>)}
+            {SUGGESTIONS.map(s => <button key={s} onClick={() => send(s)} className="flex-none text-xs bg-white/10 hover:bg-gray-200 text-gray-300 font-medium rounded-full px-4 py-2 transition-colors whitespace-nowrap">{s}</button>)}
           </div>
         )}
-        <div className="px-4 pb-6 pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-2xl px-4 py-2.5">
-            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Ask anything…" autoFocus className="flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-sm focus:outline-none" />
+        <div className="px-4 pb-6 pt-2 border-t border-white/10">
+          <div className="flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2.5">
+            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Ask anything…" autoFocus className="flex-1 bg-transparent text-white placeholder-gray-400 text-sm focus:outline-none" />
             <button onClick={() => send()} disabled={!input.trim() || loading} className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all', input.trim() && !loading ? 'bg-accent text-white' : 'bg-gray-300 text-gray-400')}><Send className="h-4 w-4" /></button>
           </div>
         </div>
@@ -137,6 +137,12 @@ const BUSINESS_QUOTES = [
   "A well-run gas station is a machine — every part should be checked, not assumed.",
 ];
 
+function toDarkIcon(lightClasses: string): string {
+  const match = lightClasses.match(/bg-([a-z]+)-50/);
+  const color = match ? match[1] : 'gray';
+  return `bg-${color}-500/10 text-${color}-400`;
+}
+
 function getRandomQuote(): string {
   return BUSINESS_QUOTES[Math.floor(Math.random() * BUSINESS_QUOTES.length)];
 }
@@ -146,6 +152,7 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { store, userEmail } = useStore();
   const router = useRouter();
+  const pathname = usePathname();
   const [showAI, setShowAI] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [quote, setQuote] = useState(getRandomQuote);
@@ -312,10 +319,10 @@ export default function HomePage() {
     { href: '/tax',         icon: Receipt,    label: 'Tax Reports',      sub: 'Quarterly filing',   badge: 0,           color: 'bg-emerald-50 text-emerald-600' },
     { href: '/deposit',     icon: DollarSign, label: 'Deposit Slip',     sub: 'Auto-generate',      badge: 0,           color: 'bg-green-50 text-green-700' },
     { href: '/bank',        icon: Building2,  label: 'Bank Recon',       sub: 'Match deposits',     badge: 0,           color: 'bg-blue-50 text-blue-700' },
-    { href: '/vendors',     icon: Shield,     label: 'Vendors',          sub: 'Price tracking',     badge: 0,           color: 'bg-gray-50 text-gray-600' },
-    { href: '/search',      icon: Brain,      label: 'Search',           sub: 'Find anything',      badge: 0,           color: 'bg-gray-50 text-gray-600' },
-    { href: '/migration',   icon: Download,   label: 'Import Data',      sub: 'CSV import',         badge: 0,           color: 'bg-gray-50 text-gray-500' },
-    { href: '/settings',    icon: Settings,   label: 'Settings',         sub: 'Store & connector',  badge: 0,           color: 'bg-gray-50 text-gray-500' },
+    { href: '/vendors',     icon: Shield,     label: 'Vendors',          sub: 'Price tracking',     badge: 0,           color: 'bg-white/5 text-gray-400' },
+    { href: '/search',      icon: Brain,      label: 'Search',           sub: 'Find anything',      badge: 0,           color: 'bg-white/5 text-gray-400' },
+    { href: '/migration',   icon: Download,   label: 'Import Data',      sub: 'CSV import',         badge: 0,           color: 'bg-white/5 text-gray-500' },
+    { href: '/settings',    icon: Settings,   label: 'Settings',         sub: 'Store & connector',  badge: 0,           color: 'bg-white/5 text-gray-500' },
   ];
 
   const { role } = useRole();
@@ -357,170 +364,178 @@ export default function HomePage() {
   const visibleMgmt = role === 'owner' ? MGMT_NAV : [];
 
   return (
-    <div className="md:flex md:min-h-screen">
+    <div className="md:flex md:min-h-screen bg-dark-bg min-h-screen">
       {/* Desktop sidebar — hidden on phone, shown on tablet/desktop widths */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-white md:shrink-0">
-        <div className="px-5 py-5 border-b border-border flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white font-black text-sm">RX</div>
+      <aside className="hidden md:flex md:w-64 md:flex-col md:bg-dark-sidebar md:border-r md:border-dark-border md:shrink-0">
+        <div className="px-5 py-5 border-b border-dark-border flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-dark-red text-white font-black text-sm shadow-lg shadow-dark-red/20">R</div>
           <div className="min-w-0">
-            <p className="font-black text-text text-sm leading-tight truncate">{storeName}</p>
+            <p className="font-black text-white text-sm leading-tight truncate">RYXSOR AI</p>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
           <div>
-            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Operations</p>
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-dark-sub mb-2">Operations</p>
             <div className="space-y-0.5">
-              {visibleOps.map(item => (
-                <Link key={item.href} href={item.href}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold text-sub hover:bg-surface hover:text-text transition-colors">
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                  {item.badge > 0 && <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-black px-1">{item.badge}</span>}
-                </Link>
-              ))}
+              {visibleOps.map(item => {
+                const active = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className={cn('flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold transition-colors',
+                      active ? 'bg-dark-red text-white' : 'text-dark-sub hover:bg-dark-card hover:text-white')}>
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                    {item.badge > 0 && <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-dark-red text-white text-[10px] font-black px-1">{item.badge}</span>}
+                  </Link>
+                );
+              })}
             </div>
           </div>
           <div>
-            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Management</p>
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-dark-sub mb-2">Management</p>
             <div className="space-y-0.5">
-              {visibleMgmt.map(item => (
-                <Link key={item.href} href={item.href}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold text-sub hover:bg-surface hover:text-text transition-colors">
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              ))}
+              {visibleMgmt.map(item => {
+                const active = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className={cn('flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-semibold transition-colors',
+                      active ? 'bg-dark-red text-white' : 'text-dark-sub hover:bg-dark-card hover:text-white')}>
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </nav>
-        <div className="px-4 py-4 border-t border-border flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-700 font-bold text-xs shrink-0">
+        <div className="px-4 py-4 border-t border-dark-border flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-dark-purple/20 text-dark-purple font-bold text-xs shrink-0">
             {storeName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-text truncate">{storeName}</p>
-            <p className="text-[11px] text-muted truncate">Store Dashboard</p>
+            <p className="text-sm font-bold text-white truncate">{storeName}</p>
+            <p className="text-[11px] text-dark-sub truncate">Store Dashboard</p>
           </div>
-          <button onClick={logout} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-sub shrink-0">
+          <button onClick={logout} className="flex h-8 w-8 items-center justify-center rounded-lg text-dark-sub hover:bg-dark-card hover:text-white shrink-0">
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </aside>
 
       {/* Main content — unchanged on mobile, becomes the right panel on desktop */}
-      <div className="flex-1 pb-24 md:pb-8">
+      <div className="flex-1 pb-24 md:pb-8 md:bg-dark-bg md:min-h-screen">
       <div className="px-4 pt-3 pb-1">
-        <p className="text-[11px] italic text-muted leading-snug">"{quote}"</p>
+        <p className="text-[11px] italic text-dark-sub leading-snug">"{quote}"</p>
       </div>
-      <div className="px-4 pt-6 pb-4 flex items-center gap-3 md:hidden bg-white border-b border-gray-200">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600">
-          <span className="text-white font-black text-xs tracking-tight">RX</span>
+      <div className="px-4 pt-6 pb-4 flex items-center gap-3 md:hidden bg-dark-sidebar border-b border-dark-border">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-dark-red shadow-lg shadow-dark-red/20">
+          <span className="text-white font-black text-sm tracking-tight">R</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="font-black text-xl text-text leading-tight truncate">{storeName}</h1>
-          <p className="text-xs text-muted">{new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
+          <h1 className="font-black text-xl text-white leading-tight truncate">{storeName}</h1>
+          <p className="text-xs text-dark-sub">{new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
         </div>
         <div className="flex items-center gap-2">
           <RoleSwitcher storeId={store?.id} />
-          <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-dark-border text-dark-sub hover:text-white hover:bg-dark-card transition-colors">
             <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </button>
-          <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white shadow-lg relative">
+          <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-dark-primary text-white shadow-lg shadow-dark-primary/30 relative">
             <Zap className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-green-400 border border-white" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-dark-green border border-dark-sidebar" />
           </button>
-          <button onClick={logout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <button onClick={logout} className="flex h-9 w-9 items-center justify-center rounded-xl border border-dark-border text-dark-sub hover:text-white hover:bg-dark-card transition-colors">
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {/* Desktop header */}
-      <div className="hidden md:flex px-4 pt-6 pb-4 items-start justify-between">
+      <div className="hidden md:flex px-8 pt-8 pb-4 items-start justify-between">
         <div>
-          <p className="text-sm text-muted">{greeting}</p>
-          <h1 className="font-black text-2xl text-text leading-tight">Welcome back!</h1>
+          <p className="text-sm text-dark-sub">{greeting}, {store?.owner_name || 'there'} 👋</p>
+          <h1 className="font-black text-2xl text-white leading-tight">{storeName}</h1>
         </div>
         <div className="flex items-center gap-2">
           <RoleSwitcher storeId={store?.id} />
-          <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted hover:text-sub">
+          <button onClick={() => { setRefreshing(true); setQuote(getRandomQuote()); load(); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-dark-border text-dark-sub hover:text-white hover:bg-dark-card transition-colors">
             <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
           </button>
-          <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white shadow-lg relative">
+          <button onClick={() => setShowAI(true)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-dark-primary text-white shadow-lg shadow-dark-primary/30 relative">
             <Zap className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-green-400 border border-white" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3 rounded-full bg-dark-green border border-dark-sidebar" />
           </button>
         </div>
       </div>
 
-      <div className="px-4 space-y-5">
+      <div className="px-4 md:px-8 space-y-5">
         {/* Store Health */}
-        <div className="tile p-4 flex items-center gap-4">
+        <div className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-4 flex items-center gap-4">
           <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl font-black text-xl text-white',
             healthScore >= 80 ? 'bg-green-500' : healthScore >= 60 ? 'bg-amber-500' : 'bg-red-500')}>
             {healthScore}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-text leading-tight">
+            <p className="text-sm font-bold text-white leading-tight">
               {healthScore >= 80 ? 'Excellent' : healthScore >= 60 ? 'Good' : 'Needs Attention'}
             </p>
-            <p className="text-xs text-muted mt-0.5">Store Health</p>
+            <p className="text-xs text-dark-sub mt-0.5">Store Health</p>
           </div>
         </div>
 
         {/* Push notification prompt */}
         {!notifEnabled && (
-          <button onClick={enableNotifications} className="w-full rounded-2xl bg-violet-50 border border-violet-200 p-4 flex items-center gap-3 text-left">
-            <Bell className="h-5 w-5 text-violet-600 shrink-0" />
+          <button onClick={enableNotifications} className="w-full rounded-2xl bg-dark-purple/10 border border-dark-purple/20 p-4 flex items-center gap-3 text-left">
+            <Bell className="h-5 w-5 text-dark-purple shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-bold text-violet-800">Enable notifications</p>
-              <p className="text-xs text-violet-600">Get daily store summary at closing time</p>
+              <p className="text-sm font-bold text-white">Enable notifications</p>
+              <p className="text-xs text-dark-sub">Get daily store summary at closing time</p>
             </div>
-            <ChevronRight className="h-4 w-4 text-violet-400" />
+            <ChevronRight className="h-4 w-4 text-dark-sub" />
           </button>
         )}
 
         {/* App grid */}
         <div>
-          <p className="section-title">Quick Access</p>
+          <p className="text-dark-sub uppercase tracking-wider text-[11px] font-bold mb-2">Quick Access</p>
 
           {/* Mobile: vertical stacked cards */}
           <div className="md:hidden space-y-3">
             {visibleApps.map(app => (
               <Link key={app.href} href={app.href}
-                className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-[0.98] relative">
-                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', app.color)}>
+                className="rounded-xl2 bg-dark-card border border-dark-border shadow-lg shadow-black/10 p-4 flex items-center gap-3 active:scale-[0.98] transition-all relative">
+                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', toDarkIcon(app.color))}>
                   <app.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-text leading-tight">{app.label}</p>
-                  <p className="text-sm text-muted mt-0.5 leading-tight">{app.sub}</p>
+                  <p className="text-base font-bold text-white leading-tight">{app.label}</p>
+                  <p className="text-sm text-dark-sub mt-0.5 leading-tight">{app.sub}</p>
                 </div>
                 {app.badge > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-black px-1.5 mr-1">
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-dark-red text-white text-[10px] font-black px-1.5 mr-1">
                     {app.badge}
                   </span>
                 )}
-                <ChevronRight className="h-5 w-5 text-gray-300 shrink-0" />
+                <ChevronRight className="h-5 w-5 text-dark-sub shrink-0" />
               </Link>
             ))}
           </div>
 
-          {/* Desktop: 2-column grid */}
+          {/* Desktop: premium dark 2-column grid */}
           <div className="hidden md:grid md:grid-cols-2 md:gap-3">
             {visibleApps.map(app => (
               <Link key={app.href} href={app.href}
-                className="tile p-4 flex items-center gap-3 hover:bg-surface transition-colors active:scale-95 relative overflow-hidden">
-                <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', app.color)}>
+                className="rounded-xl2 bg-dark-card border border-dark-border p-4 flex items-center gap-3 hover:border-dark-primary/40 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden shadow-lg shadow-black/10">
+                <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', toDarkIcon(app.color))}>
                   <app.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-text leading-tight">{app.label}</p>
-                  <p className="text-xs text-muted mt-0.5 leading-tight">{app.sub}</p>
+                  <p className="text-sm font-bold text-white leading-tight">{app.label}</p>
+                  <p className="text-xs text-dark-sub mt-0.5 leading-tight">{app.sub}</p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+                <ChevronRight className="h-4 w-4 text-dark-sub shrink-0" />
                 {app.badge > 0 && (
-                  <span className="absolute top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent text-white text-[10px] font-black px-1">
+                  <span className="absolute top-2 right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-dark-red text-white text-[10px] font-black px-1">
                     {app.badge}
                   </span>
                 )}

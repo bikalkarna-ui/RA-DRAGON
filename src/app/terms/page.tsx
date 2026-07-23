@@ -3,7 +3,7 @@ export default function TermsPage() {
     <div className="max-w-2xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-black text-text mb-2">Terms of Service</h1>
       <p className="text-gray-500 text-sm mb-8">Last updated: July 1, 2026</p>
-      <div className="space-y-6 text-sm text-gray-700 leading-relaxed">
+      <div className="space-y-6 text-sm text-gray-300 leading-relaxed">
         <section>
           <h2 className="text-lg font-bold text-text">1. Service</h2>
           <p>RYXSOR AI provides store management software for gas stations and convenience stores. By using RYXSOR AI you agree to these terms.</p>

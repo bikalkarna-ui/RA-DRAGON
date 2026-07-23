@@ -279,7 +279,7 @@ export default function InventoryPage() {
             <div className="space-y-1">
               {topMargin.map(p => (
                 <div key={p.id} className="flex justify-between text-xs">
-                  <span className="text-gray-700">{p.name}</span>
+                  <span className="text-gray-300">{p.name}</span>
                   <span className="num font-bold text-green-700">{fmt.percent(((p.unit_price-p.unit_cost)/p.unit_price)*100)}</span>
                 </div>
               ))}
@@ -341,7 +341,7 @@ export default function InventoryPage() {
                           </div>
                         </div>
                         <div className="w-20">
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div className={cn('h-full rounded-full', sc.bar)} style={{ width: p.max_quantity ? `${Math.min(100,(p.quantity/p.max_quantity)*100)}%` : st==='ok'?'70%':'20%' }} />
                           </div>
                           <div className="flex justify-between text-[9px] text-dim mt-0.5">
@@ -365,7 +365,7 @@ export default function InventoryPage() {
                         <div className="flex gap-1.5">
                           <button onClick={() => quickAdjust(p.id,'add')} disabled={!adjQty} className="flex items-center gap-1 rounded-xl bg-green-600 text-white px-3 py-2 text-xs font-bold disabled:opacity-40"><ArrowUpCircle className="h-3.5 w-3.5"/>+Add</button>
                           <button onClick={() => quickAdjust(p.id,'sub')} disabled={!adjQty} className="flex items-center gap-1 rounded-xl bg-red-600 text-white px-3 py-2 text-xs font-bold disabled:opacity-40"><ArrowDownCircle className="h-3.5 w-3.5"/>−Remove</button>
-                          <button onClick={() => setAdjustId(null)} className="rounded-xl bg-gray-100 text-gray-600 px-3 py-2 text-xs font-bold">Cancel</button>
+                          <button onClick={() => setAdjustId(null)} className="rounded-xl bg-white/10 text-gray-400 px-3 py-2 text-xs font-bold">Cancel</button>
                         </div>
                       </div>
                     )}

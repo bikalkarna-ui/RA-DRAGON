@@ -13,7 +13,7 @@ interface ScreenProps {
 
 export function Screen({ title, subtitle, back = true, action, children, className }: ScreenProps) {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-bg">
       <div className="screen">
         <div className="flex items-center justify-between py-5">
           {back ? (

@@ -187,8 +187,8 @@ export default function EmployeesPage() {
                       else if (pin.length < 4) { const np = pin + String(d); setPin(np); if (np.length === 4) setTimeout(() => { submitPIN(); }, 300); }
                     }}
                     className={cn('flex h-16 items-center justify-center rounded-2xl font-black text-xl transition-all active:scale-95',
-                      d === '⌫' ? 'text-muted bg-surface border border-border hover:bg-gray-100' :
-                      !d && d !== 0 ? 'invisible' : 'bg-surface border border-border hover:bg-gray-100 text-text')}>
+                      d === '⌫' ? 'text-muted bg-surface border border-border hover:bg-white/10' :
+                      !d && d !== 0 ? 'invisible' : 'bg-surface border border-border hover:bg-white/10 text-text')}>
                     {d}
                   </button>
                 ))}
@@ -307,7 +307,7 @@ export default function EmployeesPage() {
                             {(empHistory[emp.id] ?? []).map(c => (
                               <div key={c.id} className="flex justify-between text-xs">
                                 <span className="text-muted">{fmtDate(c.clock_in)}</span>
-                                <span className="text-gray-600">{fmtTime(c.clock_in)} – {c.clock_out ? fmtTime(c.clock_out) : 'In progress'}</span>
+                                <span className="text-gray-400">{fmtTime(c.clock_in)} – {c.clock_out ? fmtTime(c.clock_out) : 'In progress'}</span>
                                 <span className="num font-bold text-text">{c.hours_worked ? `${c.hours_worked.toFixed(1)}h` : '–'}</span>
                                 {emp.hourly_rate && c.hours_worked && <span className="num text-green-700 font-bold">{fmt.currency(emp.hourly_rate * c.hours_worked)}</span>}
                               </div>

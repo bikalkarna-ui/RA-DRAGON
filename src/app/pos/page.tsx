@@ -32,10 +32,10 @@ function Row({ label, value, sub, red, bold, indent }: {
   return (
     <div className={cn('flex items-center justify-between py-2 border-b border-gray-50 last:border-0', indent && 'pl-4')}>
       <div>
-        <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-600')}>{label}</span>
+        <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-400')}>{label}</span>
         {sub && <p className="text-[10px] text-muted">{sub}</p>}
       </div>
-      <span className={cn('num text-sm font-bold', bold ? 'text-text' : red ? 'text-red-600' : 'text-gray-800')}>
+      <span className={cn('num text-sm font-bold', bold ? 'text-text' : red ? 'text-red-600' : 'text-gray-100')}>
         {red ? '-' : ''}{fmt.currency(Math.abs(value))}
       </span>
     </div>
@@ -75,7 +75,7 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
 
   if (safeDrops === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-gray-200 p-4 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-white/10 p-4 text-center">
         <p className="text-xs text-muted">No safe drops recorded yet</p>
         <p className="text-xs text-muted">Upload your till report to see safe drop total</p>
       </div>
@@ -147,20 +147,20 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
         </div>
 
         {result.ai_reason && (
-          <div className="rounded-xl bg-white/60 p-3 mb-3">
+          <div className="rounded-xl bg-card/60 p-3 mb-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Zap className="h-3.5 w-3.5 text-violet-600"/>
               <p className="text-xs font-bold text-violet-700">AI Analysis</p>
             </div>
-            <p className="text-xs text-gray-700">{result.ai_reason}</p>
+            <p className="text-xs text-gray-300">{result.ai_reason}</p>
           </div>
         )}
 
         {result.ai_suggestions?.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-gray-700">What to check:</p>
+            <p className="text-xs font-bold text-gray-300">What to check:</p>
             {result.ai_suggestions.map((s:string,i:number) => (
-              <div key={i} className="flex gap-2 text-xs text-gray-600">
+              <div key={i} className="flex gap-2 text-xs text-gray-400">
                 <span className="font-black text-accent shrink-0">{i+1}.</span><span>{s}</span>
               </div>
             ))}
@@ -344,7 +344,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
                 <p className="text-xs font-bold text-gray-500 mt-3 mb-2">Vendor Checks Written</p>
                 {checksGiven.map((c:any,i:number) => (
                   <div key={i} className="flex justify-between py-2 border-b border-gray-50">
-                    <span className="text-sm text-gray-600">{c.payee||c.vendor||'Vendor'}{c.number?` #${c.number}`:''}</span>
+                    <span className="text-sm text-gray-400">{c.payee||c.vendor||'Vendor'}{c.number?` #${c.number}`:''}</span>
                     <span className="num text-sm font-bold text-red-600">-{fmt.currency(Number(c.amount||0))}</span>
                   </div>
                 ))}
@@ -356,19 +356,19 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
           <div className="p-5 border-t border-border">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">DAILY CLOSING</p>
             <div className="space-y-2">
-              <div className="flex justify-between py-2 border-b border-gray-100">
+              <div className="flex justify-between py-2 border-b border-white/10">
                 <span className="text-sm font-bold text-text">Daily Closing Cash (Safe Drops)</span>
                 <span className="num text-sm font-black text-text">{fmt.currency(safeDrops)}</span>
               </div>
               {actualCash > 0 && (
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">You Physically Counted</span>
+                <div className="flex justify-between py-2 border-b border-white/10">
+                  <span className="text-sm text-gray-400">You Physically Counted</span>
                   <span className="num text-sm font-bold">{fmt.currency(actualCash)}</span>
                 </div>
               )}
               {checkSales > 0 && (
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Daily Closing Check (Card Settlement)</span>
+                <div className="flex justify-between py-2 border-b border-white/10">
+                  <span className="text-sm text-gray-400">Daily Closing Check (Card Settlement)</span>
                   <span className="num text-sm font-bold">{fmt.currency(checkSales)}</span>
                 </div>
               )}
@@ -431,7 +431,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
                   const pct = insideSales > 0 ? (Math.abs(v)/insideSales*100) : 0;
                   return (
                     <div key={dept} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0">
-                      <span className="text-sm text-gray-600 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
+                      <span className="text-sm text-gray-400 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
                       <span className="text-xs text-muted w-12 text-right">{pct.toFixed(1)}%</span>
                       <span className={cn('num text-sm font-bold w-20 text-right', v<0?'text-red-600':'text-text')}>{fmt.currency(v)}</span>
                     </div>
@@ -523,7 +523,7 @@ export default function PosPage() {
               { step: '2', text: 'All sections update: Tax, Fuel, Trends, P&L, Inventory', done: true },
               { step: '3', text: 'Count cash in safe → app shows short or over instantly', done: false },
             ].map(s => (
-              <div key={s.step} className="flex items-center gap-2.5 text-xs text-gray-700">
+              <div key={s.step} className="flex items-center gap-2.5 text-xs text-gray-300">
                 <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black',
                   s.done ? 'bg-accent text-white' : 'bg-amber-400 text-white')}>
                   {s.step}

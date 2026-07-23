@@ -3,7 +3,7 @@ export default function PrivacyPage() {
     <div className="max-w-2xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-black text-text mb-2">Privacy Policy</h1>
       <p className="text-gray-500 text-sm mb-8">Last updated: July 1, 2026</p>
-      <div className="prose prose-gray max-w-none space-y-6 text-sm text-gray-700 leading-relaxed">
+      <div className="prose prose-gray max-w-none space-y-6 text-sm text-gray-300 leading-relaxed">
         <section>
           <h2 className="text-lg font-bold text-text">What We Collect</h2>
           <p>RYXSOR AI collects store data you upload — daily sales reports, inventory, employee records, and invoices. We also collect your email address for account creation and your device information for push notifications.</p>

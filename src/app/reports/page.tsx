@@ -130,7 +130,7 @@ export default function ReportsPage() {
         {!loading && tab === 'today' && (
           <>
             {!todayRpt ? (
-              <div className="tile p-10 text-center"><BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-700">No report uploaded today</p><p className="text-muted text-sm mt-1">Upload your daily close report to see today's numbers</p></div>
+              <div className="tile p-10 text-center"><BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-300">No report uploaded today</p><p className="text-muted text-sm mt-1">Upload your daily close report to see today's numbers</p></div>
             ) : (
               <>
                 <div className="tile p-6 text-center">

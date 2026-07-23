@@ -93,8 +93,8 @@ export default function TaxPage() {
               { label: 'Avg Daily Sales', value: totalDays > 0 ? grossSales/totalDays : 0 },
             ].map(row => (
               <div key={row.label} className="flex justify-between py-2 border-b border-gray-50 last:border-0">
-                <span className={cn('text-sm', row.bold ? 'font-bold text-text' : 'text-gray-600')}>{row.label}</span>
-                <span className={cn('num text-sm font-bold', row.color || (row.bold ? 'text-text' : 'text-gray-700'))}>
+                <span className={cn('text-sm', row.bold ? 'font-bold text-text' : 'text-gray-400')}>{row.label}</span>
+                <span className={cn('num text-sm font-bold', row.color || (row.bold ? 'text-text' : 'text-gray-300'))}>
                   {fmt.currency(row.value)}
                 </span>
               </div>

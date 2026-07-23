@@ -6,17 +6,18 @@
 
 @layer base {
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { background: #FFFFFF; scroll-behavior: smooth; }
+  html { background: #09090B; scroll-behavior: smooth; }
   body {
-    @apply bg-white text-text antialiased;
+    @apply bg-transparent text-text antialiased;
+    background: #09090B;
     font-family: 'Inter', ui-sans-serif, system-ui;
     overscroll-behavior: none;
   }
-  :focus-visible { outline: 2px solid #C0392B; outline-offset: 2px; }
-  ::selection { background: rgba(192,57,43,0.12); }
+  :focus-visible { outline: 2px solid #4F7CFF; outline-offset: 2px; }
+  ::selection { background: rgba(79,124,255,0.25); }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: #F3F4F6; }
-  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: #111318; }
+  ::-webkit-scrollbar-thumb { background: #26282F; border-radius: 4px; }
 }
 
 @layer components {
@@ -29,10 +30,10 @@
 
   /* Cards */
   .tile {
-    @apply bg-white rounded-xl2 shadow-card border border-border/60;
+    @apply bg-card rounded-xl2 shadow-lg shadow-black/20 border border-border;
     transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   }
-  .tile-hover:hover { @apply shadow-lifted border-border; transform: translateY(-2px); }
+  .tile-hover:hover { @apply shadow-lifted border-dark-primary/30; transform: translateY(-2px); }
 
   /* Buttons */
   .btn {
@@ -42,24 +43,24 @@
   .btn-accent { @apply btn bg-accent text-white shadow-red; }
   .btn-accent:hover { @apply bg-accent2 shadow-lifted; }
   .btn-accent:active { transform: scale(0.98); }
-  .btn-ghost { @apply btn bg-surface text-sub border border-border/70 hover:text-text hover:border-gray-300 hover:shadow-soft; }
+  .btn-ghost { @apply btn bg-surface text-sub border border-border hover:text-text hover:border-dark-primary/40 hover:shadow-soft; }
   .btn-full { @apply w-full justify-center; }
 
   /* Inputs */
   .inp {
-    @apply w-full rounded-xl bg-surface border border-border/70 px-4 py-3 text-[15px] text-text placeholder:text-dim transition-all;
+    @apply w-full rounded-xl bg-surface border border-border px-4 py-3 text-[15px] text-text placeholder:text-dim transition-all;
     outline: none;
   }
-  .inp:focus { @apply border-accent bg-white shadow-soft; box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+  .inp:focus { @apply border-dark-primary bg-card shadow-soft; box-shadow: 0 0 0 3px rgba(79,124,255,0.15); }
   .lbl { @apply block text-sm font-medium text-sub mb-1.5; }
 
   /* Badges / chips */
   .chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold; }
-  .chip-red { @apply chip bg-red-50 text-accent; }
-  .chip-green { @apply chip bg-green-50 text-green-700; }
-  .chip-yellow { @apply chip bg-amber-50 text-amber-700; }
-  .chip-blue { @apply chip bg-blue-50 text-blue-700; }
-  .chip-gray { @apply chip bg-gray-100 text-gray-600; }
+  .chip-red { @apply chip bg-dark-red/15 text-red-400; }
+  .chip-green { @apply chip bg-dark-green/15 text-green-400; }
+  .chip-yellow { @apply chip bg-dark-orange/15 text-amber-400; }
+  .chip-blue { @apply chip bg-dark-primary/15 text-blue-400; }
+  .chip-gray { @apply chip bg-white/5 text-gray-400; }
 
   /* Section label */
   .section-title { @apply text-xs font-semibold uppercase tracking-widest text-dim mb-3; }
@@ -78,7 +79,7 @@
     @apply flex flex-col items-center justify-center gap-3 rounded-xl2 border-2 border-dashed border-border p-10 text-center cursor-pointer;
     transition: border-color 0.2s, background 0.2s;
   }
-  .drop-zone:hover { border-color: #C0392B; background: rgba(192,57,43,0.02); }
+  .drop-zone:hover { border-color: #4F7CFF; background: rgba(79,124,255,0.05); }
   .drop-zone:active { transform: scale(0.99); }
 
   /* Divider */

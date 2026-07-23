@@ -115,7 +115,7 @@ export default function BillingPage() {
         ) : invoices.length === 0 ? (
           <div className="tile p-10 text-center">
             <FileText className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-            <p className="font-bold text-gray-700">No invoices yet</p>
+            <p className="font-bold text-gray-300">No invoices yet</p>
             <p className="text-sm text-muted mt-1">Create your first invoice to send to a customer.</p>
           </div>
         ) : (
@@ -131,7 +131,7 @@ export default function BillingPage() {
                     </p>
                   </div>
                   <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full uppercase',
-                    inv.status === 'sent' ? 'bg-green-100 text-green-700' : inv.status === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500')}>
+                    inv.status === 'sent' ? 'bg-green-100 text-green-700' : inv.status === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-white/10 text-gray-500')}>
                     {inv.status}
                   </span>
                 </div>
@@ -159,8 +159,8 @@ export default function BillingPage() {
       {/* Create invoice modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="bg-card w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-card flex items-center justify-between px-5 py-4 border-b border-border">
               <p className="font-black text-lg text-text">New Invoice</p>
               <button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5 text-muted" /></button>
             </div>

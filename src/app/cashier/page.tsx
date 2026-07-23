@@ -57,21 +57,21 @@ function SafeDropScreen({ store, onDone }: { store: any; onDone: () => void }) {
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Your Name</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Your Name</label>
         <input value={name} onChange={e => setName(e.target.value)}
           placeholder="e.g. Shayan" autoFocus
-          className="w-full rounded-2xl border-2 border-gray-200 px-4 py-4 text-lg font-semibold focus:border-green-400 focus:outline-none" />
+          className="w-full rounded-2xl border-2 border-white/10 px-4 py-4 text-lg font-semibold focus:border-green-400 focus:outline-none" />
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Amount Dropped</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Amount Dropped</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-2xl font-bold">$</span>
           <input type="number" step="0.01" min="0"
             value={amount} onChange={e => setAmount(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && submit()}
             placeholder="0.00"
-            className="w-full rounded-2xl border-2 border-gray-200 pl-10 pr-4 py-4 text-3xl font-black text-center focus:border-green-400 focus:outline-none" />
+            className="w-full rounded-2xl border-2 border-white/10 pl-10 pr-4 py-4 text-3xl font-black text-center focus:border-green-400 focus:outline-none" />
         </div>
       </div>
 
@@ -138,37 +138,37 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Reason</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Reason</label>
         <div className="grid grid-cols-2 gap-2 mb-3">
           {REASONS.map(r => (
             <button key={r} onClick={() => setReason(r)}
               className={cn('rounded-xl py-3 text-sm font-bold border-2 transition-colors',
-                reason === r ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-200 bg-white text-gray-600')}>
+                reason === r ? 'border-red-400 bg-red-50 text-red-700' : 'border-white/10 bg-card text-gray-400')}>
               {r}
             </button>
           ))}
         </div>
         <input value={reason} onChange={e => setReason(e.target.value)}
           placeholder="Or type reason…"
-          className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm focus:border-red-400 focus:outline-none" />
+          className="w-full rounded-2xl border-2 border-white/10 px-4 py-3 text-sm focus:border-red-400 focus:outline-none" />
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Amount</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Amount</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-2xl font-bold">$</span>
           <input type="number" step="0.01" min="0"
             value={amount} onChange={e => setAmount(e.target.value)}
             placeholder="0.00"
-            className="w-full rounded-2xl border-2 border-gray-200 pl-10 pr-4 py-4 text-3xl font-black text-center focus:border-red-400 focus:outline-none" />
+            className="w-full rounded-2xl border-2 border-white/10 pl-10 pr-4 py-4 text-3xl font-black text-center focus:border-red-400 focus:outline-none" />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Your name (optional)</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Your name (optional)</label>
         <input value={name} onChange={e => setName(e.target.value)}
           placeholder="e.g. Bikal"
-          className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm focus:border-red-400 focus:outline-none" />
+          className="w-full rounded-2xl border-2 border-white/10 px-4 py-3 text-sm focus:border-red-400 focus:outline-none" />
       </div>
 
       {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -265,18 +265,18 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
       {adding && (
         <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 space-y-3">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Book Number</label>
+            <label className="block text-sm font-bold text-gray-300 mb-1">Book Number</label>
             <input value={bookNum} onChange={e => setBookNum(e.target.value)}
               placeholder="e.g. 2739" autoFocus
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-xl font-black text-center focus:border-amber-400 focus:outline-none" />
+              className="w-full rounded-xl border-2 border-white/10 px-4 py-3 text-xl font-black text-center focus:border-amber-400 focus:outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Ticket Price</label>
+            <label className="block text-sm font-bold text-gray-300 mb-1">Ticket Price</label>
             <div className="grid grid-cols-4 gap-2">
               {['1','2','5','10','20','25','30','50'].map(p => (
                 <button key={p} onClick={() => setPrice(p)}
                   className={cn('rounded-xl py-2.5 text-sm font-bold border-2',
-                    price === p ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-gray-200 bg-white text-gray-600')}>
+                    price === p ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-white/10 bg-card text-gray-400')}>
                   ${p}
                 </button>
               ))}
@@ -304,7 +304,7 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
             const isActive = meta.status !== 'closed';
             return (
               <div key={b.id} className={cn('rounded-2xl border-2 p-4 flex items-center justify-between',
-                isActive ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-gray-50 opacity-60')}>
+                isActive ? 'border-amber-300 bg-amber-50' : 'border-white/10 bg-white/5 opacity-60')}>
                 <div>
                   <p className="font-black text-text">Book #{meta.book || '—'}</p>
                   <p className="text-xs text-muted">${meta.price} tickets · {b.description}</p>
@@ -397,7 +397,7 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
       {/* Photo scan option */}
       <div className="rounded-2xl border-2 border-dashed border-blue-300 p-4 text-center">
         <Camera className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-        <p className="text-sm font-bold text-gray-700 mb-3">Photograph the invoice (optional)</p>
+        <p className="text-sm font-bold text-gray-300 mb-3">Photograph the invoice (optional)</p>
         <input type="file" accept="image/*" capture="environment"
           onChange={e => { const f = e.target.files?.[0]; if (f) { setFile(f); } }}
           className="hidden" id="vendor-photo" />
@@ -419,28 +419,28 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
       {/* Manual entry */}
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Vendor Name</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Vendor Name</label>
         <div className="grid grid-cols-2 gap-2 mb-3">
           {VENDORS.map(v => (
             <button key={v} onClick={() => setVendor(v)}
               className={cn('rounded-xl py-3 text-sm font-bold border-2 transition-colors',
-                vendor === v ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600')}>
+                vendor === v ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-white/10 bg-card text-gray-400')}>
               {v}
             </button>
           ))}
         </div>
         <input value={vendor} onChange={e => setVendor(e.target.value)}
           placeholder="Or type vendor name…"
-          className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm focus:border-blue-400 focus:outline-none" />
+          className="w-full rounded-2xl border-2 border-white/10 px-4 py-3 text-sm focus:border-blue-400 focus:outline-none" />
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Invoice Total</label>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Invoice Total</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl font-bold">$</span>
           <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
             placeholder="0.00"
-            className="w-full rounded-2xl border-2 border-gray-200 pl-10 pr-4 py-4 text-2xl font-black text-center focus:border-blue-400 focus:outline-none" />
+            className="w-full rounded-2xl border-2 border-white/10 pl-10 pr-4 py-4 text-2xl font-black text-center focus:border-blue-400 focus:outline-none" />
         </div>
       </div>
 
@@ -479,12 +479,12 @@ export default function CashierPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-lg mx-auto">
+    <div className="min-h-screen bg-white/5 max-w-lg mx-auto">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
+      <div className="bg-card border-b border-white/10 px-4 py-4 flex items-center gap-3">
         {screen !== 'menu' ? (
-          <button onClick={() => setScreen('menu')} className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100">
-            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <button onClick={() => setScreen('menu')} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+            <ArrowLeft className="h-5 w-5 text-gray-400" />
           </button>
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-600">
@@ -515,7 +515,7 @@ export default function CashierPage() {
 
           {ACTIONS.map(a => (
             <button key={a.id} onClick={() => setScreen(a.id)}
-              className="w-full rounded-2xl bg-white border-2 border-gray-100 p-5 flex items-center gap-4 active:scale-95 transition-transform text-left">
+              className="w-full rounded-2xl bg-card border-2 border-white/10 p-5 flex items-center gap-4 active:scale-95 transition-transform text-left">
               <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', a.color)}>
                 <a.icon className="h-7 w-7 text-white" />
               </div>

@@ -75,7 +75,7 @@ export default function VendorsPage() {
               <div className="mt-3 space-y-1 max-h-32 overflow-y-auto">
                 {v.products.slice(0,5).map((p:any,i:number) => (
                   <div key={i} className="flex justify-between text-xs">
-                    <span className="text-gray-600 truncate">{p.name}</span>
+                    <span className="text-gray-400 truncate">{p.name}</span>
                     <span className="num font-semibold text-text shrink-0 ml-2">{fmt.currency(n(p.unit_cost))}</span>
                   </div>
                 ))}

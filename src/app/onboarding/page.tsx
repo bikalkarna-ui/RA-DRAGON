@@ -85,7 +85,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start py-8 px-4">
+    <div className="min-h-screen bg-white/5 flex flex-col items-center justify-start py-8 px-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-8">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
@@ -112,7 +112,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-8">
+      <div className="w-full max-w-md bg-card rounded-3xl shadow-lg p-8">
         {/* Step 1 */}
         {step === 1 && (
           <div>
@@ -210,9 +210,9 @@ export default function OnboardingPage() {
                 { icon: '📦', text: 'Scan vendor invoices to update inventory automatically' },
                 { icon: '👥', text: 'Employees clock in/out with their PIN' },
               ].map((tip, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
+                <div key={i} className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3">
                   <span className="text-xl">{tip.icon}</span>
-                  <span className="text-sm text-gray-700">{tip.text}</span>
+                  <span className="text-sm text-gray-300">{tip.text}</span>
                 </div>
               ))}
             </div>

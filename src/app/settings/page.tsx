@@ -123,10 +123,10 @@ function EmployeesTab({ store }: { store: any }) {
                       <p className="font-semibold text-text text-sm">{emp.name}</p>
                       <span className={cn('chip text-[10px]',
                         emp.role === 'owner' ? 'bg-red-100 text-red-700' :
-                        emp.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')}>
+                        emp.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-white/10 text-gray-400')}>
                         {emp.role}
                       </span>
-                      {!emp.is_active && <span className="chip bg-gray-100 text-gray-400 text-[10px]">inactive</span>}
+                      {!emp.is_active && <span className="chip bg-white/10 text-gray-400 text-[10px]">inactive</span>}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-xs text-muted">PIN: </p>
@@ -144,7 +144,7 @@ function EmployeesTab({ store }: { store: any }) {
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => toggle(emp)}
                     className={cn('text-xs font-semibold rounded-xl px-3 py-1.5 transition-colors',
-                      emp.is_active ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-green-100 text-green-700 hover:bg-green-200')}>
+                      emp.is_active ? 'bg-white/10 text-gray-400 hover:bg-gray-200' : 'bg-green-100 text-green-700 hover:bg-green-200')}>
                     {emp.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                   <button onClick={() => del(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
@@ -325,7 +325,7 @@ function StoresTab({ stores, currentStore, switchStore, createStore }: {
               className={cn('w-full flex items-center gap-4 px-5 py-4 text-left transition-colors',
                 isActive ? 'bg-red-50' : 'hover:bg-surface')}>
               <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
-                isActive ? 'bg-accent' : 'bg-gray-100')}>
+                isActive ? 'bg-accent' : 'bg-white/10')}>
                 <StoreIcon className={cn('h-6 w-6', isActive ? 'text-white' : 'text-gray-500')} />
               </div>
               <div className="flex-1 min-w-0">
@@ -397,7 +397,7 @@ function ConnectorTab({ store }: { store: any }) {
             <p className="text-xs text-muted">Windows app that auto-syncs your POS to RYXSOR AI</p>
           </div>
         </div>
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-400">
           <p>✓ Installs on your back-office PC (where Gilbarco Passport runs)</p>
           <p>✓ Automatically reads sales, inventory, and reports directly from POS</p>
           <p>✓ Syncs to your RYXSOR AI account every 30 seconds</p>
@@ -408,8 +408,8 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 1: Get connector */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 1 — Get the Connector App</p>
-        <p className="text-sm text-gray-600 mb-4">Download the Windows connector and install it on your store's back-office computer (the PC where Gilbarco Passport is installed).</p>
-        <div className="rounded-xl bg-gray-50 border border-border p-4 text-sm font-mono text-gray-700 mb-3">
+        <p className="text-sm text-gray-400 mb-4">Download the Windows connector and install it on your store's back-office computer (the PC where Gilbarco Passport is installed).</p>
+        <div className="rounded-xl bg-white/5 border border-border p-4 text-sm font-mono text-gray-300 mb-3">
           Coming soon — download link will appear here
         </div>
         <p className="text-xs text-muted">The connector runs silently in the background as a Windows Service.</p>
@@ -418,7 +418,7 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 2: Generate key */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 2 — Generate Your API Key</p>
-        <p className="text-sm text-gray-600 mb-4">Generate a secret key that connects your store to the RYXSOR AI connector. Enter this key in the connector's Settings screen.</p>
+        <p className="text-sm text-gray-400 mb-4">Generate a secret key that connects your store to the RYXSOR AI connector. Enter this key in the connector's Settings screen.</p>
 
         {!result && (
           <button onClick={generate} disabled={loading}
@@ -447,10 +447,10 @@ function ConnectorTab({ store }: { store: any }) {
               <div key={label}>
                 <p className="text-xs text-muted font-semibold mb-1">{label}</p>
                 <div className="flex gap-2">
-                  <div className="flex-1 rounded-xl bg-gray-50 border border-border px-3 py-2 text-xs font-mono text-gray-700 truncate">{value}</div>
+                  <div className="flex-1 rounded-xl bg-white/5 border border-border px-3 py-2 text-xs font-mono text-gray-300 truncate">{value}</div>
                   <button onClick={() => copy(value, label)}
                     className={cn('flex h-9 w-16 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors',
-                      copied === label ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}>
+                      copied === label ? 'bg-green-500 text-white' : 'bg-white/10 text-gray-300 hover:bg-gray-200')}>
                     {copied === label ? '✓' : 'Copy'}
                   </button>
                 </div>
@@ -467,7 +467,7 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 3: Setup */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 3 — Enter in Connector Settings</p>
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-400">
           <p>1. Open RYXSOR AI Connector on your store PC</p>
           <p>2. Right-click the tray icon → Settings</p>
           <p>3. Paste the Cloud URL, Store ID, and API Key</p>

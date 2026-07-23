@@ -100,7 +100,7 @@ export default function AlertsPage() {
         {!loading && tab === 'stock' && (
           <>
             {outOfStock.length === 0 && critical.length === 0 && lowStock.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-700">All stock levels look good</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">All stock levels look good</p></div>
             ) : (
               <>
                 {[
@@ -135,7 +135,7 @@ export default function AlertsPage() {
         {!loading && tab === 'prices' && (
           <>
             {priceChanges.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-700">No price changes detected</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">No price changes detected</p></div>
             ) : (
               <div className="tile overflow-hidden">
                 <div className="px-5 py-3 border-b border-border bg-blue-50">
@@ -180,7 +180,7 @@ export default function AlertsPage() {
         {!loading && tab === 'cash' && (
           <>
             {cashIssues.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-700">All drawers balanced this week</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">All drawers balanced this week</p></div>
             ) : (
               <div className="tile overflow-hidden">
                 <div className="px-5 py-3 border-b border-border bg-red-50">

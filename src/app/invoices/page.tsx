@@ -179,7 +179,7 @@ export default function InvoicesPage() {
                   {fmtDate(reviewMeta.invoice_date || reviewMeta.created_at)} · {items.length} items
                 </p>
               </div>
-              <button onClick={closeReview} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-border text-muted hover:text-accent ml-3">
+              <button onClick={closeReview} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card border border-border text-muted hover:text-accent ml-3">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -206,7 +206,7 @@ export default function InvoicesPage() {
                   <p className="num font-black text-green-700 text-xl">{updateItems.length}</p>
                   <p className="text-xs text-green-600 font-medium">Updates</p>
                 </div>
-                <div className={cn('rounded-xl p-3 text-center', priceChanges.length > 0 ? 'bg-amber-50' : 'bg-gray-50')}>
+                <div className={cn('rounded-xl p-3 text-center', priceChanges.length > 0 ? 'bg-amber-50' : 'bg-white/5')}>
                   <p className={cn('num font-black text-xl', priceChanges.length > 0 ? 'text-amber-700' : 'text-gray-400')}>{priceChanges.length}</p>
                   <p className={cn('text-xs font-medium', priceChanges.length > 0 ? 'text-amber-600' : 'text-muted')}>Price Changes</p>
                 </div>
@@ -241,10 +241,10 @@ export default function InvoicesPage() {
                 {items.map(li => (
                   <div key={li.id} className={cn(
                     'rounded-2xl border p-4 transition-all',
-                    li._action === 'skip'    ? 'border-gray-100 bg-gray-50 opacity-50' :
+                    li._action === 'skip'    ? 'border-white/10 bg-white/5 opacity-50' :
                     li.price_changed         ? 'border-amber-200 bg-amber-50/50' :
                     li.is_new_product        ? 'border-blue-200 bg-blue-50/50' :
-                                               'border-gray-200 bg-white'
+                                               'border-white/10 bg-card'
                   )}>
                     {/* Badges + raw description */}
                     <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -275,7 +275,7 @@ export default function InvoicesPage() {
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <div>
                         <label className="lbl">Cost $</label>
-                        <div className="rounded-xl bg-white border border-gray-200 px-3 py-2 text-sm font-bold num">
+                        <div className="rounded-xl bg-card border border-white/10 px-3 py-2 text-sm font-bold num">
                           {fmt.currency(li.unit_cost)}
                         </div>
                         {li.price_changed && li.old_cost > 0 && (
@@ -300,7 +300,7 @@ export default function InvoicesPage() {
                       </div>
                       <div>
                         <label className="lbl">Qty Received</label>
-                        <div className="rounded-xl bg-white border border-gray-200 px-3 py-2 text-sm font-bold num text-center">
+                        <div className="rounded-xl bg-card border border-white/10 px-3 py-2 text-sm font-bold num text-center">
                           {li.quantity}
                         </div>
                       </div>
@@ -317,14 +317,14 @@ export default function InvoicesPage() {
                       <button
                         onClick={() => upd(li.id, { _action: li.is_new_product ? 'create' : 'update' })}
                         className={cn('flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-colors',
-                          li._action !== 'skip' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
+                          li._action !== 'skip' ? 'bg-accent text-white' : 'bg-white/10 text-gray-500 hover:bg-gray-200')}>
                         <Check className="h-3.5 w-3.5" />
                         {li.is_new_product ? 'Add to inventory' : 'Update & receive stock'}
                       </button>
                       <button
                         onClick={() => upd(li.id, { _action: 'skip' })}
                         className={cn('flex items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-colors',
-                          li._action === 'skip' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
+                          li._action === 'skip' ? 'bg-red-100 text-red-700' : 'bg-white/10 text-gray-500 hover:bg-gray-200')}>
                         <X className="h-3.5 w-3.5" />Skip
                       </button>
                     </div>
@@ -341,7 +341,7 @@ export default function InvoicesPage() {
 
             {/* Apply button */}
             {!confirmResult && !loadingItems && included.length > 0 && (
-              <div className="p-5 border-t border-border bg-gray-50">
+              <div className="p-5 border-t border-border bg-white/5">
                 <button onClick={applyInvoice} disabled={confirming}
                   className="btn btn-accent btn-full py-4 text-base gap-2">
                   {confirming
