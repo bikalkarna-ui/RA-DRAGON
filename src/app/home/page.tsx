@@ -303,23 +303,23 @@ export default function HomePage() {
   ));
 
   const APPS = [
-    { href: '/cashier',     icon: DollarSign, label: 'Cashier Actions', sub: 'Drop · Paid out · Vendor', badge: 0, color: 'bg-green-50 text-green-700' },
+    { href: '/cashier',     icon: DollarSign, label: 'Cashier Actions', sub: 'Drop · Paid out · Vendor', badge: 0, color: 'bg-green-500/10 text-green-400' },
     { href: '/pos',         icon: BarChart3,  label: 'Daily Reports',    sub: 'Upload & review',    badge: 0,          color: 'bg-red-50 text-accent' },
-    { href: '/invoices',    icon: FileText,   label: 'Invoices',         sub: 'Scan vendor invoices', badge: pendingInv, color: 'bg-pink-50 text-pink-600' },
-    { href: '/inventory',   icon: Package,    label: 'Inventory',        sub: 'Stock & movement',   badge: outOfStock,  color: 'bg-blue-50 text-blue-600' },
-    { href: '/ordering',    icon: Brain,      label: 'AI Ordering',      sub: '90-day reorders',    badge: 0,           color: 'bg-violet-50 text-violet-600' },
-    { href: '/alerts',      icon: Bell,       label: 'Alerts',           sub: 'Price & stock',      badge: 0,           color: 'bg-amber-50 text-amber-600' },
-    { href: '/reports',     icon: TrendingUp, label: 'Reports & P&L',    sub: 'Trends & analytics', badge: 0,           color: 'bg-green-50 text-green-600' },
-    { href: '/employees',   icon: Users,      label: 'Employees',        sub: 'Time clock & pay',   badge: staffIn,     color: 'bg-cyan-50 text-cyan-600' },
-    { href: '/fuel',        icon: Fuel,       label: 'Fuel Margins',     sub: 'Cost vs price',      badge: 0,           color: 'bg-orange-50 text-orange-600' },
-    { href: '/shrink',      icon: AlertTriangle, label: 'Shrink & Waste',sub: 'Loss tracking',      badge: 0,           color: 'bg-red-50 text-red-500' },
-    { href: '/performance', icon: Users,      label: 'Performance',      sub: 'Employee stats',     badge: 0,           color: 'bg-indigo-50 text-indigo-600' },
-    { href: '/trends',      icon: TrendingUp, label: 'Annual Trends',    sub: 'Year over year',     badge: 0,           color: 'bg-teal-50 text-teal-600' },
-    { href: '/email',       icon: Mail,       label: 'Email Reader',     sub: 'AI inbox summaries', badge: 0,           color: 'bg-blue-50 text-blue-600' },
-    { href: '/billing',     icon: Receipt,    label: 'Invoicing',        sub: 'Bill your customers', badge: 0,           color: 'bg-purple-50 text-purple-600' },
-    { href: '/tax',         icon: Receipt,    label: 'Tax Reports',      sub: 'Quarterly filing',   badge: 0,           color: 'bg-emerald-50 text-emerald-600' },
-    { href: '/deposit',     icon: DollarSign, label: 'Deposit Slip',     sub: 'Auto-generate',      badge: 0,           color: 'bg-green-50 text-green-700' },
-    { href: '/bank',        icon: Building2,  label: 'Bank Recon',       sub: 'Match deposits',     badge: 0,           color: 'bg-blue-50 text-blue-700' },
+    { href: '/invoices',    icon: FileText,   label: 'Invoices',         sub: 'Scan vendor invoices', badge: pendingInv, color: 'bg-pink-500/10 text-pink-400' },
+    { href: '/inventory',   icon: Package,    label: 'Inventory',        sub: 'Stock & movement',   badge: outOfStock,  color: 'bg-blue-500/10 text-blue-400' },
+    { href: '/ordering',    icon: Brain,      label: 'AI Ordering',      sub: '90-day reorders',    badge: 0,           color: 'bg-violet-500/10 text-violet-400' },
+    { href: '/alerts',      icon: Bell,       label: 'Alerts',           sub: 'Price & stock',      badge: 0,           color: 'bg-amber-500/10 text-amber-400' },
+    { href: '/reports',     icon: TrendingUp, label: 'Reports & P&L',    sub: 'Trends & analytics', badge: 0,           color: 'bg-green-500/10 text-green-400' },
+    { href: '/employees',   icon: Users,      label: 'Employees',        sub: 'Time clock & pay',   badge: staffIn,     color: 'bg-cyan-500/10 text-cyan-400' },
+    { href: '/fuel',        icon: Fuel,       label: 'Fuel Margins',     sub: 'Cost vs price',      badge: 0,           color: 'bg-orange-500/10 text-orange-400' },
+    { href: '/shrink',      icon: AlertTriangle, label: 'Shrink & Waste',sub: 'Loss tracking',      badge: 0,           color: 'bg-red-500/10 text-red-400' },
+    { href: '/performance', icon: Users,      label: 'Performance',      sub: 'Employee stats',     badge: 0,           color: 'bg-indigo-500/10 text-indigo-400' },
+    { href: '/trends',      icon: TrendingUp, label: 'Annual Trends',    sub: 'Year over year',     badge: 0,           color: 'bg-teal-500/10 text-teal-400' },
+    { href: '/email',       icon: Mail,       label: 'Email Reader',     sub: 'AI inbox summaries', badge: 0,           color: 'bg-blue-500/10 text-blue-400' },
+    { href: '/billing',     icon: Receipt,    label: 'Invoicing',        sub: 'Bill your customers', badge: 0,           color: 'bg-purple-500/10 text-purple-400' },
+    { href: '/tax',         icon: Receipt,    label: 'Tax Reports',      sub: 'Quarterly filing',   badge: 0,           color: 'bg-emerald-500/10 text-emerald-400' },
+    { href: '/deposit',     icon: DollarSign, label: 'Deposit Slip',     sub: 'Auto-generate',      badge: 0,           color: 'bg-green-500/10 text-green-400' },
+    { href: '/bank',        icon: Building2,  label: 'Bank Recon',       sub: 'Match deposits',     badge: 0,           color: 'bg-blue-500/10 text-blue-400' },
     { href: '/vendors',     icon: Shield,     label: 'Vendors',          sub: 'Price tracking',     badge: 0,           color: 'bg-white/5 text-gray-400' },
     { href: '/search',      icon: Brain,      label: 'Search',           sub: 'Find anything',      badge: 0,           color: 'bg-white/5 text-gray-400' },
     { href: '/migration',   icon: Download,   label: 'Import Data',      sub: 'CSV import',         badge: 0,           color: 'bg-white/5 text-gray-500' },
@@ -505,7 +505,7 @@ export default function HomePage() {
             {visibleApps.map(app => (
               <Link key={app.href} href={app.href}
                 className="rounded-xl2 bg-dark-card border border-dark-border shadow-lg shadow-black/10 p-4 flex items-center gap-3 active:scale-[0.98] transition-all relative">
-                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', toDarkIcon(app.color))}>
+                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', app.color)}>
                   <app.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -527,7 +527,7 @@ export default function HomePage() {
             {visibleApps.map(app => (
               <Link key={app.href} href={app.href}
                 className="rounded-xl2 bg-dark-card border border-dark-border p-4 flex items-center gap-3 hover:border-dark-primary/40 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden shadow-lg shadow-black/10">
-                <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', toDarkIcon(app.color))}>
+                <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', app.color)}>
                   <app.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">

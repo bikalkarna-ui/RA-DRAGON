@@ -416,7 +416,7 @@ export default function InvoicesPage() {
                         <button
                           onClick={e => deleteInvoice(inv.id, e)}
                           disabled={deleting === inv.id}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                          className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
                           {deleting === inv.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                         </button>
                       </div>

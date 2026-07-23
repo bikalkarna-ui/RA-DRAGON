@@ -147,7 +147,7 @@ function EmployeesTab({ store }: { store: any }) {
                       emp.is_active ? 'bg-white/10 text-gray-400 hover:bg-gray-200' : 'bg-green-100 text-green-700 hover:bg-green-200')}>
                     {emp.is_active ? 'Deactivate' : 'Activate'}
                   </button>
-                  <button onClick={() => del(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                  <button onClick={() => del(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>

@@ -144,7 +144,7 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
           {REASONS.map(r => (
             <button key={r} onClick={() => setReason(r)}
               className={cn('rounded-xl py-3 text-sm font-bold border-2 transition-colors',
-                reason === r ? 'border-red-400 bg-red-50 text-red-700' : 'border-white/10 bg-card text-gray-400')}>
+                reason === r ? 'border-red-400 bg-red-500/10 text-red-400' : 'border-white/10 bg-card text-gray-400')}>
               {r}
             </button>
           ))}
@@ -425,7 +425,7 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
           {VENDORS.map(v => (
             <button key={v} onClick={() => setVendor(v)}
               className={cn('rounded-xl py-3 text-sm font-bold border-2 transition-colors',
-                vendor === v ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-white/10 bg-card text-gray-400')}>
+                vendor === v ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-white/10 bg-card text-gray-400')}>
               {v}
             </button>
           ))}
@@ -476,10 +476,10 @@ export default function CashierPage() {
   if (!mounted) return null;
 
   const ACTIONS = [
-    { id: 'drop' as Screen,    icon: DollarSign, label: 'Safe Drop',       sub: 'Record cash dropped into safe', color: 'bg-green-500', light: 'bg-green-50 text-green-700' },
-    { id: 'paidout' as Screen, icon: AlertTriangle, label: 'Paid Out',     sub: 'Cash taken from register',      color: 'bg-red-500',   light: 'bg-red-50 text-red-700' },
-    { id: 'vendor' as Screen,  icon: Package,    label: 'Vendor Arrived',  sub: 'Log delivery & scan invoice',   color: 'bg-blue-500',  light: 'bg-blue-50 text-blue-700' },
-    { id: 'lottery' as Screen, icon: FileText,   label: 'Lottery Book',    sub: 'Activate or close a book',      color: 'bg-amber-500', light: 'bg-amber-50 text-amber-700' },
+    { id: 'drop' as Screen,    icon: DollarSign, label: 'Safe Drop',       sub: 'Record cash dropped into safe', color: 'bg-green-500', light: 'bg-green-500/10 text-green-400' },
+    { id: 'paidout' as Screen, icon: AlertTriangle, label: 'Paid Out',     sub: 'Cash taken from register',      color: 'bg-red-500',   light: 'bg-red-500/10 text-red-400' },
+    { id: 'vendor' as Screen,  icon: Package,    label: 'Vendor Arrived',  sub: 'Log delivery & scan invoice',   color: 'bg-blue-500',  light: 'bg-blue-500/10 text-blue-400' },
+    { id: 'lottery' as Screen, icon: FileText,   label: 'Lottery Book',    sub: 'Activate or close a book',      color: 'bg-amber-500', light: 'bg-amber-500/10 text-amber-400' },
   ];
 
   if (!store) return (
