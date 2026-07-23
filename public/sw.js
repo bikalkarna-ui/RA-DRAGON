@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ra-dragon-v1';
+const CACHE_NAME = 'ra-dragon-v2-2026-07-22';
 const OFFLINE_URLS = [
   '/home',
   '/pos',
