@@ -50,11 +50,13 @@ module.exports = {
         'fade-up': 'fadeUp 0.4s ease both',
         'scale-in': 'scaleIn 0.2s ease both',
         'slide-in': 'slideIn 0.3s ease both',
+        'slide-up': 'slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) both',
       },
       keyframes: {
         fadeUp: { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
         scaleIn: { from: { opacity: '0', transform: 'scale(0.96)' }, to: { opacity: '1', transform: 'scale(1)' } },
         slideIn: { from: { opacity: '0', transform: 'translateX(-8px)' }, to: { opacity: '1', transform: 'translateX(0)' } },
+        slideUp: { from: { transform: 'translateY(100%)' }, to: { transform: 'translateY(0)' } },
       },
     },
   },
