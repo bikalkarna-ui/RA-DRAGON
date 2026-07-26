@@ -180,8 +180,8 @@ export default function MigrationPage() {
               <div><p className="num text-3xl font-bold text-accent">{importResult.failed}</p><p className="text-muted text-sm">Failed</p></div>
             </div>
             {importResult.failureReasons && importResult.failureReasons.length > 0 && (
-              <div className="text-left max-w-md mx-auto mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
-                <p className="text-xs font-bold text-red-700 mb-1">Some rows failed:</p>
+              <div className="text-left max-w-md mx-auto mb-6 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+                <p className="text-xs font-bold text-red-400 mb-1">Some rows failed:</p>
                 {importResult.failureReasons.map((r, i) => <p key={i} className="text-xs text-red-600">{r}</p>)}
               </div>
             )}

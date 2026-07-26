@@ -116,7 +116,7 @@ export default function OnboardingPage() {
         {/* Step 1 */}
         {step === 1 && (
           <div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 mb-4">
               <Store className="h-7 w-7 text-accent" />
             </div>
             <h1 className="text-2xl font-black text-text mb-1">Create Your Store</h1>
@@ -154,7 +154,7 @@ export default function OnboardingPage() {
         {/* Step 2 */}
         {step === 2 && (
           <div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 mb-4">
               <Users className="h-7 w-7 text-blue-600" />
             </div>
             <h1 className="text-2xl font-black text-text mb-1">Add First Employee</h1>
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
         {/* Step 3 */}
         {step === 3 && (
           <div className="text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50 mx-auto mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/10 mx-auto mb-4">
               <BarChart3 className="h-7 w-7 text-green-600" />
             </div>
             <h1 className="text-2xl font-black text-text mb-2">You're all set! 🎉</h1>
@@ -220,8 +220,8 @@ export default function OnboardingPage() {
         )}
 
         {error && (
-          <div className="mt-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 

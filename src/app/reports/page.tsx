@@ -186,10 +186,10 @@ export default function ReportsPage() {
                       <ClientOnly>
                         <ResponsiveContainer width="100%" height={200}>
                           <BarChart data={tab === 'week' ? chartData.slice(-7) : chartData} margin={{ top: 5, right: 5, bottom: 20, left: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#26282F" />
                             <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} angle={-45} textAnchor="end" />
                             <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={v => '$' + (v/1000).toFixed(0) + 'k'} />
-                            <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']} labelStyle={{ fontSize: 12 }} />
+                            <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']} labelStyle={{ fontSize: 12, color: '#fff' }} contentStyle={{ background: '#17191E', border: '1px solid #26282F', borderRadius: 12, color: '#fff' }} />
                             <Bar dataKey="sales" fill="#C0392B" radius={[4,4,0,0]} />
                           </BarChart>
                         </ResponsiveContainer>
@@ -208,12 +208,12 @@ export default function ReportsPage() {
                   {bestDay && worstDay && (
                     <div className="grid grid-cols-2 gap-3">
                       <div className="tile p-4 border-l-4 border-l-green-500">
-                        <div className="flex items-center gap-1.5 mb-2"><ArrowUpRight className="h-4 w-4 text-green-600" /><p className="text-xs font-bold text-green-800">Best Day</p></div>
+                        <div className="flex items-center gap-1.5 mb-2"><ArrowUpRight className="h-4 w-4 text-green-600" /><p className="text-xs font-bold text-green-300">Best Day</p></div>
                         <p className="num font-black text-text">{fmt.currency(n(bestDay.gross_sales))}</p>
                         <p className="text-xs text-muted mt-1">{(() => { try { return new Date(bestDay.report_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return bestDay.report_date; } })()}</p>
                       </div>
                       <div className="tile p-4 border-l-4 border-l-red-400">
-                        <div className="flex items-center gap-1.5 mb-2"><ArrowDownRight className="h-4 w-4 text-red-600" /><p className="text-xs font-bold text-red-800">Worst Day</p></div>
+                        <div className="flex items-center gap-1.5 mb-2"><ArrowDownRight className="h-4 w-4 text-red-600" /><p className="text-xs font-bold text-red-300">Worst Day</p></div>
                         <p className="num font-black text-text">{fmt.currency(n(worstDay.gross_sales))}</p>
                         <p className="text-xs text-muted mt-1">{(() => { try { return new Date(worstDay.report_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return worstDay.report_date; } })()}</p>
                       </div>
@@ -268,9 +268,9 @@ export default function ReportsPage() {
                   return (
                     <div key={d} className={cn('rounded-xl p-1.5 text-center min-h-12 flex flex-col items-center justify-center',
                       isToday ? 'ring-2 ring-accent' : '',
-                      rpt ? 'bg-green-50 border border-green-200' : 'bg-surface border border-border/30')}>
-                      <p className={cn('text-xs font-bold', isToday ? 'text-accent' : rpt ? 'text-green-800' : 'text-muted')}>{d}</p>
-                      {rpt && <p className="num text-[9px] font-bold text-green-700 leading-none mt-0.5">{fmt.currency(n(rpt.gross_sales)).replace('$', '$').split('.')[0]}</p>}
+                      rpt ? 'bg-green-500/10 border border-green-500/20' : 'bg-surface border border-border/30')}>
+                      <p className={cn('text-xs font-bold', isToday ? 'text-accent' : rpt ? 'text-green-300' : 'text-muted')}>{d}</p>
+                      {rpt && <p className="num text-[9px] font-bold text-green-400 leading-none mt-0.5">{fmt.currency(n(rpt.gross_sales)).replace('$', '$').split('.')[0]}</p>}
                     </div>
                   );
                 })}

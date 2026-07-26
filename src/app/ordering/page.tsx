@@ -119,7 +119,7 @@ export default function OrderingPage() {
         {/* Generate */}
         <div className="tile p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50"><Brain className="h-5 w-5 text-violet-600" /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10"><Brain className="h-5 w-5 text-violet-600" /></div>
             <div><p className="font-bold text-text">Generate AI Purchase Order</p><p className="text-xs text-muted">AI analyzes 30/60/90-day velocity to calculate exact quantities</p></div>
           </div>
           <select value={vendor} onChange={e => setVendor(e.target.value)} className="inp mb-3">
@@ -127,7 +127,7 @@ export default function OrderingPage() {
             {vendorList.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
           {vendorList.length === 0 && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">
+            <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mb-3">
               No products have a vendor assigned yet. Set a vendor company for products in Inventory, or scan a vendor invoice — it fills this in automatically.
             </p>
           )}
@@ -139,15 +139,15 @@ export default function OrderingPage() {
         {/* Current generated order */}
         {currentOrder && (
           <div className="tile overflow-hidden border-2 border-violet-300">
-            <div className="bg-violet-50 px-5 py-4 border-b border-violet-200">
+            <div className="bg-violet-500/10 px-5 py-4 border-b border-violet-500/20">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1"><Zap className="h-4 w-4 text-violet-600" /><p className="font-bold text-text">AI Order — {currentOrder.vendor_name}</p></div>
-                  <p className="text-xs text-violet-700">{(currentOrder.purchase_order_items || []).length} items · Total: {fmt.currency(n(currentOrder.total))}</p>
+                  <p className="text-xs text-violet-400">{(currentOrder.purchase_order_items || []).length} items · Total: {fmt.currency(n(currentOrder.total))}</p>
                 </div>
                 <button onClick={() => exportPO(currentOrder)} className="btn btn-ghost text-sm h-9 px-4 gap-1.5"><Download className="h-4 w-4" />Export</button>
               </div>
-              {currentOrder.ai_notes && <div className="mt-2 text-xs text-violet-700 bg-violet-100 rounded-lg px-3 py-2">{currentOrder.ai_notes}</div>}
+              {currentOrder.ai_notes && <div className="mt-2 text-xs text-violet-400 bg-violet-100 rounded-lg px-3 py-2">{currentOrder.ai_notes}</div>}
             </div>
             <div className="divide-y divide-border/50">
               {(currentOrder.purchase_order_items || []).map((item: any) => (
@@ -156,7 +156,7 @@ export default function OrderingPage() {
                     <div className="flex-1">
                       <p className="font-semibold text-text text-sm">{item.product_name}</p>
                       <p className="text-xs text-muted">Stock: {item.current_stock} · Case: {item.case_pack} · {fmt.currency(item.unit_cost)}/unit</p>
-                      {item.ai_reason && <p className="text-xs text-violet-700 mt-1 bg-violet-50 rounded px-2 py-1">{item.ai_reason}</p>}
+                      {item.ai_reason && <p className="text-xs text-violet-400 mt-1 bg-violet-500/10 rounded px-2 py-1">{item.ai_reason}</p>}
                     </div>
                     <div className="flex items-center gap-2 ml-3">
                       <button onClick={() => updateQty(item.id, -item.case_pack)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-border text-muted hover:text-accent"><Minus className="h-4 w-4" /></button>

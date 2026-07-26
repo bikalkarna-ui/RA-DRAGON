@@ -155,9 +155,9 @@ export default function InventoryPage() {
         {/* KPI strip */}
         <div className="grid grid-cols-4 gap-2">
           {[
-            { label:'Out',      val: counts.out,      f:'out',      clr:'text-red-600',    bg: counts.out > 0 ? 'border-red-300 bg-red-50' : '' },
-            { label:'Critical', val: counts.critical,  f:'critical',  clr:'text-orange-600', bg: counts.critical > 0 ? 'border-orange-300 bg-orange-50' : '' },
-            { label:'Low',      val: counts.low,       f:'low',       clr:'text-amber-600',  bg: counts.low > 0 ? 'border-amber-300 bg-amber-50' : '' },
+            { label:'Out',      val: counts.out,      f:'out',      clr:'text-red-600',    bg: counts.out > 0 ? 'border-red-300 bg-red-500/10' : '' },
+            { label:'Critical', val: counts.critical,  f:'critical',  clr:'text-orange-600', bg: counts.critical > 0 ? 'border-orange-300 bg-orange-500/10' : '' },
+            { label:'Low',      val: counts.low,       f:'low',       clr:'text-amber-600',  bg: counts.low > 0 ? 'border-amber-300 bg-amber-500/10' : '' },
             { label:'Total',    val: counts.total,     f:'all',       clr:'text-text',       bg:'' },
           ].map(s => (
             <button key={s.f} onClick={() => setFilter(filter === s.f ? 'all' : s.f as ViewFilter)}
@@ -176,7 +176,7 @@ export default function InventoryPage() {
           </div>
           <div className="tile p-4 text-center">
             <p className="text-xs text-muted font-medium">Retail Value</p>
-            <p className="num font-black text-green-700 text-lg mt-0.5">{fmt.currency(retailVal)}</p>
+            <p className="num font-black text-green-400 text-lg mt-0.5">{fmt.currency(retailVal)}</p>
           </div>
         </div>
 
@@ -202,8 +202,8 @@ export default function InventoryPage() {
           <p className="text-xs text-muted mb-3">AI reads every product, price, and quantity — updates costs automatically</p>
           <MultiScan endpoint="/api/scan-invoice" onResult={(d) => { setInvoiceResult(d); fetch_(); }} title="Scan Invoice" hint="Photo of vendor invoice" />
           {invoiceResult && (
-            <div className="mt-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3">
-              <p className="text-sm font-bold text-amber-900">✓ {invoiceResult.items?.length ?? 0} items from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>
+            <div className="mt-3 rounded-xl border-2 border-amber-300 bg-amber-500/10 p-3">
+              <p className="text-sm font-bold text-amber-200">✓ {invoiceResult.items?.length ?? 0} items from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>
               <a href="/invoices" className="mt-2 inline-flex items-center gap-2 rounded-xl bg-accent text-white px-4 py-2 text-sm font-bold">Go to Invoices → Review &amp; Apply</a>
             </div>
           )}
@@ -245,9 +245,9 @@ export default function InventoryPage() {
                 <div><label className="lbl">Cost $</label><input type="number" step="0.01" min="0" value={form.unit_cost} onChange={e => f('unit_cost', e.target.value)} className="inp" /></div>
                 <div><label className="lbl">Sell Price $</label><input type="number" step="0.01" min="0" value={form.unit_price} onChange={e => f('unit_price', e.target.value)} className="inp" /></div>
                 {form.unit_cost && form.unit_price && Number(form.unit_price) > 0 && (
-                  <div className="sm:col-span-2 rounded-xl bg-green-50 border border-green-200 px-4 py-2 flex justify-between">
-                    <span className="text-sm text-green-700">Margin</span>
-                    <span className="num font-bold text-green-800">{fmt.percent(((Number(form.unit_price)-Number(form.unit_cost))/Number(form.unit_price))*100)}</span>
+                  <div className="sm:col-span-2 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-2 flex justify-between">
+                    <span className="text-sm text-green-400">Margin</span>
+                    <span className="num font-bold text-green-300">{fmt.percent(((Number(form.unit_price)-Number(form.unit_cost))/Number(form.unit_price))*100)}</span>
                   </div>
                 )}
                 <div><label className="lbl">Quantity</label><input type="number" min="0" value={form.quantity} onChange={e => f('quantity', e.target.value)} className="inp" /></div>
@@ -267,20 +267,20 @@ export default function InventoryPage() {
         {/* Dead stock insight */}
         {deadStock.length > 0 && (
           <div className="tile p-4 border-l-4 border-l-amber-400">
-            <div className="flex items-center gap-2 mb-2"><AlertTriangle className="h-4 w-4 text-amber-600" /><p className="text-sm font-bold text-amber-800">Dead Stock ({deadStock.length} items)</p></div>
-            <p className="text-xs text-amber-700">These products have never sold: {deadStock.slice(0,3).map(p => p.name).join(', ')}{deadStock.length > 3 ? ` +${deadStock.length-3} more` : ''}</p>
+            <div className="flex items-center gap-2 mb-2"><AlertTriangle className="h-4 w-4 text-amber-600" /><p className="text-sm font-bold text-amber-300">Dead Stock ({deadStock.length} items)</p></div>
+            <p className="text-xs text-amber-400">These products have never sold: {deadStock.slice(0,3).map(p => p.name).join(', ')}{deadStock.length > 3 ? ` +${deadStock.length-3} more` : ''}</p>
           </div>
         )}
 
         {/* Top margin items */}
         {topMargin.length > 0 && (
           <div className="tile p-4 border-l-4 border-l-green-400">
-            <div className="flex items-center gap-2 mb-2"><TrendingUp className="h-4 w-4 text-green-600" /><p className="text-sm font-bold text-green-800">Highest Margin Products</p></div>
+            <div className="flex items-center gap-2 mb-2"><TrendingUp className="h-4 w-4 text-green-600" /><p className="text-sm font-bold text-green-300">Highest Margin Products</p></div>
             <div className="space-y-1">
               {topMargin.map(p => (
                 <div key={p.id} className="flex justify-between text-xs">
                   <span className="text-gray-300">{p.name}</span>
-                  <span className="num font-bold text-green-700">{fmt.percent(((p.unit_price-p.unit_cost)/p.unit_price)*100)}</span>
+                  <span className="num font-bold text-green-400">{fmt.percent(((p.unit_price-p.unit_cost)/p.unit_price)*100)}</span>
                 </div>
               ))}
             </div>
@@ -322,9 +322,9 @@ export default function InventoryPage() {
                           {p.location && ` · 📍${p.location}`}
                         </p>
                         {(st === 'out' || st === 'critical') && (
-                          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-100 px-2.5 py-1.5">
+                          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-500/10 border border-red-500/20 px-2.5 py-1.5">
                             <Zap className="h-3 w-3 text-red-500 shrink-0" />
-                            <p className="text-[11px] text-red-700 font-medium">
+                            <p className="text-[11px] text-red-400 font-medium">
                               {st === 'out' ? `Order immediately from ${p.vendor_company ?? 'vendor'} — reorder qty: ${p.reorder_qty || p.min_quantity*2}` : `Only ${p.quantity} left — reorder soon`}
                             </p>
                           </div>
@@ -335,9 +335,9 @@ export default function InventoryPage() {
                           <button onClick={() => { setAdjustId(isAdj ? null : p.id); setAdjQty(''); setAdjNote(''); }}
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-border text-muted hover:text-text text-sm font-bold">±</button>
                           <div className={cn('flex h-10 min-w-14 items-center justify-center rounded-xl px-3',
-                            st==='out'?'bg-red-100':st==='critical'?'bg-orange-100':st==='low'?'bg-amber-100':'bg-green-50')}>
+                            st==='out'?'bg-red-100':st==='critical'?'bg-orange-100':st==='low'?'bg-amber-100':'bg-green-500/10')}>
                             <span className={cn('num font-black text-xl',
-                              st==='out'?'text-red-700':st==='critical'?'text-orange-700':st==='low'?'text-amber-700':'text-green-700')}>{p.quantity}</span>
+                              st==='out'?'text-red-400':st==='critical'?'text-orange-400':st==='low'?'text-amber-400':'text-green-400')}>{p.quantity}</span>
                           </div>
                         </div>
                         <div className="w-20">
@@ -353,7 +353,7 @@ export default function InventoryPage() {
                             <History className="h-3.5 w-3.5" />
                           </button>
                           <button onClick={() => editProduct(p)} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:text-text hover:bg-surface"><Pencil className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => del(p.id)} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:text-accent hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => del(p.id)} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:text-accent hover:bg-red-500/10"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
                     </div>

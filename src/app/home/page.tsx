@@ -470,6 +470,30 @@ export default function HomePage() {
       </div>
 
       <div className="px-4 md:px-8 space-y-5">
+        {/* Colorful stat row — real data only */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Today's Sales", value: fmt.currency(grossSales), sub: hasReport ? 'Reported' : 'No report yet', color: 'green', icon: DollarSign },
+            { label: 'Fuel Revenue', value: fmt.currency(fuelSales), sub: 'Today', color: 'orange', icon: Fuel },
+            { label: 'Week Sales', value: fmt.currency(weekSales), sub: 'Last 7 days', color: 'blue', icon: TrendingUp },
+            { label: 'Inventory Value', value: fmt.currency(invValue), sub: `${outOfStock + lowStock} need attention`, color: 'purple', icon: Package },
+          ].map(stat => (
+            <div key={stat.label} className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-4">
+              <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl mb-3', {
+                green: 'bg-green-500/15 text-green-400',
+                orange: 'bg-orange-500/15 text-orange-400',
+                blue: 'bg-blue-500/15 text-blue-400',
+                purple: 'bg-purple-500/15 text-purple-400',
+              }[stat.color])}>
+                <stat.icon className="h-4 w-4" />
+              </div>
+              <p className="text-lg font-black text-white leading-tight truncate">{stat.value}</p>
+              <p className="text-xs text-dark-sub mt-0.5">{stat.label}</p>
+              <p className="text-[10px] text-dark-sub/70 mt-1">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+
         {/* Store Health */}
         <div className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-4 flex items-center gap-4">
           <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl font-black text-xl text-white',

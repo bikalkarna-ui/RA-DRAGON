@@ -77,7 +77,7 @@ export default function ShrinkPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="tile p-4 text-center border-l-4 border-l-red-400">
             <p className="text-xs text-muted">This Month</p>
-            <p className="num font-black text-xl text-red-700">{fmt.currency(monthCost)}</p>
+            <p className="num font-black text-xl text-red-400">{fmt.currency(monthCost)}</p>
             <p className="text-xs text-muted">{thisMonth.length} items</p>
           </div>
           <div className="tile p-4 text-center">
@@ -134,7 +134,7 @@ export default function ShrinkPage() {
             {events.map(ev => (
               <div key={ev.id} className="flex items-center gap-3 px-5 py-4">
                 <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm',
-                  ev.type==='theft'?'bg-red-100 text-red-700':ev.type==='expired'?'bg-amber-100 text-amber-700':'bg-white/10 text-gray-400')}>
+                  ev.type==='theft'?'bg-red-100 text-red-400':ev.type==='expired'?'bg-amber-100 text-amber-400':'bg-white/10 text-gray-400')}>
                   {ev.type==='theft'?'🚨':ev.type==='expired'?'⏰':ev.type==='waste'?'🗑':'📦'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -145,7 +145,7 @@ export default function ShrinkPage() {
                   <p className="num font-bold text-red-600">{fmt.currency(n(ev.total_cost))}</p>
                   <p className="text-xs text-muted">{(() => { try { return new Date(ev.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}); } catch { return ''; } })()}</p>
                 </div>
-                <button onClick={() => del(ev.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted hover:text-accent hover:bg-red-50">
+                <button onClick={() => del(ev.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted hover:text-accent hover:bg-red-500/10">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>

@@ -131,7 +131,7 @@ export default function BillingPage() {
                     </p>
                   </div>
                   <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full uppercase',
-                    inv.status === 'sent' ? 'bg-green-100 text-green-700' : inv.status === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-white/10 text-gray-500')}>
+                    inv.status === 'sent' ? 'bg-green-100 text-green-400' : inv.status === 'paid' ? 'bg-blue-100 text-blue-400' : 'bg-white/10 text-gray-500')}>
                     {inv.status}
                   </span>
                 </div>
@@ -221,7 +221,7 @@ export default function BillingPage() {
                 <div className="flex justify-between text-base font-black text-accent pt-1"><span>Total</span><span className="num">{fmt.currency(total)}</span></div>
               </div>
 
-              {formErr && <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">{formErr}</p>}
+              {formErr && <p className="text-sm text-red-600 font-semibold bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{formErr}</p>}
 
               <button onClick={createInvoice} disabled={creating} className="btn btn-accent btn-full gap-2 py-4">
                 {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
