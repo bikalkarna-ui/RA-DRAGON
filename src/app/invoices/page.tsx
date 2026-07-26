@@ -164,13 +164,13 @@ export default function InvoicesPage() {
           <div id="review-panel" className="tile overflow-hidden border-2 border-amber-300">
 
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-border bg-amber-500/10">
+            <div className="flex items-center justify-between p-5 border-b border-border bg-amber-50">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="font-black text-text text-lg">{reviewMeta.vendor_name ?? 'Invoice'}</p>
                   {confirmResult
                     ? <span className="chip chip-green text-xs">✓ Applied to inventory</span>
-                    : <span className="chip bg-amber-100 text-amber-400 text-xs">Needs Review</span>
+                    : <span className="chip bg-amber-100 text-amber-700 text-xs">Needs Review</span>
                   }
                 </div>
                 <p className="text-sm text-muted">
@@ -186,28 +186,28 @@ export default function InvoicesPage() {
 
             {/* Success banner */}
             {confirmResult && (
-              <div className="m-5 rounded-xl bg-green-500/10 border-2 border-green-300 p-4">
-                <p className="font-bold text-green-300">✓ Invoice applied to inventory!</p>
-                <p className="text-sm text-green-400 mt-1">
+              <div className="m-5 rounded-xl bg-green-50 border-2 border-green-300 p-4">
+                <p className="font-bold text-green-800">✓ Invoice applied to inventory!</p>
+                <p className="text-sm text-green-700 mt-1">
                   {confirmResult.created} new products added · {confirmResult.updated} products updated
                 </p>
-                <button onClick={closeReview} className="mt-2 text-sm text-green-400 font-semibold underline">Done</button>
+                <button onClick={closeReview} className="mt-2 text-sm text-green-700 font-semibold underline">Done</button>
               </div>
             )}
 
             {/* Summary stats */}
             {!confirmResult && items.length > 0 && (
               <div className="grid grid-cols-3 gap-3 p-5 border-b border-border">
-                <div className="rounded-xl bg-blue-500/10 p-3 text-center">
-                  <p className="num font-black text-blue-400 text-xl">{newItems.length}</p>
+                <div className="rounded-xl bg-blue-50 p-3 text-center">
+                  <p className="num font-black text-blue-700 text-xl">{newItems.length}</p>
                   <p className="text-xs text-blue-600 font-medium">New Products</p>
                 </div>
-                <div className="rounded-xl bg-green-500/10 p-3 text-center">
-                  <p className="num font-black text-green-400 text-xl">{updateItems.length}</p>
+                <div className="rounded-xl bg-green-50 p-3 text-center">
+                  <p className="num font-black text-green-700 text-xl">{updateItems.length}</p>
                   <p className="text-xs text-green-600 font-medium">Updates</p>
                 </div>
-                <div className={cn('rounded-xl p-3 text-center', priceChanges.length > 0 ? 'bg-amber-500/10' : 'bg-white/5')}>
-                  <p className={cn('num font-black text-xl', priceChanges.length > 0 ? 'text-amber-400' : 'text-gray-400')}>{priceChanges.length}</p>
+                <div className={cn('rounded-xl p-3 text-center', priceChanges.length > 0 ? 'bg-amber-50' : 'bg-gray-50')}>
+                  <p className={cn('num font-black text-xl', priceChanges.length > 0 ? 'text-amber-700' : 'text-gray-700')}>{priceChanges.length}</p>
                   <p className={cn('text-xs font-medium', priceChanges.length > 0 ? 'text-amber-600' : 'text-muted')}>Price Changes</p>
                 </div>
               </div>
@@ -215,13 +215,13 @@ export default function InvoicesPage() {
 
             {/* Price change alert */}
             {priceChanges.length > 0 && !confirmResult && (
-              <div className="mx-5 mt-4 rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
+              <div className="mx-5 mt-4 rounded-xl bg-amber-50 border border-amber-200 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <p className="text-sm font-bold text-amber-300">{priceChanges.length} cost price change{priceChanges.length > 1 ? 's' : ''} detected</p>
+                  <p className="text-sm font-bold text-amber-800">{priceChanges.length} cost price change{priceChanges.length > 1 ? 's' : ''} detected</p>
                 </div>
                 {priceChanges.map(li => (
-                  <p key={li.id} className="text-xs text-amber-400">
+                  <p key={li.id} className="text-xs text-amber-700">
                     {li.matched_name ?? li.raw_description}: {fmt.currency(li.old_cost ?? 0)} → <span className="font-bold">{fmt.currency(li.unit_cost)}</span>
                   </p>
                 ))}
@@ -241,18 +241,18 @@ export default function InvoicesPage() {
                 {items.map(li => (
                   <div key={li.id} className={cn(
                     'rounded-2xl border p-4 transition-all',
-                    li._action === 'skip'    ? 'border-white/10 bg-white/5 opacity-50' :
-                    li.price_changed         ? 'border-amber-500/20 bg-amber-500/10/50' :
-                    li.is_new_product        ? 'border-blue-500/20 bg-blue-500/10/50' :
-                                               'border-white/10 bg-card'
+                    li._action === 'skip'    ? 'border-gray-200 bg-gray-50 opacity-50' :
+                    li.price_changed         ? 'border-amber-200 bg-amber-50/50' :
+                    li.is_new_product        ? 'border-blue-200 bg-blue-50/50' :
+                                               'border-gray-200 bg-card'
                   )}>
                     {/* Badges + raw description */}
                     <div className="flex items-center gap-2 flex-wrap mb-2">
                       <span className={cn('chip text-[10px] font-bold',
-                        li.is_new_product ? 'bg-blue-100 text-blue-400' : 'bg-green-100 text-green-400')}>
+                        li.is_new_product ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')}>
                         {li.is_new_product ? '+ New product' : '↻ Update existing'}
                       </span>
-                      {li.price_changed && <span className="chip bg-amber-100 text-amber-400 text-[10px] font-bold">⚠ Cost changed</span>}
+                      {li.price_changed && <span className="chip bg-amber-100 text-amber-700 text-[10px] font-bold">⚠ Cost changed</span>}
                     </div>
                     <p className="text-[11px] text-muted mb-2">Invoice says: "{li.raw_description}"</p>
 
@@ -275,7 +275,7 @@ export default function InvoicesPage() {
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <div>
                         <label className="lbl">Cost $</label>
-                        <div className="rounded-xl bg-card border border-white/10 px-3 py-2 text-sm font-bold num">
+                        <div className="rounded-xl bg-card border border-gray-200 px-3 py-2 text-sm font-bold num">
                           {fmt.currency(li.unit_cost)}
                         </div>
                         {li.price_changed && li.old_cost > 0 && (
@@ -300,7 +300,7 @@ export default function InvoicesPage() {
                       </div>
                       <div>
                         <label className="lbl">Qty Received</label>
-                        <div className="rounded-xl bg-card border border-white/10 px-3 py-2 text-sm font-bold num text-center">
+                        <div className="rounded-xl bg-card border border-gray-200 px-3 py-2 text-sm font-bold num text-center">
                           {li.quantity}
                         </div>
                       </div>
@@ -317,14 +317,14 @@ export default function InvoicesPage() {
                       <button
                         onClick={() => upd(li.id, { _action: li.is_new_product ? 'create' : 'update' })}
                         className={cn('flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-colors',
-                          li._action !== 'skip' ? 'bg-accent text-white' : 'bg-white/10 text-gray-500 hover:bg-gray-200')}>
+                          li._action !== 'skip' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
                         <Check className="h-3.5 w-3.5" />
                         {li.is_new_product ? 'Add to inventory' : 'Update & receive stock'}
                       </button>
                       <button
                         onClick={() => upd(li.id, { _action: 'skip' })}
                         className={cn('flex items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-bold transition-colors',
-                          li._action === 'skip' ? 'bg-red-100 text-red-400' : 'bg-white/10 text-gray-500 hover:bg-gray-200')}>
+                          li._action === 'skip' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
                         <X className="h-3.5 w-3.5" />Skip
                       </button>
                     </div>
@@ -334,14 +334,14 @@ export default function InvoicesPage() {
             )}
 
             {confirmError && (
-              <div className="mx-5 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+              <div className="mx-5 mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
                 <p className="text-sm text-accent font-medium">{confirmError}</p>
               </div>
             )}
 
             {/* Apply button */}
             {!confirmResult && !loadingItems && included.length > 0 && (
-              <div className="p-5 border-t border-border bg-white/5">
+              <div className="p-5 border-t border-border bg-gray-50">
                 <button onClick={applyInvoice} disabled={confirming}
                   className="btn btn-accent btn-full py-4 text-base gap-2">
                   {confirming
@@ -387,18 +387,18 @@ export default function InvoicesPage() {
                 const needsReview = inv.status === 'NEEDS_REVIEW';
                 return (
                   <div key={inv.id}
-                    className={cn('cursor-pointer transition-colors', isReviewing ? 'bg-amber-500/10' : needsReview ? 'hover:bg-amber-500/10/50' : 'hover:bg-surface')}
+                    className={cn('cursor-pointer transition-colors', isReviewing ? 'bg-amber-50' : needsReview ? 'hover:bg-amber-50/50' : 'hover:bg-surface')}
                     onClick={() => openReview(inv)}>
                     <div className="flex items-center gap-3 px-5 py-4">
                       <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
-                        needsReview ? 'bg-amber-100' : inv.status === 'COMPLETED' ? 'bg-green-500/10' : 'bg-pink-500/10')}>
-                        <FileText className={cn('h-5 w-5', needsReview ? 'text-amber-600' : inv.status === 'COMPLETED' ? 'text-green-500' : 'text-pink-400')} />
+                        needsReview ? 'bg-amber-100' : inv.status === 'COMPLETED' ? 'bg-green-50' : 'bg-pink-50')}>
+                        <FileText className={cn('h-5 w-5', needsReview ? 'text-amber-600' : inv.status === 'COMPLETED' ? 'text-green-500' : 'text-pink-700')} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-0.5">
                           <p className="text-sm font-bold text-text">{inv.vendor_name ?? 'Unknown vendor'}</p>
                           {inv.price_changes_count > 0 && (
-                            <span className="chip bg-amber-100 text-amber-400 text-[10px]">⚠ {inv.price_changes_count} price changes</span>
+                            <span className="chip bg-amber-100 text-amber-700 text-[10px]">⚠ {inv.price_changes_count} price changes</span>
                           )}
                         </div>
                         <p className="text-xs text-muted">
@@ -409,21 +409,21 @@ export default function InvoicesPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         {inv.total_amount > 0 && <span className="num text-sm font-bold text-text">{fmt.currency(inv.total_amount)}</span>}
                         <span className={cn('chip text-[10px] font-bold',
-                          inv.status === 'NEEDS_REVIEW' ? 'bg-amber-100 text-amber-400' :
+                          inv.status === 'NEEDS_REVIEW' ? 'bg-amber-100 text-amber-700' :
                           inv.status === 'COMPLETED'    ? 'chip-green' : 'chip-gray')}>
                           {inv.status === 'NEEDS_REVIEW' ? 'Review' : inv.status === 'COMPLETED' ? '✓ Done' : inv.status}
                         </span>
                         <button
                           onClick={e => deleteInvoice(inv.id, e)}
                           disabled={deleting === inv.id}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                          className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-600 transition-colors">
                           {deleting === inv.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                         </button>
                       </div>
                     </div>
                     {needsReview && !isReviewing && (
                       <div className="mx-4 mb-3 flex items-center justify-between rounded-xl bg-amber-100 px-4 py-2.5">
-                        <p className="text-xs font-semibold text-amber-300">Tap to review and apply to inventory</p>
+                        <p className="text-xs font-semibold text-amber-800">Tap to review and apply to inventory</p>
                         <ChevronRight className="h-4 w-4 text-amber-600" />
                       </div>
                     )}

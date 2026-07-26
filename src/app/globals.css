@@ -6,18 +6,18 @@
 
 @layer base {
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { background: #09090B; scroll-behavior: smooth; }
+  html { background: #F7F8FA; scroll-behavior: smooth; }
   body {
     @apply bg-transparent text-text antialiased;
-    background: #09090B;
+    background: #F7F8FA;
     font-family: 'Inter', ui-sans-serif, system-ui;
     overscroll-behavior: none;
   }
-  :focus-visible { outline: 2px solid #4F7CFF; outline-offset: 2px; }
-  ::selection { background: rgba(79,124,255,0.25); }
+  :focus-visible { outline: 2px solid #C0392B; outline-offset: 2px; }
+  ::selection { background: rgba(192,57,43,0.12); }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: #111318; }
-  ::-webkit-scrollbar-thumb { background: #26282F; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: #F3F4F6; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
 }
 
 @layer components {
@@ -30,7 +30,7 @@
 
   /* Cards */
   .tile {
-    @apply bg-card rounded-xl2 shadow-lg shadow-black/20 border border-border;
+    @apply bg-card rounded-xl2 shadow-card border border-border;
     transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   }
   .tile-hover:hover { @apply shadow-lifted border-dark-primary/30; transform: translateY(-2px); }

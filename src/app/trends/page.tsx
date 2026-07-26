@@ -98,10 +98,10 @@ export default function TrendsPage() {
             <ClientOnly>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={monthlyData} margin={{ top: 5, right: 5, bottom: 20, left: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#26282F" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                   <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9CA3AF' }} angle={-45} textAnchor="end" />
                   <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={v => '$'+(v/1000).toFixed(0)+'k'} />
-                  <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']} contentStyle={{ background: '#17191E', border: '1px solid #26282F', borderRadius: 12, color: '#fff' }} />
+                  <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']}  />
                   <Bar dataKey="sales" fill="#C0392B" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -113,13 +113,13 @@ export default function TrendsPage() {
         {bestDay && (
           <div className="grid grid-cols-2 gap-3">
             <div className="tile p-4 border-l-4 border-l-green-500">
-              <p className="text-xs font-bold text-green-400 mb-1">🏆 Best Day</p>
+              <p className="text-xs font-bold text-green-700 mb-1">🏆 Best Day</p>
               <p className="num font-black text-text">{fmt.currency(n(bestDay.gross_sales))}</p>
               <p className="text-xs text-muted">{bestDay.report_date}</p>
             </div>
             {worstDay && (
               <div className="tile p-4 border-l-4 border-l-red-400">
-                <p className="text-xs font-bold text-red-400 mb-1">📉 Lowest Day</p>
+                <p className="text-xs font-bold text-red-700 mb-1">📉 Lowest Day</p>
                 <p className="num font-black text-text">{fmt.currency(n(worstDay.gross_sales))}</p>
                 <p className="text-xs text-muted">{worstDay.report_date}</p>
               </div>

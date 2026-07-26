@@ -94,7 +94,7 @@ function EmployeesTab({ store }: { store: any }) {
                 <option value="owner">Owner</option>
               </select>
             </div>
-            {error && <p className="text-sm text-accent bg-red-500/10 rounded-xl px-3 py-2">{error}</p>}
+            {error && <p className="text-sm text-accent bg-red-50 rounded-xl px-3 py-2">{error}</p>}
             <button type="submit" disabled={saving} className="btn btn-accent btn-full py-3">
               {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Adding…</> : <><Check className="h-4 w-4" />Add employee</>}
             </button>
@@ -122,11 +122,11 @@ function EmployeesTab({ store }: { store: any }) {
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-text text-sm">{emp.name}</p>
                       <span className={cn('chip text-[10px]',
-                        emp.role === 'owner' ? 'bg-red-100 text-red-400' :
-                        emp.role === 'manager' ? 'bg-blue-100 text-blue-400' : 'bg-white/10 text-gray-400')}>
+                        emp.role === 'owner' ? 'bg-red-100 text-red-700' :
+                        emp.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')}>
                         {emp.role}
                       </span>
-                      {!emp.is_active && <span className="chip bg-white/10 text-gray-400 text-[10px]">inactive</span>}
+                      {!emp.is_active && <span className="chip bg-gray-100 text-gray-700 text-[10px]">inactive</span>}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-xs text-muted">PIN: </p>
@@ -144,10 +144,10 @@ function EmployeesTab({ store }: { store: any }) {
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => toggle(emp)}
                     className={cn('text-xs font-semibold rounded-xl px-3 py-1.5 transition-colors',
-                      emp.is_active ? 'bg-white/10 text-gray-400 hover:bg-gray-200' : 'bg-green-100 text-green-400 hover:bg-green-200')}>
+                      emp.is_active ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-green-100 text-green-700 hover:bg-green-200')}>
                     {emp.is_active ? 'Deactivate' : 'Activate'}
                   </button>
-                  <button onClick={() => del(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                  <button onClick={() => del(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-600 transition-colors">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -236,7 +236,7 @@ function StoreInfoTab({ store, refetch }: { store: any; refetch: () => void }) {
           placeholder="4-digit PIN" className="inp num" />
       </div>
 
-      {err && <p className="text-sm text-red-600 font-semibold bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{err}</p>}
+      {err && <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">{err}</p>}
       <button type="submit" disabled={saving} className="btn btn-accent btn-full py-4">
         {saved ? <><CheckCircle className="h-5 w-5" />Saved!</>
           : saving ? <><Loader2 className="h-5 w-5 animate-spin" />Saving…</>
@@ -323,9 +323,9 @@ function StoresTab({ stores, currentStore, switchStore, createStore }: {
           return (
             <button key={s.id} onClick={() => switchStore(s.id)}
               className={cn('w-full flex items-center gap-4 px-5 py-4 text-left transition-colors',
-                isActive ? 'bg-red-500/10' : 'hover:bg-surface')}>
+                isActive ? 'bg-red-50' : 'hover:bg-surface')}>
               <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
-                isActive ? 'bg-accent' : 'bg-white/10')}>
+                isActive ? 'bg-accent' : 'bg-gray-100')}>
                 <StoreIcon className={cn('h-6 w-6', isActive ? 'text-white' : 'text-gray-500')} />
               </div>
               <div className="flex-1 min-w-0">
@@ -346,9 +346,9 @@ function StoresTab({ stores, currentStore, switchStore, createStore }: {
       </div>
 
       {stores.length > 1 && (
-        <div className="rounded-2xl bg-blue-500/10 border border-blue-500/20 p-4">
-          <p className="text-sm font-semibold text-blue-300 mb-1">💡 Switching stores</p>
-          <p className="text-xs text-blue-400">
+        <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
+          <p className="text-sm font-semibold text-blue-800 mb-1">💡 Switching stores</p>
+          <p className="text-xs text-blue-700">
             Tap any store above to switch to it. All pages — inventory, sales, reports, employees — will show data for the selected store.
           </p>
         </div>
@@ -389,7 +389,7 @@ function ConnectorTab({ store }: { store: any }) {
       {/* What is this */}
       <div className="tile p-5">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
             <span className="text-accent text-lg font-black">R</span>
           </div>
           <div>
@@ -397,7 +397,7 @@ function ConnectorTab({ store }: { store: any }) {
             <p className="text-xs text-muted">Windows app that auto-syncs your POS to RYXSOR AI</p>
           </div>
         </div>
-        <div className="space-y-2 text-sm text-gray-400">
+        <div className="space-y-2 text-sm text-gray-700">
           <p>✓ Installs on your back-office PC (where Gilbarco Passport runs)</p>
           <p>✓ Automatically reads sales, inventory, and reports directly from POS</p>
           <p>✓ Syncs to your RYXSOR AI account every 30 seconds</p>
@@ -408,8 +408,8 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 1: Get connector */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 1 — Get the Connector App</p>
-        <p className="text-sm text-gray-400 mb-4">Download the Windows connector and install it on your store's back-office computer (the PC where Gilbarco Passport is installed).</p>
-        <div className="rounded-xl bg-white/5 border border-border p-4 text-sm font-mono text-gray-300 mb-3">
+        <p className="text-sm text-gray-700 mb-4">Download the Windows connector and install it on your store's back-office computer (the PC where Gilbarco Passport is installed).</p>
+        <div className="rounded-xl bg-gray-50 border border-border p-4 text-sm font-mono text-gray-800 mb-3">
           Coming soon — download link will appear here
         </div>
         <p className="text-xs text-muted">The connector runs silently in the background as a Windows Service.</p>
@@ -418,7 +418,7 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 2: Generate key */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 2 — Generate Your API Key</p>
-        <p className="text-sm text-gray-400 mb-4">Generate a secret key that connects your store to the RYXSOR AI connector. Enter this key in the connector's Settings screen.</p>
+        <p className="text-sm text-gray-700 mb-4">Generate a secret key that connects your store to the RYXSOR AI connector. Enter this key in the connector's Settings screen.</p>
 
         {!result && (
           <button onClick={generate} disabled={loading}
@@ -427,16 +427,16 @@ function ConnectorTab({ store }: { store: any }) {
           </button>
         )}
         {error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 mt-3">
-            <p className="text-sm text-red-400 font-medium">Error: {error}</p>
+          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 mt-3">
+            <p className="text-sm text-red-700 font-medium">Error: {error}</p>
             <p className="text-xs text-red-600 mt-1">Make sure you ran the Supabase SQL: <code>alter table stores add column if not exists connector_api_key text;</code></p>
           </div>
         )}
 
         {result?.success && (
           <div className="space-y-3">
-            <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-3 mb-3">
-              <p className="text-xs font-bold text-green-300 mb-1">✓ Key generated — copy these into the connector's Settings</p>
+            <div className="rounded-xl bg-green-50 border border-green-200 p-3 mb-3">
+              <p className="text-xs font-bold text-green-800 mb-1">✓ Key generated — copy these into the connector's Settings</p>
             </div>
 
             {[
@@ -447,10 +447,10 @@ function ConnectorTab({ store }: { store: any }) {
               <div key={label}>
                 <p className="text-xs text-muted font-semibold mb-1">{label}</p>
                 <div className="flex gap-2">
-                  <div className="flex-1 rounded-xl bg-white/5 border border-border px-3 py-2 text-xs font-mono text-gray-300 truncate">{value}</div>
+                  <div className="flex-1 rounded-xl bg-gray-50 border border-border px-3 py-2 text-xs font-mono text-gray-800 truncate">{value}</div>
                   <button onClick={() => copy(value, label)}
                     className={cn('flex h-9 w-16 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors',
-                      copied === label ? 'bg-green-500 text-white' : 'bg-white/10 text-gray-300 hover:bg-gray-200')}>
+                      copied === label ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200')}>
                     {copied === label ? '✓' : 'Copy'}
                   </button>
                 </div>
@@ -467,7 +467,7 @@ function ConnectorTab({ store }: { store: any }) {
       {/* Step 3: Setup */}
       <div className="tile p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-muted mb-3">Step 3 — Enter in Connector Settings</p>
-        <div className="space-y-2 text-sm text-gray-400">
+        <div className="space-y-2 text-sm text-gray-700">
           <p>1. Open RYXSOR AI Connector on your store PC</p>
           <p>2. Right-click the tray icon → Settings</p>
           <p>3. Paste the Cloud URL, Store ID, and API Key</p>
@@ -506,11 +506,11 @@ function AccountTab() {
           </div>
           <div>
             <p className="text-xs text-muted font-medium uppercase tracking-wide mb-1">Plan</p>
-            <span className="chip bg-green-100 text-green-400 text-xs font-bold">Starter — Free</span>
+            <span className="chip bg-green-100 text-green-700 text-xs font-bold">Starter — Free</span>
           </div>
         </div>
       </div>
-      <button onClick={logout} className="btn btn-ghost btn-full py-4 text-accent border-accent/30 hover:bg-red-500/10">
+      <button onClick={logout} className="btn btn-ghost btn-full py-4 text-accent border-accent/30 hover:bg-red-50">
         Sign Out
       </button>
     </div>

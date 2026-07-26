@@ -85,7 +85,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white/5 flex flex-col items-center justify-start py-8 px-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start py-8 px-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-8">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
@@ -101,7 +101,7 @@ export default function OnboardingPage() {
             <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-sm transition-all',
               step > s.id  ? 'bg-green-500 text-white' :
               step === s.id ? 'bg-accent text-white' :
-              'bg-gray-200 text-gray-400')}>
+              'bg-gray-200 text-gray-700')}>
               {step > s.id ? <Check className="h-4 w-4" /> : s.id}
             </div>
             {i < STEPS.length - 1 && (
@@ -116,7 +116,7 @@ export default function OnboardingPage() {
         {/* Step 1 */}
         {step === 1 && (
           <div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 mb-4">
               <Store className="h-7 w-7 text-accent" />
             </div>
             <h1 className="text-2xl font-black text-text mb-1">Create Your Store</h1>
@@ -154,7 +154,7 @@ export default function OnboardingPage() {
         {/* Step 2 */}
         {step === 2 && (
           <div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 mb-4">
               <Users className="h-7 w-7 text-blue-600" />
             </div>
             <h1 className="text-2xl font-black text-text mb-1">Add First Employee</h1>
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
         {/* Step 3 */}
         {step === 3 && (
           <div className="text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/10 mx-auto mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50 mx-auto mb-4">
               <BarChart3 className="h-7 w-7 text-green-600" />
             </div>
             <h1 className="text-2xl font-black text-text mb-2">You're all set! 🎉</h1>
@@ -210,9 +210,9 @@ export default function OnboardingPage() {
                 { icon: '📦', text: 'Scan vendor invoices to update inventory automatically' },
                 { icon: '👥', text: 'Employees clock in/out with their PIN' },
               ].map((tip, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3">
+                <div key={i} className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
                   <span className="text-xl">{tip.icon}</span>
-                  <span className="text-sm text-gray-300">{tip.text}</span>
+                  <span className="text-sm text-gray-800">{tip.text}</span>
                 </div>
               ))}
             </div>
@@ -220,8 +220,8 @@ export default function OnboardingPage() {
         )}
 
         {error && (
-          <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="mt-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
 
@@ -251,7 +251,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Progress text */}
-      <p className="text-xs text-gray-400 mt-4">Step {step} of {STEPS.length}</p>
+      <p className="text-xs text-gray-700 mt-4">Step {step} of {STEPS.length}</p>
     </div>
   );
 }

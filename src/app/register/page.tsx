@@ -138,7 +138,7 @@ export default function RegisterPage() {
                 className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />
             </div>
 
-            {err && <p className="text-red-400 text-sm bg-red-950/50 rounded-xl px-4 py-3">{err}</p>}
+            {err && <p className="text-red-700 text-sm bg-red-950/50 rounded-xl px-4 py-3">{err}</p>}
 
             <button type="submit" disabled={loading}
               className="w-full bg-accent hover:bg-red-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl py-4 transition-all disabled:opacity-60 mt-2">
@@ -154,7 +154,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-gray-400 mt-6">
           Already have an account?{' '}
-          <Link href="/login" className="text-accent font-semibold hover:text-red-400">Sign in</Link>
+          <Link href="/login" className="text-accent font-semibold hover:text-red-700">Sign in</Link>
         </p>
       </div>
     </div>

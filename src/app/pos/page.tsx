@@ -32,7 +32,7 @@ function Row({ label, value, sub, red, bold, indent }: {
   return (
     <div className={cn('flex items-center justify-between py-2 border-b border-gray-50 last:border-0', indent && 'pl-4')}>
       <div>
-        <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-400')}>{label}</span>
+        <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-700')}>{label}</span>
         {sub && <p className="text-[10px] text-muted">{sub}</p>}
       </div>
       <span className={cn('num text-sm font-bold', bold ? 'text-text' : red ? 'text-red-600' : 'text-gray-100')}>
@@ -75,7 +75,7 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
 
   if (safeDrops === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-white/10 p-4 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-gray-200 p-4 text-center">
         <p className="text-xs text-muted">No safe drops recorded yet</p>
         <p className="text-xs text-muted">Upload your till report to see safe drop total</p>
       </div>
@@ -86,15 +86,15 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
   if (alreadyCounted && !result) {
     return (
       <div className={cn('rounded-2xl border-2 p-5',
-        isShort ? 'border-red-400 bg-red-500/10' :
-        isOver  ? 'border-blue-400 bg-blue-500/10' :
-                  'border-green-400 bg-green-500/10')}>
+        isShort ? 'border-red-400 bg-red-50' :
+        isOver  ? 'border-blue-400 bg-blue-50' :
+                  'border-green-400 bg-green-50')}>
         <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{color: isShort?'#b91c1c':isOver?'#1d4ed8':'#15803d'}}>
           CASH COUNT RESULT
         </p>
         <div className="flex items-end justify-between mb-3">
           <div>
-            <p className={cn('num font-black text-5xl leading-none', isShort?'text-red-400':isOver?'text-blue-400':'text-green-400')}>
+            <p className={cn('num font-black text-5xl leading-none', isShort?'text-red-700':isOver?'text-blue-700':'text-green-700')}>
               {isOver?'+':''}{fmt.currency(diff!)}
             </p>
             <p className={cn('text-sm font-bold mt-2', isShort?'text-red-600':isOver?'text-blue-600':'text-green-600')}>
@@ -120,9 +120,9 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
   if (result && !result.error) {
     return (
       <div className={cn('rounded-2xl border-2 p-5',
-        result.status==='balanced' ? 'border-green-400 bg-green-500/10' :
-        result.status==='short'    ? 'border-red-400 bg-red-500/10' :
-                                     'border-blue-400 bg-blue-500/10')}>
+        result.status==='balanced' ? 'border-green-400 bg-green-50' :
+        result.status==='short'    ? 'border-red-400 bg-red-50' :
+                                     'border-blue-400 bg-blue-50')}>
         <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
            style={{color:result.status==='balanced'?'#15803d':result.status==='short'?'#b91c1c':'#1d4ed8'}}>
           CASH COUNT RESULT
@@ -130,7 +130,7 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
         <div className="flex items-end justify-between mb-3">
           <div>
             <p className={cn('num font-black text-5xl leading-none',
-              result.status==='balanced'?'text-green-400':result.status==='short'?'text-red-400':'text-blue-400')}>
+              result.status==='balanced'?'text-green-700':result.status==='short'?'text-red-700':'text-blue-700')}>
               {(result.short_over||0)>=0?'+':''}{fmt.currency(result.short_over||0)}
             </p>
             <p className={cn('text-sm font-bold mt-2',
@@ -150,17 +150,17 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
           <div className="rounded-xl bg-card/60 p-3 mb-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Zap className="h-3.5 w-3.5 text-violet-600"/>
-              <p className="text-xs font-bold text-violet-400">AI Analysis</p>
+              <p className="text-xs font-bold text-violet-700">AI Analysis</p>
             </div>
-            <p className="text-xs text-gray-300">{result.ai_reason}</p>
+            <p className="text-xs text-gray-800">{result.ai_reason}</p>
           </div>
         )}
 
         {result.ai_suggestions?.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-gray-300">What to check:</p>
+            <p className="text-xs font-bold text-gray-800">What to check:</p>
             {result.ai_suggestions.map((s:string,i:number) => (
-              <div key={i} className="flex gap-2 text-xs text-gray-400">
+              <div key={i} className="flex gap-2 text-xs text-gray-700">
                 <span className="font-black text-accent shrink-0">{i+1}.</span><span>{s}</span>
               </div>
             ))}
@@ -175,9 +175,9 @@ function CashCount({ safeDrops, reportDate, existingCount, onUpdate, storeId }: 
 
   // Input form
   return (
-    <div className="rounded-2xl border-2 border-amber-300 bg-amber-500/10 p-5">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400 mb-1">COUNT YOUR CASH</p>
-      <p className="text-xs text-amber-400 mb-1">
+    <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">COUNT YOUR CASH</p>
+      <p className="text-xs text-amber-700 mb-1">
         Safe drops total: <span className="num font-black text-text">{fmt.currency(safeDrops)}</span>
       </p>
       <p className="text-xs text-amber-600 mb-4">
@@ -256,9 +256,9 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
   const checksGiven: any[] = Array.isArray(report.checks_given) ? report.checks_given : [];
 
   // Status chip
-  const statusColor = shortOver < -0.50 ? 'bg-red-100 text-red-400' :
-                      shortOver > 0.50  ? 'bg-blue-100 text-blue-400' :
-                      actualCash > 0    ? 'chip-green' : 'bg-amber-100 text-amber-400';
+  const statusColor = shortOver < -0.50 ? 'bg-red-100 text-red-700' :
+                      shortOver > 0.50  ? 'bg-blue-100 text-blue-700' :
+                      actualCash > 0    ? 'chip-green' : 'bg-amber-100 text-amber-700';
   const statusText  = shortOver < -0.50 ? `⚠ Short ${fmt.currency(Math.abs(shortOver))}` :
                       shortOver > 0.50  ? `Over ${fmt.currency(shortOver)}` :
                       actualCash > 0    ? '✓ Balanced' : 'Count cash';
@@ -318,7 +318,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
 
           {/* IN */}
           <div className="p-5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-green-400 bg-green-500/10 rounded-lg px-3 py-1.5 inline-block mb-4">↑ IN — All Income</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-green-700 bg-green-50 rounded-lg px-3 py-1.5 inline-block mb-4">↑ IN — All Income</p>
             <Row label="Fuel Amount"           value={fuelSales} bold />
             <Row label="Total Merchandise"     value={insideSales} bold />
             <Row label="  Taxable Sales"       value={insideSales - taxes} indent />
@@ -335,7 +335,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
 
           {/* OUT */}
           <div className="p-5 border-t border-border">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 bg-red-500/10 rounded-lg px-3 py-1.5 inline-block mb-4">↓ OUT — All Expenses & Payouts</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-red-700 bg-red-50 rounded-lg px-3 py-1.5 inline-block mb-4">↓ OUT — All Expenses & Payouts</p>
             <Row label="Lotto Cashes Paid"     value={lotteryPayouts} red />
             <Row label="Scratch Off Cashes"    value={scratchPayouts} red />
             <Row label="Paid Out (Cash)"       value={paidOuts} red />
@@ -344,7 +344,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
                 <p className="text-xs font-bold text-gray-500 mt-3 mb-2">Vendor Checks Written</p>
                 {checksGiven.map((c:any,i:number) => (
                   <div key={i} className="flex justify-between py-2 border-b border-gray-50">
-                    <span className="text-sm text-gray-400">{c.payee||c.vendor||'Vendor'}{c.number?` #${c.number}`:''}</span>
+                    <span className="text-sm text-gray-700">{c.payee||c.vendor||'Vendor'}{c.number?` #${c.number}`:''}</span>
                     <span className="num text-sm font-bold text-red-600">-{fmt.currency(Number(c.amount||0))}</span>
                   </div>
                 ))}
@@ -356,29 +356,29 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
           <div className="p-5 border-t border-border">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-4">DAILY CLOSING</p>
             <div className="space-y-2">
-              <div className="flex justify-between py-2 border-b border-white/10">
+              <div className="flex justify-between py-2 border-b border-gray-200">
                 <span className="text-sm font-bold text-text">Daily Closing Cash (Safe Drops)</span>
                 <span className="num text-sm font-black text-text">{fmt.currency(safeDrops)}</span>
               </div>
               {actualCash > 0 && (
-                <div className="flex justify-between py-2 border-b border-white/10">
-                  <span className="text-sm text-gray-400">You Physically Counted</span>
+                <div className="flex justify-between py-2 border-b border-gray-200">
+                  <span className="text-sm text-gray-700">You Physically Counted</span>
                   <span className="num text-sm font-bold">{fmt.currency(actualCash)}</span>
                 </div>
               )}
               {checkSales > 0 && (
-                <div className="flex justify-between py-2 border-b border-white/10">
-                  <span className="text-sm text-gray-400">Daily Closing Check (Card Settlement)</span>
+                <div className="flex justify-between py-2 border-b border-gray-200">
+                  <span className="text-sm text-gray-700">Daily Closing Check (Card Settlement)</span>
                   <span className="num text-sm font-bold">{fmt.currency(checkSales)}</span>
                 </div>
               )}
               {shortOver !== 0 && actualCash > 0 && (
                 <div className={cn('flex justify-between py-3 rounded-xl px-3 mt-2 font-bold',
                   shortOver < 0 ? 'bg-red-100' : 'bg-green-100')}>
-                  <span className={cn('text-sm', shortOver < 0 ? 'text-red-400' : 'text-green-400')}>
+                  <span className={cn('text-sm', shortOver < 0 ? 'text-red-700' : 'text-green-700')}>
                     {shortOver < 0 ? '⚠ SHORT / OVER' : 'SHORT / OVER'}
                   </span>
-                  <span className={cn('num text-sm', shortOver < 0 ? 'text-red-400' : 'text-green-400')}>
+                  <span className={cn('num text-sm', shortOver < 0 ? 'text-red-700' : 'text-green-700')}>
                     {shortOver > 0 ? '+' : ''}{fmt.currency(shortOver)}
                   </span>
                 </div>
@@ -431,7 +431,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
                   const pct = insideSales > 0 ? (Math.abs(v)/insideSales*100) : 0;
                   return (
                     <div key={dept} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0">
-                      <span className="text-sm text-gray-400 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
+                      <span className="text-sm text-gray-700 flex-1 capitalize">{dept.toLowerCase().replace(/_/g,' ')}</span>
                       <span className="text-xs text-muted w-12 text-right">{pct.toFixed(1)}%</span>
                       <span className={cn('num text-sm font-bold w-20 text-right', v<0?'text-red-600':'text-text')}>{fmt.currency(v)}</span>
                     </div>
@@ -444,9 +444,9 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
           {/* AI Notes */}
           {report.ai_notes && (
             <div className="p-5 border-t border-border">
-              <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-4">
-                <div className="flex items-center gap-2 mb-2"><Zap className="h-4 w-4 text-violet-600"/><p className="text-sm font-bold text-violet-300">Auto-Processed</p></div>
-                <p className="text-sm text-violet-400">{report.ai_notes}</p>
+              <div className="rounded-xl bg-violet-50 border border-violet-200 p-4">
+                <div className="flex items-center gap-2 mb-2"><Zap className="h-4 w-4 text-violet-600"/><p className="text-sm font-bold text-violet-800">Auto-Processed</p></div>
+                <p className="text-sm text-violet-700">{report.ai_notes}</p>
               </div>
             </div>
           )}
@@ -454,7 +454,7 @@ function ReportCard({ report, onDelete, onRefresh, storeId }: {
           {/* Delete */}
           <div className="p-5 border-t border-border">
             <button onClick={doDelete} disabled={deleting}
-              className="btn btn-ghost w-full border border-red-500/20 text-red-500 hover:bg-red-500/10 gap-2 py-3">
+              className="btn btn-ghost w-full border border-red-200 text-red-500 hover:bg-red-50 gap-2 py-3">
               {deleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
               Delete this report
             </button>
@@ -523,7 +523,7 @@ export default function PosPage() {
               { step: '2', text: 'All sections update: Tax, Fuel, Trends, P&L, Inventory', done: true },
               { step: '3', text: 'Count cash in safe → app shows short or over instantly', done: false },
             ].map(s => (
-              <div key={s.step} className="flex items-center gap-2.5 text-xs text-gray-300">
+              <div key={s.step} className="flex items-center gap-2.5 text-xs text-gray-800">
                 <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black',
                   s.done ? 'bg-accent text-white' : 'bg-amber-400 text-white')}>
                   {s.step}
@@ -536,9 +536,9 @@ export default function PosPage() {
 
         {/* Scan success message */}
         {scanSuccess && (
-          <div className="rounded-2xl bg-green-500/10 border-2 border-green-400 px-4 py-3 flex items-center gap-3">
+          <div className="rounded-2xl bg-green-50 border-2 border-green-400 px-4 py-3 flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-            <p className="text-sm font-semibold text-green-300">{scanSuccess}</p>
+            <p className="text-sm font-semibold text-green-800">{scanSuccess}</p>
           </div>
         )}
 
@@ -563,15 +563,15 @@ export default function PosPage() {
         />
 
         {/* Info box about what auto-updates */}
-        <div className="rounded-2xl bg-blue-500/10 border border-blue-500/20 p-4">
+        <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
           <div className="flex items-start gap-2">
             <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-bold text-blue-300 mb-1">When you upload a report, these update automatically:</p>
+              <p className="text-xs font-bold text-blue-800 mb-1">When you upload a report, these update automatically:</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                 {['Tax Reports', 'Annual Trends', 'Reports & P&L', 'Fuel Margins',
                   'Vendor Invoices', 'Bank Reconciliation', 'Home Dashboard', 'AI Ordering'].map(s => (
-                  <p key={s} className="text-[11px] text-blue-400">✓ {s}</p>
+                  <p key={s} className="text-[11px] text-blue-700">✓ {s}</p>
                 ))}
               </div>
             </div>

@@ -100,13 +100,13 @@ export default function AlertsPage() {
         {!loading && tab === 'stock' && (
           <>
             {outOfStock.length === 0 && critical.length === 0 && lowStock.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">All stock levels look good</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-800">All stock levels look good</p></div>
             ) : (
               <>
                 {[
-                  { title: '🔴 Out of Stock', items: outOfStock, color: 'border-l-red-500', bg: 'bg-red-500/10', chip: 'chip-red', msg: 'Order immediately' },
-                  { title: '🟠 Critical — Order Now', items: critical, color: 'border-l-orange-500', bg: 'bg-orange-500/10', chip: 'chip-red', msg: 'Very low stock' },
-                  { title: '🟡 Low Stock — Order Soon', items: lowStock, color: 'border-l-amber-400', bg: 'bg-amber-500/10', chip: 'chip-yellow', msg: 'Below minimum' },
+                  { title: '🔴 Out of Stock', items: outOfStock, color: 'border-l-red-500', bg: 'bg-red-50', chip: 'chip-red', msg: 'Order immediately' },
+                  { title: '🟠 Critical — Order Now', items: critical, color: 'border-l-orange-500', bg: 'bg-orange-50', chip: 'chip-red', msg: 'Very low stock' },
+                  { title: '🟡 Low Stock — Order Soon', items: lowStock, color: 'border-l-amber-400', bg: 'bg-amber-50', chip: 'chip-yellow', msg: 'Below minimum' },
                 ].filter(g => g.items.length > 0).map(group => (
                   <div key={group.title} className="tile overflow-hidden">
                     <div className={cn('px-5 py-3 border-b border-border', group.bg)}>
@@ -119,7 +119,7 @@ export default function AlertsPage() {
                           <p className="text-xs text-muted mt-0.5">{p.vendor_company ?? '—'} · Min: {p.min_quantity} · Reorder: {p.reorder_qty || '—'}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className={cn('num font-black text-xl', p.quantity === 0 ? 'text-red-400' : 'text-amber-400')}>{p.quantity}</p>
+                          <p className={cn('num font-black text-xl', p.quantity === 0 ? 'text-red-700' : 'text-amber-700')}>{p.quantity}</p>
                           <p className="text-[10px] text-muted">units left</p>
                         </div>
                       </div>
@@ -135,11 +135,11 @@ export default function AlertsPage() {
         {!loading && tab === 'prices' && (
           <>
             {priceChanges.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">No price changes detected</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-800">No price changes detected</p></div>
             ) : (
               <div className="tile overflow-hidden">
-                <div className="px-5 py-3 border-b border-border bg-blue-500/10">
-                  <p className="text-sm font-bold text-blue-300">{priceChanges.length} price change{priceChanges.length > 1 ? 's' : ''} need review</p>
+                <div className="px-5 py-3 border-b border-border bg-blue-50">
+                  <p className="text-sm font-bold text-blue-800">{priceChanges.length} price change{priceChanges.length > 1 ? 's' : ''} need review</p>
                 </div>
                 {priceChanges.map((item, i) => {
                   const oldCost = n(item.unit_cost_old || item.old_unit_cost);
@@ -156,7 +156,7 @@ export default function AlertsPage() {
                         <div className="text-right shrink-0 ml-4">
                           <div className="flex items-center gap-2">
                             <span className="num text-sm text-muted line-through">{fmt.currency(oldCost)}</span>
-                            <span className="text-gray-400">→</span>
+                            <span className="text-gray-700">→</span>
                             <span className="num font-bold text-text">{fmt.currency(newCost)}</span>
                           </div>
                           <div className={cn('flex items-center gap-1 justify-end mt-1', diff > 0 ? 'text-red-600' : 'text-green-600')}>
@@ -180,11 +180,11 @@ export default function AlertsPage() {
         {!loading && tab === 'cash' && (
           <>
             {cashIssues.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">All drawers balanced this week</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-800">All drawers balanced this week</p></div>
             ) : (
               <div className="tile overflow-hidden">
-                <div className="px-5 py-3 border-b border-border bg-red-500/10">
-                  <p className="text-sm font-bold text-red-300">{cashIssues.length} cash discrepanc{cashIssues.length > 1 ? 'ies' : 'y'} this week</p>
+                <div className="px-5 py-3 border-b border-border bg-red-50">
+                  <p className="text-sm font-bold text-red-800">{cashIssues.length} cash discrepanc{cashIssues.length > 1 ? 'ies' : 'y'} this week</p>
                 </div>
                 {cashIssues.map(r => {
                   const diff = n(r.drawer_difference);
@@ -197,7 +197,7 @@ export default function AlertsPage() {
                           <p className="text-xs text-muted mt-0.5">Expected: {fmt.currency(n(r.expected_cash))} · Actual: {fmt.currency(n(r.actual_cash))}</p>
                         </div>
                         <div className={cn('rounded-xl px-3 py-1.5 text-center', isShort ? 'bg-red-100' : 'bg-green-100')}>
-                          <p className={cn('num font-black text-lg', isShort ? 'text-red-400' : 'text-green-400')}>{diff >= 0 ? '+' : ''}{fmt.currency(diff)}</p>
+                          <p className={cn('num font-black text-lg', isShort ? 'text-red-700' : 'text-green-700')}>{diff >= 0 ? '+' : ''}{fmt.currency(diff)}</p>
                           <p className={cn('text-[10px] font-bold', isShort ? 'text-red-600' : 'text-green-600')}>{isShort ? 'SHORT' : 'OVER'}</p>
                         </div>
                       </div>
@@ -220,7 +220,7 @@ export default function AlertsPage() {
             ) : (
               <div className="tile overflow-hidden divide-y divide-border/50">
                 {notifs.map(n => (
-                  <div key={n.id} className={cn('px-5 py-4 flex items-start gap-3', !n.is_read && 'bg-violet-500/10/50')}>
+                  <div key={n.id} className={cn('px-5 py-4 flex items-start gap-3', !n.is_read && 'bg-violet-50/50')}>
                     <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl',
                       n.type === 'out_of_stock' ? 'bg-red-100 text-red-600' :
                       n.type === 'low_stock' ? 'bg-amber-100 text-amber-600' :

@@ -114,8 +114,8 @@ export default function BillingPage() {
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted" /></div>
         ) : invoices.length === 0 ? (
           <div className="tile p-10 text-center">
-            <FileText className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-            <p className="font-bold text-gray-300">No invoices yet</p>
+            <FileText className="h-8 w-8 text-gray-800 mx-auto mb-3" />
+            <p className="font-bold text-gray-800">No invoices yet</p>
             <p className="text-sm text-muted mt-1">Create your first invoice to send to a customer.</p>
           </div>
         ) : (
@@ -131,7 +131,7 @@ export default function BillingPage() {
                     </p>
                   </div>
                   <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full uppercase',
-                    inv.status === 'sent' ? 'bg-green-100 text-green-400' : inv.status === 'paid' ? 'bg-blue-100 text-blue-400' : 'bg-white/10 text-gray-500')}>
+                    inv.status === 'sent' ? 'bg-green-100 text-green-700' : inv.status === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500')}>
                     {inv.status}
                   </span>
                 </div>
@@ -200,7 +200,7 @@ export default function BillingPage() {
                       <input type="number" step="0.01" value={it.unit_price} onChange={e => updateItem(i, 'unit_price', e.target.value)}
                         placeholder="Price" className="inp num w-24" />
                       {items.length > 1 && (
-                        <button onClick={() => removeItem(i)}><Trash2 className="h-4 w-4 text-red-400" /></button>
+                        <button onClick={() => removeItem(i)}><Trash2 className="h-4 w-4 text-red-700" /></button>
                       )}
                     </div>
                   ))}
@@ -221,7 +221,7 @@ export default function BillingPage() {
                 <div className="flex justify-between text-base font-black text-accent pt-1"><span>Total</span><span className="num">{fmt.currency(total)}</span></div>
               </div>
 
-              {formErr && <p className="text-sm text-red-600 font-semibold bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{formErr}</p>}
+              {formErr && <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">{formErr}</p>}
 
               <button onClick={createInvoice} disabled={creating} className="btn btn-accent btn-full gap-2 py-4">
                 {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}

@@ -32,9 +32,9 @@ export default function BankPage() {
   return (
     <Screen title="Bank Reconciliation" subtitle="Match deposits to daily cash totals">
       <div className="space-y-4">
-        <div className="tile p-4 bg-blue-500/10 border border-blue-500/20">
-          <p className="text-sm font-bold text-blue-300 mb-1">How to use</p>
-          <p className="text-xs text-blue-400">Enter the amount that actually hit your bank account for each day. The app compares it to what POS says you should have deposited.</p>
+        <div className="tile p-4 bg-blue-50 border border-blue-200">
+          <p className="text-sm font-bold text-blue-800 mb-1">How to use</p>
+          <p className="text-xs text-blue-700">Enter the amount that actually hit your bank account for each day. The app compares it to what POS says you should have deposited.</p>
         </div>
 
         {loading && <div className="tile p-8 text-center"><RefreshCw className="h-6 w-6 text-accent animate-spin mx-auto" /></div>}

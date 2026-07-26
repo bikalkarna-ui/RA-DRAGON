@@ -175,7 +175,7 @@ export default function EmployeesPage() {
                 ))}
               </div>
               {pinMsg && (
-                <div className={cn('rounded-xl px-4 py-3 mb-4 text-sm font-bold', pinMsg.ok ? 'bg-green-500/10 border border-green-300 text-green-300' : 'bg-red-500/10 border border-red-300 text-red-300')}>
+                <div className={cn('rounded-xl px-4 py-3 mb-4 text-sm font-bold', pinMsg.ok ? 'bg-green-50 border border-green-300 text-green-800' : 'bg-red-50 border border-red-300 text-red-800')}>
                   {pinMsg.text}
                 </div>
               )}
@@ -187,8 +187,8 @@ export default function EmployeesPage() {
                       else if (pin.length < 4) { const np = pin + String(d); setPin(np); if (np.length === 4) setTimeout(() => { submitPIN(); }, 300); }
                     }}
                     className={cn('flex h-16 items-center justify-center rounded-2xl font-black text-xl transition-all active:scale-95',
-                      d === '⌫' ? 'text-muted bg-surface border border-border hover:bg-white/10' :
-                      !d && d !== 0 ? 'invisible' : 'bg-surface border border-border hover:bg-white/10 text-text')}>
+                      d === '⌫' ? 'text-muted bg-surface border border-border hover:bg-gray-100' :
+                      !d && d !== 0 ? 'invisible' : 'bg-surface border border-border hover:bg-gray-100 text-text')}>
                     {d}
                   </button>
                 ))}
@@ -198,8 +198,8 @@ export default function EmployeesPage() {
             {/* Currently clocked in */}
             {clocks.length > 0 && (
               <div className="tile overflow-hidden">
-                <div className="px-5 py-3 border-b border-border bg-green-500/10">
-                  <p className="text-xs font-bold text-green-300 uppercase tracking-wide">Currently Working ({clocks.length})</p>
+                <div className="px-5 py-3 border-b border-border bg-green-50">
+                  <p className="text-xs font-bold text-green-800 uppercase tracking-wide">Currently Working ({clocks.length})</p>
                 </div>
                 {clocks.map(c => (
                   <div key={c.id} className="px-5 py-4 flex items-center justify-between border-b border-border/50 last:border-0">
@@ -208,7 +208,7 @@ export default function EmployeesPage() {
                       <p className="text-xs text-muted">Clocked in {fmtTime(c.clock_in)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="num font-bold text-green-400">{duration(c.clock_in)}</p>
+                      <p className="num font-bold text-green-700">{duration(c.clock_in)}</p>
                       <div className="flex h-2 w-2 rounded-full bg-green-500 ml-auto mt-1 animate-pulse" />
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function EmployeesPage() {
                   <div><label className="lbl">Hourly rate $</label><input type="number" step="0.01" min="0" value={form.hourly_rate} onChange={e => f('hourly_rate', e.target.value)} className="inp" placeholder="15.00" /></div>
                   <button type="submit" className="btn btn-accent btn-full"><Check className="h-4 w-4" />{editId ? 'Save changes' : 'Add employee'}</button>
                   {formErr && (
-                    <p className="text-sm text-red-600 font-semibold bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                    <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">
                       {formErr}
                     </p>
                   )}
@@ -290,7 +290,7 @@ export default function EmployeesPage() {
                             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </button>
                           <button onClick={() => { setEditId(emp.id); setShowForm(true); setForm({ name: emp.name, role: emp.role, pin: emp.pin ?? '', hourly_rate: emp.hourly_rate ? String(emp.hourly_rate) : '', phone: emp.phone ?? '' }); }} className="flex h-8 w-8 items-center justify-center rounded-xl text-muted hover:text-text hover:bg-surface"><Pencil className="h-4 w-4" /></button>
-                          <button onClick={() => delEmp(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl text-muted hover:text-accent hover:bg-red-500/10"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => delEmp(emp.id)} className="flex h-8 w-8 items-center justify-center rounded-xl text-muted hover:text-accent hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2 mt-4">
@@ -307,9 +307,9 @@ export default function EmployeesPage() {
                             {(empHistory[emp.id] ?? []).map(c => (
                               <div key={c.id} className="flex justify-between text-xs">
                                 <span className="text-muted">{fmtDate(c.clock_in)}</span>
-                                <span className="text-gray-400">{fmtTime(c.clock_in)} – {c.clock_out ? fmtTime(c.clock_out) : 'In progress'}</span>
+                                <span className="text-gray-700">{fmtTime(c.clock_in)} – {c.clock_out ? fmtTime(c.clock_out) : 'In progress'}</span>
                                 <span className="num font-bold text-text">{c.hours_worked ? `${c.hours_worked.toFixed(1)}h` : '–'}</span>
-                                {emp.hourly_rate && c.hours_worked && <span className="num text-green-400 font-bold">{fmt.currency(emp.hourly_rate * c.hours_worked)}</span>}
+                                {emp.hourly_rate && c.hours_worked && <span className="num text-green-700 font-bold">{fmt.currency(emp.hourly_rate * c.hours_worked)}</span>}
                               </div>
                             ))}
                           </div>
@@ -344,7 +344,7 @@ export default function EmployeesPage() {
                   <div className="grid grid-cols-4 gap-2">
                     <div className="rounded-xl bg-surface p-2.5 text-center"><p className="text-[10px] text-muted">Total Hrs</p><p className="num font-bold text-text">{totalHrs.toFixed(1)}</p></div>
                     <div className="rounded-xl bg-surface p-2.5 text-center"><p className="text-[10px] text-muted">Regular</p><p className="num font-bold text-text">{regHrs.toFixed(1)}</p></div>
-                    <div className={cn('rounded-xl p-2.5 text-center', otHrs > 0 ? 'bg-amber-500/10' : 'bg-surface')}><p className="text-[10px] text-muted">Overtime</p><p className={cn('num font-bold', otHrs > 0 ? 'text-amber-400' : 'text-text')}>{otHrs.toFixed(1)}</p></div>
+                    <div className={cn('rounded-xl p-2.5 text-center', otHrs > 0 ? 'bg-amber-50' : 'bg-surface')}><p className="text-[10px] text-muted">Overtime</p><p className={cn('num font-bold', otHrs > 0 ? 'text-amber-700' : 'text-text')}>{otHrs.toFixed(1)}</p></div>
                     <div className="rounded-xl bg-surface p-2.5 text-center"><p className="text-[10px] text-muted">Rate</p><p className="num font-bold text-text">{rate ? fmt.currency(rate) : '—'}</p></div>
                   </div>
                 </div>

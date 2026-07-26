@@ -8,10 +8,10 @@ import { fmt, cn } from '@/lib/utils';
 import { RefreshCw, TrendingUp, Fuel } from 'lucide-react';
 
 const GRADES = [
-  { key: 'unleaded', label: 'Unleaded', sales_col: 'fuel_unleaded_sales', gal_col: 'fuel_unleaded_gallons', color: 'text-green-400 bg-green-500/10' },
-  { key: 'midgrade', label: 'Midgrade', sales_col: 'fuel_midgrade_sales', gal_col: 'fuel_midgrade_gallons', color: 'text-blue-400 bg-blue-500/10' },
-  { key: 'premium',  label: 'Premium',  sales_col: 'fuel_premium_sales',  gal_col: 'fuel_premium_gallons',  color: 'text-purple-400 bg-purple-500/10' },
-  { key: 'diesel',   label: 'Diesel',   sales_col: 'fuel_diesel_sales',   gal_col: 'fuel_diesel_gallons',   color: 'text-amber-400 bg-amber-500/10' },
+  { key: 'unleaded', label: 'Unleaded', sales_col: 'fuel_unleaded_sales', gal_col: 'fuel_unleaded_gallons', color: 'text-green-700 bg-green-50' },
+  { key: 'midgrade', label: 'Midgrade', sales_col: 'fuel_midgrade_sales', gal_col: 'fuel_midgrade_gallons', color: 'text-blue-700 bg-blue-50' },
+  { key: 'premium',  label: 'Premium',  sales_col: 'fuel_premium_sales',  gal_col: 'fuel_premium_gallons',  color: 'text-purple-700 bg-purple-50' },
+  { key: 'diesel',   label: 'Diesel',   sales_col: 'fuel_diesel_sales',   gal_col: 'fuel_diesel_gallons',   color: 'text-amber-700 bg-amber-50' },
 ];
 
 export default function FuelPage() {
@@ -94,7 +94,7 @@ export default function FuelPage() {
           <div key={g.key} className="tile p-5">
             <div className="flex items-center justify-between mb-3">
               <span className={cn('rounded-lg px-3 py-1.5 text-xs font-bold', g.color)}>{g.label}</span>
-              {g.margin > 0 && <span className="num font-black text-green-400">{fmt.currency(g.margin)}/gal margin</span>}
+              {g.margin > 0 && <span className="num font-black text-green-700">{fmt.currency(g.margin)}/gal margin</span>}
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-surface p-2.5 text-center">
@@ -111,9 +111,9 @@ export default function FuelPage() {
               </div>
             </div>
             {g.cost > 0 && g.avgPrice > 0 && (
-              <div className={cn('mt-3 rounded-xl p-3 flex justify-between', g.margin > 0 ? 'bg-green-500/10' : 'bg-red-500/10')}>
+              <div className={cn('mt-3 rounded-xl p-3 flex justify-between', g.margin > 0 ? 'bg-green-50' : 'bg-red-50')}>
                 <span className="text-sm font-semibold">Net Margin</span>
-                <span className={cn('num font-black', g.margin > 0 ? 'text-green-400' : 'text-red-400')}>
+                <span className={cn('num font-black', g.margin > 0 ? 'text-green-700' : 'text-red-700')}>
                   {fmt.currency(g.margin)}/gal ({g.marginPct.toFixed(1)}%)
                 </span>
               </div>

@@ -80,11 +80,11 @@ export default function EmailPage() {
         </div>
       ) : connected === false ? (
         <div className="tile p-8 text-center">
-          <Mail className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+          <Mail className="h-10 w-10 text-gray-800 mx-auto mb-3" />
           <p className="font-bold text-text mb-2">Connect your Gmail</p>
           <p className="text-sm text-muted mb-5">See AI summaries of your inbox right here — no need to open Gmail separately.</p>
           {callbackErr && (
-            <p className="text-xs text-red-600 font-semibold bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2 mb-4 max-w-sm mx-auto">
+            <p className="text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-4 max-w-sm mx-auto">
               Connection failed: {callbackErr}
             </p>
           )}
@@ -102,10 +102,10 @@ export default function EmailPage() {
           {loading && emails.length === 0 ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted" /></div>
           ) : err ? (
-            <p className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{err}</p>
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{err}</p>
           ) : emails.length === 0 ? (
             <div className="tile p-8 text-center">
-              <Mail className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+              <Mail className="h-8 w-8 text-gray-800 mx-auto mb-2" />
               <p className="text-sm text-muted">No recent emails found.</p>
             </div>
           ) : (
@@ -117,7 +117,7 @@ export default function EmailPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className={cn('text-sm truncate', e.unread ? 'font-bold text-text' : 'font-semibold text-sub')}>{e.from.split('<')[0].trim()}</p>
-                      <ExternalLink className="h-3.5 w-3.5 text-gray-300 shrink-0" />
+                      <ExternalLink className="h-3.5 w-3.5 text-gray-800 shrink-0" />
                     </div>
                     <p className="text-sm text-text mt-0.5 truncate">{e.subject}</p>
                     <p className="text-xs text-muted mt-1 leading-relaxed">{e.summary}</p>
