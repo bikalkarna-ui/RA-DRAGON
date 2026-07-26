@@ -128,7 +128,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              {err && <p className="text-red-700 text-sm bg-red-950/50 rounded-xl px-4 py-3">{err}</p>}
+              {err && <p className="text-red-400 text-sm bg-red-950/50 rounded-xl px-4 py-3">{err}</p>}
 
               <button type="submit" disabled={loading}
                 className="w-full bg-accent hover:bg-red-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl py-4 transition-all disabled:opacity-60">
@@ -142,7 +142,7 @@ export default function LoginPage() {
 
               <p className="text-center text-sm text-gray-400">
                 No account?{' '}
-                <Link href="/register" className="text-accent font-semibold hover:text-red-700">
+                <Link href="/register" className="text-accent font-semibold hover:text-red-400">
                   Start free trial
                 </Link>
               </p>
@@ -174,17 +174,17 @@ export default function LoginPage() {
                     className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 pr-14 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
                   />
                   <button type="button" onClick={() => setShowPw(v => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 text-sm font-medium transition-colors">
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors">
                     {showPw ? 'Hide' : 'Show'}
                   </button>
                 </div>
               </div>
 
               {err && (
-                <div className="text-red-700 text-sm bg-red-950/50 rounded-xl px-4 py-3">
+                <div className="text-red-400 text-sm bg-red-950/50 rounded-xl px-4 py-3">
                   <p>{err}</p>
                   <button type="button" onClick={sendMagicLink}
-                    className="text-accent underline text-xs mt-1.5 hover:text-red-700">
+                    className="text-accent underline text-xs mt-1.5 hover:text-red-400">
                     Send me a sign-in link instead →
                   </button>
                 </div>
@@ -201,7 +201,7 @@ export default function LoginPage() {
               </button>
 
               <button type="button" onClick={sendMagicLink} disabled={loading}
-                className="w-full text-gray-500 hover:text-gray-800 text-sm text-center py-1 transition-colors">
+                className="w-full text-gray-500 hover:text-gray-300 text-sm text-center py-1 transition-colors">
                 Forgot password? Send sign-in link
               </button>
             </form>

@@ -52,7 +52,7 @@ export default function SearchPage() {
   if (!mounted) return null;
 
   const ICON: Record<ResultType, any> = { product: Package, invoice: FileText, employee: Users, report: BarChart3 };
-  const COLOR: Record<ResultType, string> = { product: 'bg-blue-50 text-blue-600', invoice: 'bg-pink-50 text-pink-600', employee: 'bg-cyan-50 text-cyan-600', report: 'bg-red-50 text-accent' };
+  const COLOR: Record<ResultType, string> = { product: 'bg-blue-500/10 text-blue-400', invoice: 'bg-pink-500/10 text-pink-400', employee: 'bg-cyan-500/10 text-cyan-400', report: 'bg-red-50 text-accent' };
 
   return (
     <Screen title="Search" subtitle="Find anything in your store">

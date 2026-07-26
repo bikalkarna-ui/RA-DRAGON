@@ -203,7 +203,7 @@ export default function InventoryPage() {
           <MultiScan endpoint="/api/scan-invoice" onResult={(d) => { setInvoiceResult(d); fetch_(); }} title="Scan Invoice" hint="Photo of vendor invoice" />
           {invoiceResult && (
             <div className="mt-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-3">
-              <p className="text-sm font-bold text-amber-200">✓ {invoiceResult.items?.length ?? 0} items from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>
+              <p className="text-sm font-bold text-amber-900">✓ {invoiceResult.items?.length ?? 0} items from {invoiceResult.invoice?.vendor_name ?? 'invoice'}</p>
               <a href="/invoices" className="mt-2 inline-flex items-center gap-2 rounded-xl bg-accent text-white px-4 py-2 text-sm font-bold">Go to Invoices → Review &amp; Apply</a>
             </div>
           )}
@@ -279,7 +279,7 @@ export default function InventoryPage() {
             <div className="space-y-1">
               {topMargin.map(p => (
                 <div key={p.id} className="flex justify-between text-xs">
-                  <span className="text-gray-800">{p.name}</span>
+                  <span className="text-gray-300">{p.name}</span>
                   <span className="num font-bold text-green-700">{fmt.percent(((p.unit_price-p.unit_cost)/p.unit_price)*100)}</span>
                 </div>
               ))}
@@ -322,7 +322,7 @@ export default function InventoryPage() {
                           {p.location && ` · 📍${p.location}`}
                         </p>
                         {(st === 'out' || st === 'critical') && (
-                          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-2.5 py-1.5">
+                          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-100 px-2.5 py-1.5">
                             <Zap className="h-3 w-3 text-red-500 shrink-0" />
                             <p className="text-[11px] text-red-700 font-medium">
                               {st === 'out' ? `Order immediately from ${p.vendor_company ?? 'vendor'} — reorder qty: ${p.reorder_qty || p.min_quantity*2}` : `Only ${p.quantity} left — reorder soon`}
@@ -341,7 +341,7 @@ export default function InventoryPage() {
                           </div>
                         </div>
                         <div className="w-20">
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div className={cn('h-full rounded-full', sc.bar)} style={{ width: p.max_quantity ? `${Math.min(100,(p.quantity/p.max_quantity)*100)}%` : st==='ok'?'70%':'20%' }} />
                           </div>
                           <div className="flex justify-between text-[9px] text-dim mt-0.5">
@@ -365,7 +365,7 @@ export default function InventoryPage() {
                         <div className="flex gap-1.5">
                           <button onClick={() => quickAdjust(p.id,'add')} disabled={!adjQty} className="flex items-center gap-1 rounded-xl bg-green-600 text-white px-3 py-2 text-xs font-bold disabled:opacity-40"><ArrowUpCircle className="h-3.5 w-3.5"/>+Add</button>
                           <button onClick={() => quickAdjust(p.id,'sub')} disabled={!adjQty} className="flex items-center gap-1 rounded-xl bg-red-600 text-white px-3 py-2 text-xs font-bold disabled:opacity-40"><ArrowDownCircle className="h-3.5 w-3.5"/>−Remove</button>
-                          <button onClick={() => setAdjustId(null)} className="rounded-xl bg-gray-100 text-gray-700 px-3 py-2 text-xs font-bold">Cancel</button>
+                          <button onClick={() => setAdjustId(null)} className="rounded-xl bg-white/10 text-gray-400 px-3 py-2 text-xs font-bold">Cancel</button>
                         </div>
                       </div>
                     )}

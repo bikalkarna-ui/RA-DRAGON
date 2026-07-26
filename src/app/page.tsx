@@ -27,14 +27,14 @@ export default function LandingPage() {
   if (!mounted) return null;
 
   const features = [
-    { icon: BarChart3, title: 'Daily Sales Reports',     desc: 'Upload your Modisoft daily report and instantly get your complete P&L — sales, cash flow, short/over, and department breakdown. Automated every day.',           color: '#EF5350', bg: 'rgba(192,57,43,0.15)' },
-    { icon: Package,   title: 'Smart Inventory',         desc: 'Track every product in real time. Every delivery, sale, and adjustment is logged with a full history. Know exactly what you have, what sold, and what to order.',  color: '#60A5FA', bg: 'rgba(37,99,235,0.15)' },
-    { icon: Brain,     title: 'AI Ordering Engine',      desc: 'AI analyzes 30, 60, and 90-day sales velocity per product and generates exact purchase orders by vendor. Never overstock or run out again.',                         color: '#A78BFA', bg: 'rgba(124,58,237,0.15)' },
-    { icon: FileText,  title: 'Invoice Scanner',         desc: 'Photograph vendor invoices with your phone. AI reads every product, price, and quantity — updates your inventory and flags any price changes automatically.',         color: '#F472B6', bg: 'rgba(219,39,119,0.15)' },
-    { icon: TrendingUp,title: 'Profit & Loss',           desc: '30-day P&L dashboard with daily trends, best and worst days, department performance, and AI-powered business recommendations tailored to your store.',               color: '#34D399', bg: 'rgba(5,150,105,0.15)' },
-    { icon: Bell,      title: 'Smart Alerts',            desc: 'Get notified when products go out of stock, when vendor prices change, and when your drawer is short. Every alert includes an AI recommendation.',                   color: '#FBBF24', bg: 'rgba(217,119,6,0.15)' },
-    { icon: Users,     title: 'Employee Management',     desc: 'PIN-based time clock, shift tracking, payroll calculations, and CSV export. Manage your entire team from one place.',                                               color: '#22D3EE', bg: 'rgba(8,145,178,0.15)' },
-    { icon: Shield,    title: 'Enterprise Security',     desc: 'Bank-grade encryption, automatic backups, and complete audit logs. Your data is safe and accessible from any device, anywhere.',                                   color: '#9CA3AF', bg: 'rgba(255,255,255,0.08)' },
+    { icon: BarChart3, title: 'Daily Sales Reports',     desc: 'Upload your Modisoft daily report and instantly get your complete P&L — sales, cash flow, short/over, and department breakdown. Automated every day.',           color: '#C0392B', bg: '#FEF2F2' },
+    { icon: Package,   title: 'Smart Inventory',         desc: 'Track every product in real time. Every delivery, sale, and adjustment is logged with a full history. Know exactly what you have, what sold, and what to order.',  color: '#2563EB', bg: '#EFF6FF' },
+    { icon: Brain,     title: 'AI Ordering Engine',      desc: 'AI analyzes 30, 60, and 90-day sales velocity per product and generates exact purchase orders by vendor. Never overstock or run out again.',                         color: '#7C3AED', bg: '#F5F3FF' },
+    { icon: FileText,  title: 'Invoice Scanner',         desc: 'Photograph vendor invoices with your phone. AI reads every product, price, and quantity — updates your inventory and flags any price changes automatically.',         color: '#DB2777', bg: '#FDF2F8' },
+    { icon: TrendingUp,title: 'Profit & Loss',           desc: '30-day P&L dashboard with daily trends, best and worst days, department performance, and AI-powered business recommendations tailored to your store.',               color: '#059669', bg: '#ECFDF5' },
+    { icon: Bell,      title: 'Smart Alerts',            desc: 'Get notified when products go out of stock, when vendor prices change, and when your drawer is short. Every alert includes an AI recommendation.',                   color: '#D97706', bg: '#FFFBEB' },
+    { icon: Users,     title: 'Employee Management',     desc: 'PIN-based time clock, shift tracking, payroll calculations, and CSV export. Manage your entire team from one place.',                                               color: '#0891B2', bg: '#ECFEFF' },
+    { icon: Shield,    title: 'Enterprise Security',     desc: 'Bank-grade encryption, automatic backups, and complete audit logs. Your data is safe and accessible from any device, anywhere.',                                   color: '#374151', bg: '#F9FAFB' },
   ];
 
   const plans = [
@@ -43,8 +43,8 @@ export default function LandingPage() {
       price: 'Free',
       period: '',
       desc: 'Perfect to get started',
-      color: 'border-dark-border bg-dark-card',
-      btn: 'bg-white/10 text-white border border-dark-border hover:bg-white/15',
+      color: 'border-gray-200',
+      btn: 'bg-gray-900 text-white hover:bg-gray-700',
       features: ['1 store location', 'Daily report uploads', 'Basic inventory tracking', 'Invoice scanning (5/month)', 'Email support'],
       popular: false,
     },
@@ -53,7 +53,7 @@ export default function LandingPage() {
       price: '$149',
       period: '/month',
       desc: 'For serious store operators',
-      color: 'border-accent ring-2 ring-accent bg-dark-card',
+      color: 'border-accent ring-2 ring-accent',
       btn: 'bg-accent text-white hover:bg-red-700',
       features: ['Up to 3 store locations', 'Unlimited daily reports', 'Full inventory with history', 'Unlimited invoice scanning', 'AI ordering engine', 'Employee time clock', 'Profit & Loss reports', 'Priority support', '1 month FREE trial'],
       popular: true,
@@ -63,8 +63,8 @@ export default function LandingPage() {
       price: '$245.99',
       period: '/month',
       desc: 'For multi-location operators',
-      color: 'border-dark-border bg-dark-card',
-      btn: 'bg-white text-dark-bg hover:bg-gray-200',
+      color: 'border-gray-800 bg-gray-900',
+      btn: 'bg-white text-gray-900 hover:bg-gray-100',
       dark: true,
       features: ['Unlimited store locations', 'Corporate dashboard', 'Everything in Pro', 'Custom integrations', 'Dedicated account manager', 'White-label option', 'API access', 'SLA guarantee', '1 month FREE trial'],
       popular: false,
@@ -73,26 +73,26 @@ export default function LandingPage() {
 
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="min-h-screen bg-white">
 
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white font-black text-xl">R</div>
             <div>
-              <span className="font-black text-white text-xl">RYXSOR AI</span>
+              <span className="font-black text-gray-900 text-xl">RYXSOR AI</span>
               <span className="hidden sm:inline text-xs text-gray-400 ml-2">by RA</span>
             </div>
           </div>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm text-gray-400 hover:text-white font-medium">Features</a>
-            <a href="#pricing" className="text-sm text-gray-400 hover:text-white font-medium">Pricing</a>
-            <a href="#about" className="text-sm text-gray-400 hover:text-white font-medium">About</a>
-            <a href="#contact" className="text-sm text-gray-400 hover:text-white font-medium">Contact</a>
-            <Link href="/login" className="text-sm font-semibold text-gray-300 hover:text-white">Sign In</Link>
+            <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 font-medium">Features</a>
+            <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
+            <a href="#about" className="text-sm text-gray-600 hover:text-gray-900 font-medium">About</a>
+            <a href="#contact" className="text-sm text-gray-600 hover:text-gray-900 font-medium">Contact</a>
+            <Link href="/login" className="text-sm font-semibold text-gray-700 hover:text-gray-900">Sign In</Link>
             <Link href="/register"
               className="inline-flex items-center gap-1.5 rounded-xl bg-accent text-white font-bold text-sm px-5 py-2.5 hover:bg-red-700 transition-colors">
               Start Free <ArrowRight className="h-4 w-4" />
@@ -107,12 +107,12 @@ export default function LandingPage() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-dark-border px-6 py-4 space-y-3 bg-dark-bg">
-            <a href="#features" className="block text-sm text-gray-300 py-2" onClick={() => setMenuOpen(false)}>Features</a>
-            <a href="#pricing" className="block text-sm text-gray-300 py-2" onClick={() => setMenuOpen(false)}>Pricing</a>
-            <a href="#about" className="block text-sm text-gray-300 py-2" onClick={() => setMenuOpen(false)}>About</a>
-            <a href="#contact" className="block text-sm text-gray-300 py-2" onClick={() => setMenuOpen(false)}>Contact</a>
-            <Link href="/login" className="block text-sm font-semibold text-gray-300 py-2">Sign In</Link>
+          <div className="md:hidden border-t border-gray-100 px-6 py-4 space-y-3 bg-white">
+            <a href="#features" className="block text-sm text-gray-700 py-2" onClick={() => setMenuOpen(false)}>Features</a>
+            <a href="#pricing" className="block text-sm text-gray-700 py-2" onClick={() => setMenuOpen(false)}>Pricing</a>
+            <a href="#about" className="block text-sm text-gray-700 py-2" onClick={() => setMenuOpen(false)}>About</a>
+            <a href="#contact" className="block text-sm text-gray-700 py-2" onClick={() => setMenuOpen(false)}>Contact</a>
+            <Link href="/login" className="block text-sm font-semibold text-gray-700 py-2">Sign In</Link>
             <Link href="/register" className="block text-center rounded-xl bg-accent text-white font-bold text-sm px-5 py-3">
               Start Free Trial
             </Link>
@@ -122,11 +122,11 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-dark-red/10 border border-dark-red/20 px-4 py-2 mb-8">
+        <div className="inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-100 px-4 py-2 mb-8">
           <Zap className="h-3.5 w-3.5 text-accent" />
           <span className="text-xs font-bold text-accent tracking-wide uppercase">AI-Powered Gas Station Management</span>
         </div>
-        <h1 className="text-5xl sm:text-6xl font-black text-white leading-tight mb-6">
+        <h1 className="text-5xl sm:text-6xl font-black text-gray-900 leading-tight mb-6">
           Run your store smarter.<br />
           <span className="text-accent">Not harder.</span>
         </h1>
@@ -139,7 +139,7 @@ export default function LandingPage() {
             Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
           </Link>
           <Link href="/login"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dark-border text-gray-300 font-bold text-base px-8 py-4 hover:border-dark-border hover:bg-dark-card transition-all">
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 text-gray-700 font-bold text-base px-8 py-4 hover:border-gray-300 hover:bg-gray-50 transition-all">
             Sign in to your store
           </Link>
         </div>
@@ -154,16 +154,16 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-black text-white mb-4">Everything your store needs</h2>
+          <h2 className="text-4xl font-black text-gray-900 mb-4">Everything your store needs</h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">Built specifically for gas stations and convenience stores. Every feature is designed around how your business actually works.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map(f => (
-            <div key={f.title} className="rounded-2xl border border-dark-border p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.04)] hover:shadow-[0_4px_12px_rgba(16,24,40,0.06),0_12px_32px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200">
+            <div key={f.title} className="rounded-2xl border border-gray-100 p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_2px_8px_rgba(16,24,40,0.04)] hover:shadow-[0_4px_12px_rgba(16,24,40,0.06),0_12px_32px_rgba(16,24,40,0.08)] hover:-translate-y-0.5 transition-all duration-200">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl mb-4" style={{ background: f.bg }}>
                 <f.icon className="h-6 w-6" style={{ color: f.color }} />
               </div>
-              <h3 className="font-black text-white text-base mb-2">{f.title}</h3>
+              <h3 className="font-black text-gray-900 text-base mb-2">{f.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
             </div>
           ))}
@@ -173,7 +173,7 @@ export default function LandingPage() {
       {/* What makes us different */}
       <section className="max-w-5xl mx-auto px-6 py-24">
         <div className="text-center mb-14">
-          <h2 className="text-4xl font-black text-white mb-4">What makes RYXSOR AI different</h2>
+          <h2 className="text-4xl font-black text-gray-900 mb-4">What makes RYXSOR AI different</h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">We're not another generic inventory app. Here's what actually sets us apart.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -183,8 +183,8 @@ export default function LandingPage() {
             { title: 'Built for gas stations specifically', desc: "Lottery book tracking, fuel margin analysis, vendor-based ordering — features generic retail software doesn't have, because it wasn't built for this industry." },
             { title: 'Founder who actually worked this job', desc: "Built by someone who grew up working in gas stations, not a generic SaaS template repurposed for a new market." },
           ].map(d => (
-            <div key={d.title} className="rounded-2xl bg-dark-card border border-dark-border p-6 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
-              <h3 className="font-black text-white text-base mb-2">{d.title}</h3>
+            <div key={d.title} className="rounded-2xl bg-gray-50 border border-gray-100 p-6 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
+              <h3 className="font-black text-gray-900 text-base mb-2">{d.title}</h3>
               <p className="text-sm text-gray-500 leading-relaxed">{d.desc}</p>
             </div>
           ))}
@@ -192,10 +192,10 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="bg-dark-card py-24">
+      <section className="bg-gray-50 py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-white mb-4">How it works</h2>
+            <h2 className="text-4xl font-black text-gray-900 mb-4">How it works</h2>
             <p className="text-lg text-gray-500">Get your store running on RYXSOR AI in minutes</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
@@ -206,7 +206,7 @@ export default function LandingPage() {
             ].map(s => (
               <div key={s.step} className="text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white font-black text-xl mx-auto mb-4">{s.step}</div>
-                <h3 className="font-black text-white text-lg mb-2">{s.title}</h3>
+                <h3 className="font-black text-gray-900 text-lg mb-2">{s.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{s.desc}</p>
               </div>
             ))}
@@ -218,10 +218,10 @@ export default function LandingPage() {
       <ReviewsSection />
 
       {/* Pricing */}
-      <section id="pricing" className="bg-dark-card py-24">
+      <section id="pricing" className="bg-gray-50 py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-white mb-4">Simple, transparent pricing</h2>
+            <h2 className="text-4xl font-black text-gray-900 mb-4">Simple, transparent pricing</h2>
             <p className="text-lg text-gray-500">Start free. Upgrade when you're ready. Cancel anytime.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -233,10 +233,10 @@ export default function LandingPage() {
                     Most Popular
                   </div>
                 )}
-                <h3 className={`text-xl font-black mb-1 ${plan.dark ? 'text-white' : 'text-white'}`}>{plan.name}</h3>
+                <h3 className={`text-xl font-black mb-1 ${plan.dark ? 'text-white' : 'text-gray-900'}`}>{plan.name}</h3>
                 <p className={`text-sm mb-4 ${plan.dark ? 'text-gray-400' : 'text-gray-500'}`}>{plan.desc}</p>
                 <div className="flex items-end gap-1 mb-6">
-                  <span className={`text-4xl font-black ${plan.dark ? 'text-white' : 'text-white'}`}>{plan.price}</span>
+                  <span className={`text-4xl font-black ${plan.dark ? 'text-white' : 'text-gray-900'}`}>{plan.price}</span>
                   <span className={`text-sm mb-1 ${plan.dark ? 'text-gray-400' : 'text-gray-500'}`}>{plan.period}</span>
                 </div>
                 <Link href="/register"
@@ -247,7 +247,7 @@ export default function LandingPage() {
                   {plan.features.map(f => (
                     <li key={f} className="flex items-start gap-2.5">
                       <Check className={`h-4 w-4 shrink-0 mt-0.5 ${plan.dark ? 'text-green-400' : 'text-green-500'}`} />
-                      <span className={`text-sm ${plan.dark ? 'text-gray-300' : 'text-gray-400'}`}>{f}</span>
+                      <span className={`text-sm ${plan.dark ? 'text-gray-300' : 'text-gray-600'}`}>{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -261,7 +261,7 @@ export default function LandingPage() {
       <section id="about" className="max-w-4xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-4xl font-black text-white mb-4">Built by people who understand your business</h2>
+            <h2 className="text-4xl font-black text-gray-900 mb-4">Built by people who understand your business</h2>
             <p className="text-gray-500 leading-relaxed mb-4">
               RYXSOR AI was founded by RA, who grew up working in gas stations and convenience stores. We built the software we always wished existed — one that works with your existing POS, not against it.
             </p>
@@ -318,7 +318,7 @@ export default function LandingPage() {
             <h3 className="text-3xl font-black text-white mb-4">Ready to transform your store?</h3>
             <p className="text-red-200 mb-8">Be one of the first store owners running on RYXSOR AI.</p>
             <Link href="/register"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white text-accent font-black text-lg px-10 py-4 hover:bg-white/5 transition-colors">
+              className="inline-flex items-center gap-2 rounded-2xl bg-white text-accent font-black text-lg px-10 py-4 hover:bg-gray-100 transition-colors">
               Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
             </Link>
             <p className="text-red-200 text-sm mt-4">Free to start · No credit card · Works with Modisoft</p>
@@ -341,7 +341,7 @@ export default function LandingPage() {
               <a href="#contact" className="text-gray-500 hover:text-gray-300 text-xs">Contact</a>
               <Link href="/login" className="text-gray-500 hover:text-gray-300 text-xs">Sign In</Link>
             </div>
-            <p className="text-gray-400 text-xs">© 2026 RYXSOR AI. All rights reserved.</p>
+            <p className="text-gray-600 text-xs">© 2026 RYXSOR AI. All rights reserved.</p>
           </div>
         </div>
       </footer>

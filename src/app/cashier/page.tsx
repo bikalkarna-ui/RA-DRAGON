@@ -51,9 +51,9 @@ function SafeDropScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="rounded-2xl bg-green-500/10 border-2 border-green-400 p-5 text-center mb-6">
+      <div className="rounded-2xl bg-green-50 border-2 border-green-400 p-5 text-center mb-6">
         <DollarSign className="h-10 w-10 text-green-600 mx-auto mb-2" />
-        <p className="font-black text-xl text-green-300">Record Safe Drop</p>
+        <p className="font-black text-xl text-green-800">Record Safe Drop</p>
         <p className="text-sm text-green-600">This goes directly to today's report</p>
       </div>
 
@@ -76,7 +76,7 @@ function SafeDropScreen({ store, onDone }: { store: any; onDone: () => void }) {
         </div>
       </div>
 
-      {error && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <button onClick={submit} disabled={!amount || !name || saving}
         className={cn('w-full rounded-2xl py-5 text-xl font-black text-white transition-all',
           amount && name ? 'bg-green-500 active:scale-95' : 'bg-gray-300')}>
@@ -132,9 +132,9 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="rounded-2xl bg-red-500/10 border-2 border-red-400 p-5 text-center mb-6">
+      <div className="rounded-2xl bg-red-50 border-2 border-red-400 p-5 text-center mb-6">
         <AlertTriangle className="h-10 w-10 text-red-600 mx-auto mb-2" />
-        <p className="font-black text-xl text-red-300">Record Paid Out</p>
+        <p className="font-black text-xl text-red-800">Record Paid Out</p>
         <p className="text-sm text-red-600">Cash taken from register</p>
       </div>
 
@@ -144,7 +144,7 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
           {REASONS.map(r => (
             <button key={r} onClick={() => setReason(r)}
               className={cn('rounded-xl py-3 text-sm font-bold border-2 transition-colors',
-                reason === r ? 'border-red-400 bg-red-50 text-red-700' : 'border-white/10 bg-card text-gray-400')}>
+                reason === r ? 'border-red-400 bg-red-500/10 text-red-400' : 'border-white/10 bg-card text-gray-400')}>
               {r}
             </button>
           ))}
@@ -172,7 +172,7 @@ function PaidOutScreen({ store, onDone }: { store: any; onDone: () => void }) {
           className="w-full rounded-2xl border-2 border-white/10 px-4 py-3 text-sm focus:border-red-400 focus:outline-none" />
       </div>
 
-      {error && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <button onClick={submit} disabled={!amount || !reason || saving}
         className={cn('w-full rounded-2xl py-5 text-xl font-black text-white transition-all',
           amount && reason ? 'bg-red-500 active:scale-95' : 'bg-gray-300')}>
@@ -252,8 +252,8 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="rounded-2xl bg-amber-500/10 border-2 border-amber-400 p-4 text-center mb-2">
-        <p className="font-black text-xl text-amber-300">Lottery Book Tracker</p>
+      <div className="rounded-2xl bg-amber-50 border-2 border-amber-400 p-4 text-center mb-2">
+        <p className="font-black text-xl text-amber-800">Lottery Book Tracker</p>
         <p className="text-sm text-amber-600">Activate and close scratch ticket books — no writing needed</p>
       </div>
 
@@ -264,7 +264,7 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
       </button>
 
       {adding && (
-        <div className="rounded-2xl border-2 border-amber-300 bg-amber-500/10 p-4 space-y-3">
+        <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 space-y-3">
           <div>
             <label className="block text-sm font-bold text-gray-300 mb-1">Book Number</label>
             <input value={bookNum} onChange={e => setBookNum(e.target.value)}
@@ -277,7 +277,7 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
               {['1','2','5','10','20','25','30','50'].map(p => (
                 <button key={p} onClick={() => setPrice(p)}
                   className={cn('rounded-xl py-2.5 text-sm font-bold border-2',
-                    price === p ? 'border-amber-400 bg-amber-100 text-amber-300' : 'border-white/10 bg-card text-gray-400')}>
+                    price === p ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-white/10 bg-card text-gray-400')}>
                   ${p}
                 </button>
               ))}
@@ -288,7 +288,7 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
             {saving ? 'Saving…' : 'Activate Book'}
           </button>
           {errMsg && (
-            <p className="text-sm text-red-600 font-semibold bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+            <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-xl px-3 py-2">
               {errMsg}
             </p>
           )}
@@ -305,7 +305,7 @@ function LotteryScreen({ store, onDone }: { store: any; onDone: () => void }) {
             const isActive = meta.status !== 'closed';
             return (
               <div key={b.id} className={cn('rounded-2xl border-2 p-4 flex items-center justify-between',
-                isActive ? 'border-amber-300 bg-amber-500/10' : 'border-white/10 bg-white/5 opacity-60')}>
+                isActive ? 'border-amber-300 bg-amber-50' : 'border-white/10 bg-white/5 opacity-60')}>
                 <div>
                   <p className="font-black text-text">Book #{meta.book || '—'}</p>
                   <p className="text-xs text-muted">${meta.price} tickets · {b.description}</p>
@@ -389,9 +389,9 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="rounded-2xl bg-blue-500/10 border-2 border-blue-400 p-5 text-center mb-2">
+      <div className="rounded-2xl bg-blue-50 border-2 border-blue-400 p-5 text-center mb-2">
         <Package className="h-10 w-10 text-blue-600 mx-auto mb-2" />
-        <p className="font-black text-xl text-blue-300">Vendor Delivery</p>
+        <p className="font-black text-xl text-blue-800">Vendor Delivery</p>
         <p className="text-sm text-blue-600">Scan invoice or enter manually — goes to owner instantly</p>
       </div>
 
@@ -425,7 +425,7 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
           {VENDORS.map(v => (
             <button key={v} onClick={() => setVendor(v)}
               className={cn('rounded-xl py-3 text-sm font-bold border-2 transition-colors',
-                vendor === v ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-white/10 bg-card text-gray-400')}>
+                vendor === v ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-white/10 bg-card text-gray-400')}>
               {v}
             </button>
           ))}
@@ -445,7 +445,7 @@ function VendorScreen({ store, onDone }: { store: any; onDone: () => void }) {
         </div>
       </div>
 
-      {error && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">{error}</div>}
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <button onClick={logDelivery} disabled={!vendor || saving}
         className={cn('w-full rounded-2xl py-5 text-xl font-black text-white transition-all',
           vendor ? 'bg-blue-500 active:scale-95' : 'bg-gray-300')}>
@@ -476,10 +476,10 @@ export default function CashierPage() {
   if (!mounted) return null;
 
   const ACTIONS = [
-    { id: 'drop' as Screen,    icon: DollarSign, label: 'Safe Drop',       sub: 'Record cash dropped into safe', color: 'bg-green-500', light: 'bg-green-50 text-green-700' },
-    { id: 'paidout' as Screen, icon: AlertTriangle, label: 'Paid Out',     sub: 'Cash taken from register',      color: 'bg-red-500',   light: 'bg-red-50 text-red-700' },
-    { id: 'vendor' as Screen,  icon: Package,    label: 'Vendor Arrived',  sub: 'Log delivery & scan invoice',   color: 'bg-blue-500',  light: 'bg-blue-50 text-blue-700' },
-    { id: 'lottery' as Screen, icon: FileText,   label: 'Lottery Book',    sub: 'Activate or close a book',      color: 'bg-amber-500', light: 'bg-amber-50 text-amber-700' },
+    { id: 'drop' as Screen,    icon: DollarSign, label: 'Safe Drop',       sub: 'Record cash dropped into safe', color: 'bg-green-500', light: 'bg-green-500/10 text-green-400' },
+    { id: 'paidout' as Screen, icon: AlertTriangle, label: 'Paid Out',     sub: 'Cash taken from register',      color: 'bg-red-500',   light: 'bg-red-500/10 text-red-400' },
+    { id: 'vendor' as Screen,  icon: Package,    label: 'Vendor Arrived',  sub: 'Log delivery & scan invoice',   color: 'bg-blue-500',  light: 'bg-blue-500/10 text-blue-400' },
+    { id: 'lottery' as Screen, icon: FileText,   label: 'Lottery Book',    sub: 'Activate or close a book',      color: 'bg-amber-500', light: 'bg-amber-500/10 text-amber-400' },
   ];
 
   if (!store) return (
@@ -537,10 +537,10 @@ export default function CashierPage() {
             </button>
           ))}
 
-          <div className="rounded-2xl bg-violet-500/10 border border-violet-500/20 p-4 mt-4">
+          <div className="rounded-2xl bg-violet-50 border border-violet-200 p-4 mt-4">
             <div className="flex items-center gap-2 mb-1">
               <Zap className="h-4 w-4 text-violet-600" />
-              <p className="text-sm font-bold text-violet-300">Everything is automatic</p>
+              <p className="text-sm font-bold text-violet-800">Everything is automatic</p>
             </div>
             <p className="text-xs text-violet-600">Safe drops, paid outs, and deliveries all go directly into today's daily report. Owner sees everything instantly from their phone.</p>
           </div>

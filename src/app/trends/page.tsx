@@ -101,7 +101,7 @@ export default function TrendsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                   <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9CA3AF' }} angle={-45} textAnchor="end" />
                   <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={v => '$'+(v/1000).toFixed(0)+'k'} />
-                  <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']}  />
+                  <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']} />
                   <Bar dataKey="sales" fill="#C0392B" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
