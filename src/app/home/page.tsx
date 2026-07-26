@@ -303,25 +303,25 @@ export default function HomePage() {
   ));
 
   const APPS = [
-    { href: '/cashier',     icon: DollarSign, label: 'Cashier Actions', sub: 'Drop · Paid out · Vendor', badge: 0, color: 'bg-green-500/10 text-green-400' },
+    { href: '/cashier',     icon: DollarSign, label: 'Cashier Actions', sub: 'Drop · Paid out · Vendor', badge: 0, color: 'bg-green-50 text-green-700' },
     { href: '/pos',         icon: BarChart3,  label: 'Daily Reports',    sub: 'Upload & review',    badge: 0,          color: 'bg-red-50 text-accent' },
-    { href: '/invoices',    icon: FileText,   label: 'Invoices',         sub: 'Scan vendor invoices', badge: pendingInv, color: 'bg-pink-500/10 text-pink-400' },
-    { href: '/inventory',   icon: Package,    label: 'Inventory',        sub: 'Stock & movement',   badge: outOfStock,  color: 'bg-blue-500/10 text-blue-400' },
-    { href: '/ordering',    icon: Brain,      label: 'AI Ordering',      sub: '90-day reorders',    badge: 0,           color: 'bg-violet-500/10 text-violet-400' },
-    { href: '/alerts',      icon: Bell,       label: 'Alerts',           sub: 'Price & stock',      badge: 0,           color: 'bg-amber-500/10 text-amber-400' },
-    { href: '/reports',     icon: TrendingUp, label: 'Reports & P&L',    sub: 'Trends & analytics', badge: 0,           color: 'bg-green-500/10 text-green-400' },
-    { href: '/employees',   icon: Users,      label: 'Employees',        sub: 'Time clock & pay',   badge: staffIn,     color: 'bg-cyan-500/10 text-cyan-400' },
-    { href: '/fuel',        icon: Fuel,       label: 'Fuel Margins',     sub: 'Cost vs price',      badge: 0,           color: 'bg-orange-500/10 text-orange-400' },
-    { href: '/shrink',      icon: AlertTriangle, label: 'Shrink & Waste',sub: 'Loss tracking',      badge: 0,           color: 'bg-red-500/10 text-red-400' },
-    { href: '/performance', icon: Users,      label: 'Performance',      sub: 'Employee stats',     badge: 0,           color: 'bg-indigo-500/10 text-indigo-400' },
-    { href: '/trends',      icon: TrendingUp, label: 'Annual Trends',    sub: 'Year over year',     badge: 0,           color: 'bg-teal-500/10 text-teal-400' },
-    { href: '/email',       icon: Mail,       label: 'Email Reader',     sub: 'AI inbox summaries', badge: 0,           color: 'bg-blue-500/10 text-blue-400' },
-    { href: '/billing',     icon: Receipt,    label: 'Invoicing',        sub: 'Bill your customers', badge: 0,           color: 'bg-purple-500/10 text-purple-400' },
-    { href: '/tax',         icon: Receipt,    label: 'Tax Reports',      sub: 'Quarterly filing',   badge: 0,           color: 'bg-emerald-500/10 text-emerald-400' },
-    { href: '/deposit',     icon: DollarSign, label: 'Deposit Slip',     sub: 'Auto-generate',      badge: 0,           color: 'bg-green-500/10 text-green-400' },
-    { href: '/bank',        icon: Building2,  label: 'Bank Recon',       sub: 'Match deposits',     badge: 0,           color: 'bg-blue-500/10 text-blue-400' },
-    { href: '/vendors',     icon: Shield,     label: 'Vendors',          sub: 'Price tracking',     badge: 0,           color: 'bg-white/5 text-gray-400' },
-    { href: '/search',      icon: Brain,      label: 'Search',           sub: 'Find anything',      badge: 0,           color: 'bg-white/5 text-gray-400' },
+    { href: '/invoices',    icon: FileText,   label: 'Invoices',         sub: 'Scan vendor invoices', badge: pendingInv, color: 'bg-pink-50 text-pink-700' },
+    { href: '/inventory',   icon: Package,    label: 'Inventory',        sub: 'Stock & movement',   badge: outOfStock,  color: 'bg-blue-50 text-blue-700' },
+    { href: '/ordering',    icon: Brain,      label: 'AI Ordering',      sub: '90-day reorders',    badge: 0,           color: 'bg-violet-50 text-violet-700' },
+    { href: '/alerts',      icon: Bell,       label: 'Alerts',           sub: 'Price & stock',      badge: 0,           color: 'bg-amber-50 text-amber-700' },
+    { href: '/reports',     icon: TrendingUp, label: 'Reports & P&L',    sub: 'Trends & analytics', badge: 0,           color: 'bg-green-50 text-green-700' },
+    { href: '/employees',   icon: Users,      label: 'Employees',        sub: 'Time clock & pay',   badge: staffIn,     color: 'bg-cyan-50 text-cyan-700' },
+    { href: '/fuel',        icon: Fuel,       label: 'Fuel Margins',     sub: 'Cost vs price',      badge: 0,           color: 'bg-orange-50 text-orange-700' },
+    { href: '/shrink',      icon: AlertTriangle, label: 'Shrink & Waste',sub: 'Loss tracking',      badge: 0,           color: 'bg-red-50 text-red-700' },
+    { href: '/performance', icon: Users,      label: 'Performance',      sub: 'Employee stats',     badge: 0,           color: 'bg-indigo-50 text-indigo-700' },
+    { href: '/trends',      icon: TrendingUp, label: 'Annual Trends',    sub: 'Year over year',     badge: 0,           color: 'bg-teal-50 text-teal-700' },
+    { href: '/email',       icon: Mail,       label: 'Email Reader',     sub: 'AI inbox summaries', badge: 0,           color: 'bg-blue-50 text-blue-700' },
+    { href: '/billing',     icon: Receipt,    label: 'Invoicing',        sub: 'Bill your customers', badge: 0,           color: 'bg-purple-50 text-purple-700' },
+    { href: '/tax',         icon: Receipt,    label: 'Tax Reports',      sub: 'Quarterly filing',   badge: 0,           color: 'bg-emerald-50 text-emerald-700' },
+    { href: '/deposit',     icon: DollarSign, label: 'Deposit Slip',     sub: 'Auto-generate',      badge: 0,           color: 'bg-green-50 text-green-700' },
+    { href: '/bank',        icon: Building2,  label: 'Bank Recon',       sub: 'Match deposits',     badge: 0,           color: 'bg-blue-50 text-blue-700' },
+    { href: '/vendors',     icon: Shield,     label: 'Vendors',          sub: 'Price tracking',     badge: 0,           color: 'bg-gray-50 text-gray-600' },
+    { href: '/search',      icon: Brain,      label: 'Search',           sub: 'Find anything',      badge: 0,           color: 'bg-gray-50 text-gray-600' },
     { href: '/migration',   icon: Download,   label: 'Import Data',      sub: 'CSV import',         badge: 0,           color: 'bg-white/5 text-gray-500' },
     { href: '/settings',    icon: Settings,   label: 'Settings',         sub: 'Store & connector',  badge: 0,           color: 'bg-white/5 text-gray-500' },
   ];
@@ -470,30 +470,6 @@ export default function HomePage() {
       </div>
 
       <div className="px-4 md:px-8 space-y-5">
-        {/* Colorful stat row — real data only */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: "Today's Sales", value: fmt.currency(grossSales), sub: hasReport ? 'Reported' : 'No report yet', color: 'green', icon: DollarSign },
-            { label: 'Fuel Revenue', value: fmt.currency(fuelSales), sub: 'Today', color: 'orange', icon: Fuel },
-            { label: 'Week Sales', value: fmt.currency(weekSales), sub: 'Last 7 days', color: 'blue', icon: TrendingUp },
-            { label: 'Inventory Value', value: fmt.currency(invValue), sub: `${outOfStock + lowStock} need attention`, color: 'purple', icon: Package },
-          ].map(stat => (
-            <div key={stat.label} className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-4">
-              <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl mb-3', {
-                green: 'bg-green-500/15 text-green-400',
-                orange: 'bg-orange-500/15 text-orange-400',
-                blue: 'bg-blue-500/15 text-blue-400',
-                purple: 'bg-purple-500/15 text-purple-400',
-              }[stat.color])}>
-                <stat.icon className="h-4 w-4" />
-              </div>
-              <p className="text-lg font-black text-white leading-tight truncate">{stat.value}</p>
-              <p className="text-xs text-dark-sub mt-0.5">{stat.label}</p>
-              <p className="text-[10px] text-dark-sub/70 mt-1">{stat.sub}</p>
-            </div>
-          ))}
-        </div>
-
         {/* Store Health */}
         <div className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-4 flex items-center gap-4">
           <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl font-black text-xl text-white',
