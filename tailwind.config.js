@@ -4,30 +4,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Core tokens — light theme (app-wide)
-        bg:     '#FFFFFF',
-        surface:'#F8F9FA',
-        card:   '#FFFFFF',
-        border: '#E5E7EB',
-        accent: '#C0392B',
-        accent2:'#E74C3C',
-        muted:  '#6B7280',
-        dim:    '#9CA3AF',
-        text:   '#111827',
-        sub:    '#4B5563',
-        // Colorful accent palette — used for stat cards, icon badges, sidebar
+        // Core tokens — now dark theme (app-wide)
+        bg:     '#09090B',
+        surface:'#111318',
+        card:   '#17191E',
+        border: '#26282F',
+        accent: '#D6453D',
+        accent2:'#E15D56',
+        muted:  '#9CA3AF',
+        dim:    '#6B7280',
+        text:   '#FFFFFF',
+        sub:    '#B4B8C0',
+        // Extra palette for icons/status, matches the dark spec exactly
         dark: {
-          bg:      '#FFFFFF',
-          sidebar: '#FFFFFF',
-          card:    '#FFFFFF',
-          border:  '#E5E7EB',
-          primary: '#2563EB',
-          red:     '#C0392B',
-          green:   '#16A34A',
-          orange:  '#D97706',
-          purple:  '#7C3AED',
-          text:    '#111827',
-          sub:     '#6B7280',
+          bg:      '#09090B',
+          sidebar: '#111318',
+          card:    '#17191E',
+          border:  '#26282F',
+          primary: '#4F7CFF',
+          red:     '#D6453D',
+          green:   '#22C55E',
+          orange:  '#F59E0B',
+          purple:  '#8B5CF6',
+          text:    '#FFFFFF',
+          sub:     '#9CA3AF',
         },
       },
       fontFamily: {
