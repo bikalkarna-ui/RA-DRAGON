@@ -10,8 +10,9 @@ import {
   BarChart3, Package, Brain, Bell, FileText, TrendingUp, TrendingDown,
   Users, LogOut, RefreshCw, Zap, AlertTriangle, DollarSign, X, Send,
   Fuel, Receipt, PieChart, Shield, Building2, Clock, Download,
-  ChevronRight, Settings, Mail
+  ChevronRight, Settings, Mail, Upload, CheckCircle2
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Lightweight formatter — converts any stray **bold** markdown into real
 // bold text and preserves line breaks, so chat never shows raw asterisks
@@ -144,6 +145,32 @@ function toDarkIcon(lightClasses: string): string {
   return `bg-${color}-500/10 text-${color}-400`;
 }
 
+const INSIGHT_ICONS: Record<string, { icon: any; color: string }> = {
+  package: { icon: Package, color: 'bg-amber-50 text-amber-700' },
+  'trending-down': { icon: TrendingDown, color: 'bg-orange-50 text-orange-700' },
+  'file-text': { icon: FileText, color: 'bg-blue-50 text-blue-700' },
+  alert: { icon: AlertTriangle, color: 'bg-red-50 text-accent' },
+  upload: { icon: Upload, color: 'bg-purple-50 text-purple-700' },
+  check: { icon: CheckCircle2, color: 'bg-green-50 text-green-700' },
+};
+
+const ACTIVITY_ICONS: Record<string, { icon: any; color: string }> = {
+  safe_drop: { icon: DollarSign, color: 'bg-green-50 text-green-700' },
+  paid_out: { icon: AlertTriangle, color: 'bg-red-50 text-accent' },
+  delivery: { icon: Package, color: 'bg-blue-50 text-blue-700' },
+  lottery_book: { icon: FileText, color: 'bg-amber-50 text-amber-700' },
+};
+
+function timeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 function getRandomQuote(): string {
   return BUSINESS_QUOTES[Math.floor(Math.random() * BUSINESS_QUOTES.length)];
 }
@@ -159,6 +186,10 @@ export default function HomePage() {
   const [quote, setQuote] = useState(getRandomQuote);
   const [showAgryx, setShowAgryx] = useState(false);
   const [dataReady, setDataReady] = useState(false);
+  const [chartData, setChartData] = useState<{ date: string; sales: number }[]>([]);
+  const [insights, setInsights] = useState<{ icon: string; text: string; sub: string }[]>([]);
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
+  const [notifs, setNotifs] = useState<any[]>([]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -188,30 +219,56 @@ export default function HomePage() {
       const weekAgo = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
       const monthAgo = new Date(Date.now()-30*86400000).toISOString().split('T')[0];
 
-      const [{ data: dr }, { data: products }, { data: active }, { data: invs }, { data: weekRpts }, { data: monthRpts }] = await Promise.all([
+      const [{ data: dr }, { data: products }, { data: active }, { data: invs }, { data: weekRpts }, { data: monthRpts }, { data: activity }] = await Promise.all([
         sb.from('daily_reports').select('gross_sales,drawer_difference,fuel_sales,status').eq('store_id', store.id).eq('report_date', today).maybeSingle(),
         sb.from('products').select('quantity,min_quantity,unit_cost').eq('store_id', store.id).eq('is_active', true),
         sb.from('time_clock').select('id').eq('store_id', store.id).is('clock_out', null),
         sb.from('invoices').select('id').eq('store_id', store.id).eq('status', 'NEEDS_REVIEW'),
         sb.from('daily_reports').select('gross_sales').eq('store_id', store.id).gte('report_date', weekAgo),
-        sb.from('daily_reports').select('gross_sales').eq('store_id', store.id).gte('report_date', monthAgo),
+        sb.from('daily_reports').select('report_date,gross_sales').eq('store_id', store.id).gte('report_date', monthAgo).order('report_date', { ascending: true }),
+        sb.from('timeline_events').select('*').eq('store_id', store.id).order('created_at', { ascending: false }).limit(6),
       ]);
+
+      setActivityFeed(activity || []);
+      fetch(`/api/notifications${store?.id ? `?store_id=${store.id}` : ''}`)
+        .then(r => r.json()).then(d => setNotifs((d.notifications || []).slice(0, 5))).catch(() => {});
 
       const n = (v: any) => Number(v || 0);
       const prods = products || [];
+      const outOfStockCount = prods.filter(p => p.quantity === 0).length;
+      const lowStockCount = prods.filter(p => p.quantity > 0 && p.quantity <= p.min_quantity).length;
+      const pendingInvCount = invs?.length || 0;
+
       setKpis({
         grossSales: n(dr?.gross_sales),
         shortOver: n(dr?.drawer_difference),
-        outOfStock: prods.filter(p => p.quantity === 0).length,
-        lowStock: prods.filter(p => p.quantity > 0 && p.quantity <= p.min_quantity).length,
+        outOfStock: outOfStockCount,
+        lowStock: lowStockCount,
         staffIn: active?.length || 0,
-        pendingInv: invs?.length || 0,
+        pendingInv: pendingInvCount,
         invValue: prods.reduce((s, p) => s + n(p.unit_cost) * n(p.quantity), 0),
         weekSales: (weekRpts||[]).reduce((s, r) => s + n(r.gross_sales), 0),
         monthSales: (monthRpts||[]).reduce((s, r) => s + n(r.gross_sales), 0),
         fuelSales: n(dr?.fuel_sales),
         hasReport: !!dr,
       });
+
+      // Real 30-day sales chart data — no fabricated numbers
+      setChartData((monthRpts || []).map(r => ({
+        date: new Date(r.report_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        sales: n(r.gross_sales),
+      })));
+
+      // Real insights computed from actual data — nothing invented
+      const realInsights: { icon: string; text: string; sub: string }[] = [];
+      if (outOfStockCount > 0) realInsights.push({ icon: 'package', text: `${outOfStockCount} item${outOfStockCount === 1 ? '' : 's'} out of stock`, sub: 'Reorder suggested' });
+      if (lowStockCount > 0) realInsights.push({ icon: 'trending-down', text: `${lowStockCount} item${lowStockCount === 1 ? '' : 's'} running low`, sub: 'Check inventory' });
+      if (pendingInvCount > 0) realInsights.push({ icon: 'file-text', text: `${pendingInvCount} invoice${pendingInvCount === 1 ? '' : 's'} need review`, sub: 'Awaiting approval' });
+      if (dr && n(dr.drawer_difference) < -0.5) realInsights.push({ icon: 'alert', text: `Drawer short $${Math.abs(n(dr.drawer_difference)).toFixed(2)} today`, sub: 'Review cashier actions' });
+      if (!dr) realInsights.push({ icon: 'upload', text: 'No report uploaded today', sub: 'Upload your close report' });
+      if (realInsights.length === 0) realInsights.push({ icon: 'check', text: 'Everything looks healthy', sub: 'No urgent issues right now' });
+      setInsights(realInsights);
+
       setDataReady(true);
     } catch (e) { console.error(e); }
     setRefreshing(false);
@@ -484,6 +541,62 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Sales Overview + AI Insights — real data only */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-5">
+            <div className="flex items-center justify-between mb-1">
+              <p className="font-bold text-white">Sales Overview</p>
+              <span className="text-[11px] text-dark-sub">Last 30 days</span>
+            </div>
+            <p className="text-2xl font-black text-white mb-4">{fmt.currency(monthSales)}</p>
+            {chartData.length === 0 ? (
+              <div className="h-[180px] flex items-center justify-center">
+                <p className="text-sm text-dark-sub">No reports uploaded yet — upload your first daily report to see trends here.</p>
+              </div>
+            ) : (
+              <div className="h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickFormatter={v => '$' + (v/1000).toFixed(0) + 'k'} width={40} />
+                    <Tooltip formatter={(v: any) => [fmt.currency(v), 'Sales']} contentStyle={{ borderRadius: 12, fontSize: 12 }} />
+                    <Line type="monotone" dataKey="sales" stroke="#C0392B" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                <Brain className="h-4 w-4" />
+              </div>
+              <p className="font-bold text-white text-sm">AI Insights</p>
+            </div>
+            <div className="space-y-2.5">
+              {insights.map((ins, i) => {
+                const conf = INSIGHT_ICONS[ins.icon] || INSIGHT_ICONS.check;
+                const Icon = conf.icon;
+                return (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', conf.color)}>
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-white leading-tight">{ins.text}</p>
+                      <p className="text-[11px] text-dark-sub mt-0.5">{ins.sub}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setShowAI(true)} className="w-full mt-4 rounded-xl bg-accent text-white text-xs font-bold py-2.5 flex items-center justify-center gap-1.5">
+              <Zap className="h-3.5 w-3.5" />Ask AI Copilot
+            </button>
+          </div>
+        </div>
+
         {/* Push notification prompt */}
         {!notifEnabled && (
           <button onClick={enableNotifications} className="w-full rounded-2xl bg-dark-purple/10 border border-dark-purple/20 p-4 flex items-center gap-3 text-left">
@@ -542,6 +655,61 @@ export default function HomePage() {
                 )}
               </Link>
             ))}
+          </div>
+        </div>
+
+        {/* Recent Activity + Notifications — real data only */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-5">
+            <p className="font-bold text-white mb-4">Recent Activity</p>
+            {activityFeed.length === 0 ? (
+              <p className="text-sm text-dark-sub py-6 text-center">No activity recorded yet today.</p>
+            ) : (
+              <div className="space-y-3">
+                {activityFeed.map(a => {
+                  const conf = ACTIVITY_ICONS[a.type] || { icon: Clock, color: 'bg-gray-100 text-gray-600' };
+                  const Icon = conf.icon;
+                  return (
+                    <div key={a.id} className="flex items-center gap-3">
+                      <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', conf.color)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{a.title}</p>
+                        <p className="text-xs text-dark-sub truncate">{a.description}</p>
+                      </div>
+                      <span className="text-[11px] text-dark-sub shrink-0">{timeAgo(a.created_at)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-dark-card border border-dark-border rounded-xl2 shadow-lg shadow-black/10 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-bold text-white">Notifications</p>
+              <Link href="/alerts" className="text-xs font-semibold text-accent">View all</Link>
+            </div>
+            {notifs.length === 0 ? (
+              <p className="text-sm text-dark-sub py-6 text-center">You're all caught up — no notifications.</p>
+            ) : (
+              <div className="space-y-3">
+                {notifs.map(n => (
+                  <div key={n.id} className="flex items-center gap-3">
+                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                      n.type === 'out_of_stock' ? 'bg-red-50 text-accent' : n.type === 'low_stock' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700')}>
+                      <Bell className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{n.title}</p>
+                      <p className="text-xs text-dark-sub truncate">{n.message}</p>
+                    </div>
+                    <span className="text-[11px] text-dark-sub shrink-0">{timeAgo(n.created_at)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
