@@ -130,7 +130,7 @@ export default function ReportsPage() {
         {!loading && tab === 'today' && (
           <>
             {!todayRpt ? (
-              <div className="tile p-10 text-center"><BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-300">No report uploaded today</p><p className="text-muted text-sm mt-1">Upload your daily close report to see today's numbers</p></div>
+              <div className="tile p-10 text-center"><BarChart3 className="h-10 w-10 text-dim mx-auto mb-3" /><p className="font-bold text-gray-800">No report uploaded today</p><p className="text-muted text-sm mt-1">Upload your daily close report to see today's numbers</p></div>
             ) : (
               <>
                 <div className="tile p-6 text-center">
@@ -173,7 +173,7 @@ export default function ReportsPage() {
                     <p className="num text-5xl font-black text-text">{fmt.currency(totalSales)}</p>
                     <p className="text-sm text-muted mt-2">{rpts.length} days reported · avg {fmt.currency(avgSales)}/day</p>
                     {totalShortOver !== 0 && (
-                      <div className={cn('mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold', totalShortOver < 0 ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400')}>
+                      <div className={cn('mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold', totalShortOver < 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600')}>
                         {totalShortOver < 0 ? '⚠' : '✓'} {label} Short/Over: {totalShortOver >= 0 ? '+' : ''}{fmt.currency(totalShortOver)}
                       </div>
                     )}

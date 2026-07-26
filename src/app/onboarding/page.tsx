@@ -85,7 +85,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white/5 flex flex-col items-center justify-start py-8 px-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start py-8 px-4">
       {/* Header */}
       <div className="flex items-center gap-2 mb-8">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
@@ -101,7 +101,7 @@ export default function OnboardingPage() {
             <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-sm transition-all',
               step > s.id  ? 'bg-green-500 text-white' :
               step === s.id ? 'bg-accent text-white' :
-              'bg-gray-200 text-gray-400')}>
+              'bg-gray-200 text-gray-700')}>
               {step > s.id ? <Check className="h-4 w-4" /> : s.id}
             </div>
             {i < STEPS.length - 1 && (
@@ -210,9 +210,9 @@ export default function OnboardingPage() {
                 { icon: '📦', text: 'Scan vendor invoices to update inventory automatically' },
                 { icon: '👥', text: 'Employees clock in/out with their PIN' },
               ].map((tip, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3">
+                <div key={i} className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
                   <span className="text-xl">{tip.icon}</span>
-                  <span className="text-sm text-gray-300">{tip.text}</span>
+                  <span className="text-sm text-gray-800">{tip.text}</span>
                 </div>
               ))}
             </div>
@@ -251,7 +251,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Progress text */}
-      <p className="text-xs text-gray-400 mt-4">Step {step} of {STEPS.length}</p>
+      <p className="text-xs text-gray-700 mt-4">Step {step} of {STEPS.length}</p>
     </div>
   );
 }

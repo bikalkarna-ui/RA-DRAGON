@@ -119,7 +119,7 @@ export default function MigrationPage() {
         {step === 1 && (
           <div className="space-y-4">
             <div className="tile p-4 flex items-center gap-3">
-              <FileText className="h-5 w-5 text-blue-400" />
+              <FileText className="h-5 w-5 text-blue-700" />
               <div className="flex-1"><p className="font-semibold text-text text-sm">{file?.name}</p><p className="text-xs text-muted">{rawRows.length} rows found</p></div>
               <button onClick={reset} className="text-xs text-muted hover:text-sub">Change</button>
             </div>
@@ -130,7 +130,7 @@ export default function MigrationPage() {
         {step === 2 && (
           <div className="space-y-4">
             <div className="tile p-5">
-              <div className="flex items-center gap-2 mb-4"><Brain className="h-5 w-5 text-violet-400" /><p className="font-semibold text-text">AI Column Mapping</p></div>
+              <div className="flex items-center gap-2 mb-4"><Brain className="h-5 w-5 text-violet-700" /><p className="font-semibold text-text">AI Column Mapping</p></div>
               <div className="space-y-2">
                 {mapping.map((m, i) => (
                   <div key={m.source} className="flex items-center gap-3">
@@ -149,7 +149,7 @@ export default function MigrationPage() {
         {step === 3 && (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
-              <div className="tile p-4 text-center"><p className="num text-2xl font-bold text-green-400">{validRows.length}</p><p className="text-xs text-muted mt-1">Valid</p></div>
+              <div className="tile p-4 text-center"><p className="num text-2xl font-bold text-green-700">{validRows.length}</p><p className="text-xs text-muted mt-1">Valid</p></div>
               <div className="tile p-4 text-center"><p className="num text-2xl font-bold text-accent">{errors.length}</p><p className="text-xs text-muted mt-1">Errors</p></div>
               <div className="tile p-4 text-center"><p className="num text-2xl font-bold text-text">{rawRows.length}</p><p className="text-xs text-muted mt-1">Total</p></div>
             </div>
@@ -173,10 +173,10 @@ export default function MigrationPage() {
 
         {step === 5 && importResult && (
           <div className="tile p-10 text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/15"><Check className="h-8 w-8 text-green-400" /></div>
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50"><Check className="h-8 w-8 text-green-700" /></div>
             <p className="font-bold text-text text-xl mb-4">Import complete!</p>
             <div className="flex justify-center gap-10 mb-6">
-              <div><p className="num text-3xl font-bold text-green-400">{importResult.imported}</p><p className="text-muted text-sm">Imported</p></div>
+              <div><p className="num text-3xl font-bold text-green-700">{importResult.imported}</p><p className="text-muted text-sm">Imported</p></div>
               <div><p className="num text-3xl font-bold text-accent">{importResult.failed}</p><p className="text-muted text-sm">Failed</p></div>
             </div>
             {importResult.failureReasons && importResult.failureReasons.length > 0 && (

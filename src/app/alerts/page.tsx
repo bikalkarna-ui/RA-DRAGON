@@ -100,7 +100,7 @@ export default function AlertsPage() {
         {!loading && tab === 'stock' && (
           <>
             {outOfStock.length === 0 && critical.length === 0 && lowStock.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">All stock levels look good</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-800">All stock levels look good</p></div>
             ) : (
               <>
                 {[
@@ -135,7 +135,7 @@ export default function AlertsPage() {
         {!loading && tab === 'prices' && (
           <>
             {priceChanges.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">No price changes detected</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-800">No price changes detected</p></div>
             ) : (
               <div className="tile overflow-hidden">
                 <div className="px-5 py-3 border-b border-border bg-blue-50">
@@ -156,7 +156,7 @@ export default function AlertsPage() {
                         <div className="text-right shrink-0 ml-4">
                           <div className="flex items-center gap-2">
                             <span className="num text-sm text-muted line-through">{fmt.currency(oldCost)}</span>
-                            <span className="text-gray-400">→</span>
+                            <span className="text-gray-700">→</span>
                             <span className="num font-bold text-text">{fmt.currency(newCost)}</span>
                           </div>
                           <div className={cn('flex items-center gap-1 justify-end mt-1', diff > 0 ? 'text-red-600' : 'text-green-600')}>
@@ -180,7 +180,7 @@ export default function AlertsPage() {
         {!loading && tab === 'cash' && (
           <>
             {cashIssues.length === 0 ? (
-              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-300">All drawers balanced this week</p></div>
+              <div className="tile p-10 text-center"><div className="text-4xl mb-3">✅</div><p className="font-bold text-gray-800">All drawers balanced this week</p></div>
             ) : (
               <div className="tile overflow-hidden">
                 <div className="px-5 py-3 border-b border-border bg-red-50">
