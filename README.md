@@ -1,36 +1,93 @@
-# RA Solution — Dragon Edition 🐉
+# RYXSOR AI — Smart Store Manager
 
-AI-powered POS & store management for convenience stores.
-Dragon theme: obsidian black, blood red, fire gold.
+AI-powered gas station and convenience store management platform. Sits on top of your existing Modisoft POS — upload daily reports and AI automatically handles your P&L, inventory, ordering, and invoices.
 
 ## Features
 
-1. **Live Sales Dashboard** — auto-refreshes every 30 seconds, hourly chart, category breakdown
-2. **AI Smart Ordering** — one order per vendor (Pepsi, Coke, Frito-Lay, RNK, GG, McLane, Core-Mark), AI analyzes sales velocity
-3. **Inventory Tracking** — low stock alerts, overstock alerts, filter by vendor, min/max quantities
-4. **AI Invoice Scanner** — PDF/photo, price change alerts, 30% markup suggestions
-5. **Invoice Tracking** — full history with price change badges
-6. **Lottery & Fuel** — daily manual entry, scratch-off + lotto terminal + payouts, net auto-calculated, fuel by grade
-7. **Net Sales Calculator** — Reports page has adjustable line items (scratch-off deduction, lotto paid out, etc.) to get real net total
-8. **POS** — barcode scanner, employee PIN with numpad, 4 payment methods, receipt
-9. **Employees** — cashier/manager PINs, activate/deactivate
-10. **Migration Center** — CSV/Excel import with AI column mapping
+- **Daily Sales Reports** — Upload your Modisoft daily report photo and instantly get your complete P&L
+- **Smart Inventory** — Track every product in real time with full movement history
+- **AI Ordering Engine** — AI analyzes 30/60/90-day sales velocity and generates purchase orders by vendor
+- **Invoice Scanner** — Photograph vendor invoices; AI reads every product, price, and quantity
+- **Profit & Loss** — 30-day P&L dashboard with daily trends and AI recommendations
+- **Smart Alerts** — Get notified for out-of-stock, price changes, and short drawers
+- **Employee Management** — PIN-based time clock, shift tracking, payroll calculations
+- **Fuel Margins** — Track cost vs. posted price per grade
+- **PWA** — Installable, works offline, push notifications
 
-## Setup
+## Tech Stack
 
-### 1. Run SQL
-Paste `supabase/schema.sql` in Supabase SQL Editor → Run
+- **Next.js 14** (App Router)
+- **Supabase** (Auth + PostgreSQL)
+- **Tailwind CSS v3**
+- **Recharts** for data visualization
+- **lucide-react** for icons
+- **PWA** with service worker, push notifications
 
-### 2. Vercel Environment Variables
+## Getting Started
+
+1. **Clone and install:**
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env.local
+   ```
+   Fill in your Supabase URL, anon key, and service role key from [Supabase Dashboard](https://supabase.com).
+
+3. **Set up the database:**
+   Run the SQL migrations in order from the `supabase/` directory:
+   - `schema.sql` (base schema)
+   - `schema_v2_final.sql`
+   - `schema_v2_additions.sql`
+   - `schema_v3.sql`
+   - `schema_daily_reports.sql`
+   - `schema_v4_order_history.sql`
+
+4. **Run the dev server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production:**
+   ```bash
+   npm run build && npm start
+   ```
+
+## Push Notifications (Optional)
+
+Generate VAPID keys:
+```bash
+npx web-push generate-vapid-keys
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://bemouimlxnsemdqwbpkm.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
-OPENROUTER_API_KEY=sk-or-v1-...
+Add the public key to `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and the private key to `VAPID_PRIVATE_KEY` in your `.env.local`.
+
+## Project Structure
+
+```
+src/
+├── app/                 # Next.js App Router pages
+│   ├── page.tsx         # Landing page (marketing)
+│   ├── login/           # Sign in
+│   ├── register/        # Sign up
+│   ├── home/            # Main dashboard
+│   ├── pos/             # Daily report upload & P&L
+│   ├── inventory/       # Inventory management
+│   ├── invoices/        # Invoice scanning
+│   ├── ordering/        # AI ordering engine
+│   ├── employees/       # Employee management
+│   ├── fuel/            # Fuel margin tracking
+│   ├── reports/         # Analytics & trends
+│   ├── alerts/          # Smart alerts
+│   ├── settings/        # Store & account settings
+│   ├── api/             # API routes
+│   └── ...
+├── components/          # Shared React components
+├── hooks/               # Custom React hooks
+└── lib/                 # Utilities, Supabase clients
 ```
 
-### 3. Deploy
-Push to GitHub → Vercel → Add 4 env vars → Deploy
+## License
 
-### 4. First login
-Register → store auto-created → all vendor companies pre-loaded
+© 2026 RYXSOR AI. All rights reserved.
