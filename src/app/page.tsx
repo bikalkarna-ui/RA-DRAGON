@@ -159,19 +159,15 @@ function MiniPreview({ kind }: { kind: 'pnl' | 'ordering' | 'fuel' }) {
 }
 
 export default function LandingPage() {
-  const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     try {
       createClient().auth.getSession().then(({ data }: any) => {
         if (data?.session) window.location.href = '/home';
       });
     } catch {}
   }, []);
-
-  if (!mounted) return null;
 
   const features = [
     { icon: BarChart3, title: 'Daily Sales Reports',     desc: 'Upload your Modisoft daily report and instantly get your complete P&L — sales, cash flow, short/over, and department breakdown. Automated every day.',           color: '#C0392B', bg: '#FEF2F2' },
@@ -221,6 +217,27 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Structured data for search engines */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: 'RYXSOR AI',
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Web, iOS, Android',
+            description:
+              'AI-powered gas station and convenience store management platform. Auto-read daily reports, track inventory, manage employees, and generate P&L.',
+            offers: [
+              { '@type': 'Offer', name: 'Starter', price: '0', priceCurrency: 'USD', description: '1 store location, daily reports, basic inventory' },
+              { '@type': 'Offer', name: 'Pro', price: '149', priceCurrency: 'USD', description: 'Up to 3 locations, AI ordering, employee time clock, P&L reports' },
+              { '@type': 'Offer', name: 'Enterprise', price: '245.99', priceCurrency: 'USD', description: 'Unlimited locations, corporate dashboard, API access' },
+            ],
+            publisher: { '@type': 'Organization', name: 'RYXSOR AI', foundingDate: '2026', founder: { '@type': 'Person', name: 'RA' } },
+          }),
+        }}
+      />
 
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
@@ -263,6 +280,10 @@ export default function LandingPage() {
             <Link href="/register" className="block text-center rounded-xl bg-accent text-white font-bold text-sm px-5 py-3">
               Start Free Trial
             </Link>
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Link href="/terms" className="text-xs text-gray-400">Terms</Link>
+              <Link href="/privacy" className="text-xs text-gray-400">Privacy</Link>
+            </div>
           </div>
         )}
       </nav>
@@ -568,12 +589,14 @@ export default function LandingPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white font-black text-sm">R</div>
               <span className="text-gray-400 text-sm">RYXSOR AI — by RA</span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               <a href="#features" className="text-gray-500 hover:text-gray-300 text-xs">Features</a>
               <a href="#pricing" className="text-gray-500 hover:text-gray-300 text-xs">Pricing</a>
               <a href="#about" className="text-gray-500 hover:text-gray-300 text-xs">About</a>
               <a href="#contact" className="text-gray-500 hover:text-gray-300 text-xs">Contact</a>
               <Link href="/login" className="text-gray-500 hover:text-gray-300 text-xs">Sign In</Link>
+              <Link href="/terms" className="text-gray-500 hover:text-gray-300 text-xs">Terms</Link>
+              <Link href="/privacy" className="text-gray-500 hover:text-gray-300 text-xs">Privacy</Link>
             </div>
             <p className="text-gray-600 text-xs">© 2026 RYXSOR AI. All rights reserved.</p>
           </div>

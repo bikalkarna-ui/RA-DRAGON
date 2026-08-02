@@ -35,7 +35,7 @@ function Row({ label, value, sub, red, bold, indent }: {
         <span className={cn('text-sm', bold ? 'font-bold text-text' : 'text-gray-700')}>{label}</span>
         {sub && <p className="text-[10px] text-muted">{sub}</p>}
       </div>
-      <span className={cn('num text-sm font-bold', bold ? 'text-text' : red ? 'text-red-600' : 'text-gray-100')}>
+      <span className={cn('num text-sm font-bold', bold ? 'text-text' : red ? 'text-red-600' : 'text-gray-900')}>
         {red ? '-' : ''}{fmt.currency(Math.abs(value))}
       </span>
     </div>

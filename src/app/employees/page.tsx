@@ -82,7 +82,7 @@ export default function EmployeesPage() {
       fetch('/api/timeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'clock_out', title: `${emp.name} clocked out`, description: duration(active.clock_in), employee_name: emp.name, store_id: store?.id }) }).catch(() => {});
     } else {
       const { error: clockErr } = await sb.from('time_clock').insert({ store_id: store.id, employee_id: emp.id, employee_name: emp.name, clock_in: new Date().toISOString() });
-      if (clockErr) { setPinMsg({ text: `Error: ${clockErr.message}`, ok: false }); setPin(''); setTimeout(() => setPinMsg(null), 5000); setSaving(false); return; }
+      if (clockErr) { setPinMsg({ text: `Error: ${clockErr.message}`, ok: false }); setPin(''); setTimeout(() => setPinMsg(null), 5000); return; }
       setPinMsg({ text: `✓ ${emp.name} clocked IN`, ok: true });
       fetch('/api/timeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'clock_in', title: `${emp.name} clocked in`, employee_name: emp.name, store_id: store?.id }) }).catch(() => {});
     }

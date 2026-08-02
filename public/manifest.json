@@ -5,7 +5,7 @@
   "start_url": "/home",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1a1a2e",
+  "theme_color": "#C0392B",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -25,13 +25,5 @@
     "business",
     "productivity",
     "finance"
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-home.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "label": "Dashboard"
-    }
   ]
 }

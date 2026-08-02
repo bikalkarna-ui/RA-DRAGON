@@ -147,7 +147,7 @@ export default function BillingPage() {
                     {inv.status === 'sent' ? 'Resend' : 'Send'}
                   </button>
                 </div>
-                {sendMsg?.id === inv.id && (
+                {sendMsg?.id === inv.id && sendMsg && (
                   <p className={cn('text-xs font-semibold mt-2', sendMsg.ok ? 'text-green-600' : 'text-red-600')}>{sendMsg.text}</p>
                 )}
               </div>

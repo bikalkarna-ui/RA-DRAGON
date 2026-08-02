@@ -132,7 +132,7 @@ export default function RegisterPage() {
                 className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password (min 6 characters)</label>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password (min 8 characters)</label>
               <input type="password" required minLength={8} value={pw} onChange={e => setPw(e.target.value)}
                 placeholder="At least 8 characters, with a letter and number"
                 className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 text-white placeholder-gray-600 text-base focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all" />

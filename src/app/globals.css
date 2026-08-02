@@ -6,7 +6,15 @@
 
 @layer base {
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { background: #F7F8FA; scroll-behavior: smooth; }
+  html {
+    background: #F7F8FA;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
   body {
     @apply bg-transparent text-text antialiased;
     background: #F7F8FA;
@@ -18,6 +26,8 @@
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: #F3F4F6; }
   ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+  /* Anchor links offset for sticky nav */
+  [id] { scroll-margin-top: 80px; }
 }
 
 @layer components {
@@ -89,15 +99,21 @@
   .divider { @apply border-b border-border; }
 }
 
+/* Global reduced-motion support — respects user accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media print {
   body * { visibility: hidden; }
   #receipt, #receipt * { visibility: visible; }
   #receipt { position: absolute; top: 0; left: 0; width: 100%; }
   .no-print { display: none !important; }
-
-  @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .animate-fade-up { animation: fade-up 0.2s ease-out; }
-  @keyframes scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
-  .animate-scale-in { animation: scale-in 0.15s ease-out; }
-  .shadow-lifted { box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
 }
