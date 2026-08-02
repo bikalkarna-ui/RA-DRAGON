@@ -10,7 +10,7 @@ import {
   BarChart3, Package, Brain, Bell, FileText, TrendingUp, TrendingDown,
   Users, LogOut, RefreshCw, Zap, AlertTriangle, DollarSign, X, Send,
   Fuel, Receipt, PieChart, Shield, Building2, Clock, Download,
-  ChevronRight, Settings, Mail, Upload, CheckCircle2
+  ChevronRight, Settings, Mail, Upload, CheckCircle2, History
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -365,6 +365,7 @@ export default function HomePage() {
     { href: '/invoices',    icon: FileText,   label: 'Invoices',         sub: 'Scan vendor invoices', badge: pendingInv, color: 'bg-pink-50 text-pink-700' },
     { href: '/inventory',   icon: Package,    label: 'Inventory',        sub: 'Stock & movement',   badge: outOfStock,  color: 'bg-blue-50 text-blue-700' },
     { href: '/ordering',    icon: Brain,      label: 'AI Ordering',      sub: '90-day reorders',    badge: 0,           color: 'bg-violet-50 text-violet-700' },
+    { href: '/order-history', icon: History,  label: 'Order History',    sub: 'What you ordered, by category', badge: 0, color: 'bg-teal-50 text-teal-700' },
     { href: '/alerts',      icon: Bell,       label: 'Alerts',           sub: 'Price & stock',      badge: 0,           color: 'bg-amber-50 text-amber-700' },
     { href: '/reports',     icon: TrendingUp, label: 'Reports & P&L',    sub: 'Trends & analytics', badge: 0,           color: 'bg-green-50 text-green-700' },
     { href: '/employees',   icon: Users,      label: 'Employees',        sub: 'Time clock & pay',   badge: staffIn,     color: 'bg-cyan-50 text-cyan-700' },
@@ -384,7 +385,7 @@ export default function HomePage() {
   ];
 
   const { role } = useRole();
-  const MANAGER_PAGES = ['/pos', '/invoices', '/inventory', '/ordering', '/alerts', '/cashier'];
+  const MANAGER_PAGES = ['/pos', '/invoices', '/inventory', '/ordering', '/order-history', '/alerts', '/cashier'];
   const EMPLOYEE_PAGES = ['/cashier', '/pos'];
   const visibleApps = APPS.filter(app => {
     if (role === 'owner') return true;
@@ -398,6 +399,7 @@ export default function HomePage() {
     { href: '/invoices',  icon: FileText,   label: 'Invoices',        badge: pendingInv },
     { href: '/inventory', icon: Package,    label: 'Inventory',       badge: outOfStock },
     { href: '/ordering',  icon: Brain,      label: 'AI Ordering',     badge: 0 },
+    { href: '/order-history', icon: History, label: 'Order History',  badge: 0 },
     { href: '/reports',   icon: TrendingUp, label: 'Reports & P&L',   badge: 0 },
     { href: '/employees', icon: Users,      label: 'Employees',       badge: staffIn },
     { href: '/vendors',   icon: Shield,     label: 'Vendors',         badge: 0 },

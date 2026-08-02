@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Home, BarChart3, Bell, Menu, Plus, X, FileText, Upload, DollarSign,
   AlertTriangle, Truck, ClipboardList, Package, Fuel, Brain, PiggyBank,
-  Sparkles, Users, BellPlus,
+  Sparkles, Users, BellPlus, History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,7 @@ const ACTIONS = [
   { href: '/reports', icon: Sparkles, label: 'Generate AI Report', color: 'text-pink-400 bg-pink-500/10' },
   { href: '/employees', icon: Users, label: 'Add Employee', color: 'text-indigo-400 bg-indigo-500/10' },
   { href: '/alerts', icon: BellPlus, label: 'Create Alert', color: 'text-yellow-400 bg-yellow-500/10' },
+  { href: '/order-history', icon: History, label: 'Order History', color: 'text-teal-400 bg-teal-500/10' },
 ];
 
 export function MobileNav() {

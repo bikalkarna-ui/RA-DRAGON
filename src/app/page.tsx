@@ -6,10 +6,157 @@ import { createClient } from '@/lib/supabase/client';
 import {
   ArrowRight, BarChart3, Package, Brain, FileText,
   TrendingUp, Bell, Users, Check, Mail, Phone,
-  Shield, Zap, Clock, Star, Menu, X
+  Shield, Zap, Clock, Star, Menu, X, ScanLine, Fuel, Cigarette,
+  Building2, ChevronDown
 } from 'lucide-react';
 import { ReviewsSection } from '@/components/landing/reviews-section';
 import { ChatWidget } from '@/components/landing/chat-widget';
+
+// Signature hero element — visualizes the product's actual mechanism: a photographed
+// daily report gets scanned and turned into a structured, categorized P&L in seconds.
+// This is deliberately built from the real thing RYXSOR does, not a generic dashboard mock.
+function ScanVisual() {
+  const rows = [
+    { label: 'Fuel', value: '$4,218.60', icon: Fuel, color: '#D97706' },
+    { label: 'Tobacco / CIG', value: '$1,940.15', icon: Cigarette, color: '#7C3AED' },
+    { label: 'Grocery & Snacks', value: '$2,105.40', icon: Package, color: '#2563EB' },
+    { label: 'Lottery', value: '$612.00', icon: Star, color: '#059669' },
+  ];
+  return (
+    <div className="relative mx-auto max-w-3xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 rounded-3xl border border-gray-200 bg-white shadow-[0_2px_8px_rgba(16,24,40,0.04),0_24px_64px_rgba(16,24,40,0.10)] overflow-hidden">
+
+        {/* Left: the raw report */}
+        <div className="relative bg-gray-900 p-6 sm:p-7 overflow-hidden">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-4">Photo of your report</p>
+          <div className="space-y-2 font-mono text-[11px] leading-relaxed text-gray-400">
+            <p className="text-gray-300">** DAILY CLOSE — SHIFT 2 **</p>
+            <p>REG SALES ....... 8,876.15</p>
+            <p>FUEL GALLONS .... 1,104.2</p>
+            <p>DEPT 04 TOBACCO . 1,940.15</p>
+            <p>DEPT 09 GROCERY . 2,105.40</p>
+            <p>LOTTERY NET ..... 612.00</p>
+            <p>DRAWER COUNT .... 240.00</p>
+            <p className="text-gray-600">— end of report —</p>
+          </div>
+          {/* scanning beam */}
+          <div className="scan-beam pointer-events-none absolute inset-x-0 h-16 bg-gradient-to-b from-transparent via-accent/40 to-transparent" />
+        </div>
+
+        {/* Right: structured output */}
+        <div className="p-6 sm:p-7 bg-white">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-accent/10">
+              <Brain className="h-3 w-3 text-accent" />
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Structured instantly</p>
+          </div>
+          <div className="space-y-3">
+            {rows.map((r, i) => (
+              <div key={r.label} className="reveal-row flex items-center justify-between" style={{ animationDelay: `${0.5 + i * 0.18}s` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${r.color}14` }}>
+                    <r.icon className="h-4 w-4" style={{ color: r.color }} />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700">{r.label}</span>
+                </div>
+                <span className="num text-sm font-bold text-gray-900">{r.value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="reveal-row mt-4 pt-4 border-t border-gray-100 flex items-center justify-between" style={{ animationDelay: '1.3s' }}>
+            <span className="text-sm font-black text-gray-900">Net for the day</span>
+            <span className="num text-base font-black text-accent">$8,876.15</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating scan chip */}
+      <div className="scan-chip absolute left-1/2 -translate-x-1/2 -top-4 sm:top-1/2 sm:-translate-y-1/2 sm:left-1/2 flex items-center gap-1.5 rounded-full bg-gray-900 text-white text-xs font-bold px-3.5 py-2 shadow-lg">
+        <ScanLine className="h-3.5 w-3.5 text-accent2" /> AI reading report…
+      </div>
+
+      <style>{`
+        @keyframes scanSweep { 0%,15%{transform:translateY(-64px);opacity:0} 20%{opacity:1} 55%{transform:translateY(280px);opacity:1} 62%,100%{opacity:0} }
+        .scan-beam { animation: scanSweep 3.2s ease-in-out infinite; }
+        @keyframes revealRow { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:translateX(0)} }
+        .reveal-row { animation: revealRow 0.5s ease both; animation-iteration-count: 1; }
+        @keyframes chipPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }
+        .scan-chip { animation: chipPulse 3.2s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .scan-beam, .reveal-row, .scan-chip { animation: none !important; opacity: 1 !important; transform: none !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-gray-100 py-5">
+      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between text-left gap-4">
+        <span className="font-bold text-gray-900 text-base">{q}</span>
+        <ChevronDown className={`h-5 w-5 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <p className="text-sm text-gray-500 leading-relaxed mt-3 pr-8">{a}</p>}
+    </div>
+  );
+}
+
+// Small stylized "screen" used in the alternating feature sections — deliberately a
+// simplified mock, not a real screenshot, so it never goes stale as the app changes.
+function MiniPreview({ kind }: { kind: 'pnl' | 'ordering' | 'fuel' }) {
+  if (kind === 'pnl') {
+    return (
+      <div className="rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(16,24,40,0.04),0_16px_40px_rgba(16,24,40,0.08)] p-5">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Today's P&L</p>
+        <div className="flex items-end gap-1.5 h-24 mb-3">
+          {[40, 65, 50, 80, 55, 90, 70].map((h, i) => (
+            <div key={i} className="flex-1 rounded-t-md bg-accent/70" style={{ height: `${h}%` }} />
+          ))}
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-500">Net sales</span>
+          <span className="num font-black text-gray-900">$8,876.15</span>
+        </div>
+      </div>
+    );
+  }
+  if (kind === 'ordering') {
+    const rows = [
+      { name: 'Marlboro Red 20ct', qty: 12, tag: 'reorder' },
+      { name: 'Bud Light 24oz', qty: 24, tag: 'reorder' },
+      { name: 'Monster Energy', qty: 18, tag: 'ok' },
+    ];
+    return (
+      <div className="rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(16,24,40,0.04),0_16px_40px_rgba(16,24,40,0.08)] p-5">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">AI suggested order</p>
+        <div className="space-y-2.5">
+          {rows.map(r => (
+            <div key={r.name} className="flex items-center justify-between text-sm">
+              <span className="text-gray-700 font-medium">{r.name}</span>
+              <span className={`chip ${r.tag === 'reorder' ? 'chip-red' : 'chip-green'}`}>{r.tag === 'reorder' ? `+${r.qty} units` : 'in stock'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(16,24,40,0.04),0_16px_40px_rgba(16,24,40,0.08)] p-5">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Fuel margin, today</p>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        {[{ g: 'Regular', m: '$0.31' }, { g: 'Plus', m: '$0.34' }, { g: 'Premium', m: '$0.38' }].map(f => (
+          <div key={f.g} className="rounded-xl bg-gray-50 p-3">
+            <p className="text-xs text-gray-400 mb-1">{f.g}</p>
+            <p className="num font-black text-gray-900">{f.m}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
@@ -76,12 +223,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
 
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white font-black text-xl">R</div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white font-black text-xl font-display">R</div>
             <div>
-              <span className="font-black text-gray-900 text-xl">RYXSOR AI</span>
+              <span className="font-display font-bold text-gray-900 text-xl">RYXSOR AI</span>
               <span className="hidden sm:inline text-xs text-gray-400 ml-2">by RA</span>
             </div>
           </div>
@@ -121,19 +268,19 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center">
+      <section className="max-w-6xl mx-auto px-6 pt-16 sm:pt-20 pb-16 text-center">
         <div className="inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-100 px-4 py-2 mb-8">
           <Zap className="h-3.5 w-3.5 text-accent" />
           <span className="text-xs font-bold text-accent tracking-wide uppercase">AI-Powered Gas Station Management</span>
         </div>
-        <h1 className="text-5xl sm:text-6xl font-black text-gray-900 leading-tight mb-6">
-          Run your store smarter.<br />
-          <span className="text-accent">Not harder.</span>
+        <h1 className="font-display text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.05] mb-6">
+          Your report becomes<br />
+          your <span className="text-accent">P&amp;L in seconds.</span>
         </h1>
         <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed">
           RYXSOR AI sits on top of your existing Modisoft POS. Upload your daily report and AI automatically handles your P&amp;L, inventory, ordering, and invoices — so you can focus on your customers.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <Link href="/register"
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent text-white font-bold text-lg px-10 py-5 hover:bg-red-700 active:scale-95 transition-all shadow-[0_2px_8px_rgba(192,57,43,0.18),0_8px_20px_rgba(192,57,43,0.16)] hover:shadow-[0_4px_12px_rgba(192,57,43,0.22),0_12px_32px_rgba(192,57,43,0.2)]">
             Launch RYXSOR AI <ArrowRight className="h-5 w-5" />
@@ -143,7 +290,11 @@ export default function LandingPage() {
             Sign in to your store
           </Link>
         </div>
-        <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
+
+        {/* Signature visual */}
+        <ScanVisual />
+
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-400 mt-12">
           <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-green-500" />Free to start</span>
           <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-green-500" />Works with Modisoft</span>
           <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-green-500" />No credit card needed</span>
@@ -151,10 +302,26 @@ export default function LandingPage() {
       </section>
 
 
+      {/* Trust pillars */}
+      <section className="border-y border-gray-100 bg-gray-50/60">
+        <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 text-center">
+          {[
+            { title: 'Zero manual entry', desc: 'Photograph a report or invoice — the AI reads every line so you don\u2019t type numbers twice.' },
+            { title: 'Runs 24/7', desc: 'Alerts, ordering, and P&L update the moment new data comes in — no clocking in required.' },
+            { title: 'Built on real shifts', desc: 'Every screen was shaped by an actual gas station counter, not a generic retail template.' },
+          ].map(p => (
+            <div key={p.title}>
+              <h3 className="font-display font-bold text-gray-900 text-lg mb-1.5">{p.title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-black text-gray-900 mb-4">Everything your store needs</h2>
+          <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">Everything your store needs</h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">Built specifically for gas stations and convenience stores. Every feature is designed around how your business actually works.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -173,7 +340,7 @@ export default function LandingPage() {
       {/* What makes us different */}
       <section className="max-w-5xl mx-auto px-6 py-24">
         <div className="text-center mb-14">
-          <h2 className="text-4xl font-black text-gray-900 mb-4">What makes RYXSOR AI different</h2>
+          <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">What makes RYXSOR AI different</h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">We're not another generic inventory app. Here's what actually sets us apart.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -195,7 +362,7 @@ export default function LandingPage() {
       <section className="bg-gray-50 py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">How it works</h2>
+            <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">How it works</h2>
             <p className="text-lg text-gray-500">Get your store running on RYXSOR AI in minutes</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
@@ -214,6 +381,73 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Deep feature showcase — alternating detail sections */}
+      <section className="max-w-5xl mx-auto px-6 py-24 space-y-24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-accent mb-3">Profit & Loss</p>
+            <h3 className="font-display text-3xl font-bold text-gray-900 mb-4">Know today's numbers today, not next week</h3>
+            <ul className="space-y-3">
+              {['Upload your daily report photo — sales, fuel, and department totals populate automatically', 'See short/over, best and worst days, and department trends without opening a spreadsheet', 'AI flags anything unusual — a short drawer, a slow department — the moment it happens'].map(t => (
+                <li key={t} className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600 leading-relaxed">{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <MiniPreview kind="pnl" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-center">
+          <div className="sm:order-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-accent mb-3">AI Ordering</p>
+            <h3 className="font-display text-3xl font-bold text-gray-900 mb-4">Never guess what to reorder again</h3>
+            <ul className="space-y-3">
+              {['AI reads 30/60/90-day sales velocity per product and tells you exactly what to reorder, and how much', 'Purchase orders are grouped by vendor, ready to send in one tap', 'Order History keeps every past order — invoice-scanned or manual — searchable by category'].map(t => (
+                <li key={t} className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600 leading-relaxed">{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="sm:order-1"><MiniPreview kind="ordering" /></div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-accent mb-3">Fuel Margins</p>
+            <h3 className="font-display text-3xl font-bold text-gray-900 mb-4">Fuel is your thinnest margin — watch it like one</h3>
+            <ul className="space-y-3">
+              {['Track cost vs. posted price per grade, updated with every delivery', 'See gallons sold and margin dollars side by side, not buried in a POS report', 'Catch a pricing mistake before it costs you a full shift of margin'].map(t => (
+                <li key={t} className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <span className="text-sm text-gray-600 leading-relaxed">{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <MiniPreview kind="fuel" />
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-gray-50 py-24">
+        <div className="max-w-2xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">Questions store owners actually ask</h2>
+          </div>
+          <div>
+            <FaqItem q="Does this replace my Modisoft POS?" a="No — RYXSOR AI sits on top of it. You keep ringing up sales on Modisoft exactly like you do now. RYXSOR reads your daily reports and invoices and turns them into P&L, inventory, and ordering data." />
+            <FaqItem q="How long does setup take?" a="Most owners are running within a day. Sign up, import your product list (CSV or manual), and start uploading daily reports — there's no hardware to install." />
+            <FaqItem q="What if I have more than one store?" a="RYXSOR supports multiple locations under one account, with role-based access so managers and employees only see what's relevant to them." />
+            <FaqItem q="Can employees clock in without seeing financials?" a="Yes. Owner, Manager, and Employee roles each see a different, PIN-gated view — cashiers get the time clock and cashier actions, not your P&L." />
+            <FaqItem q="Does it track lottery and tobacco separately?" a="Yes — lottery, tobacco, and every other department are tracked as their own categories throughout reports, inventory, and ordering." />
+          </div>
+        </div>
+      </section>
+
       {/* Reviews */}
       <ReviewsSection />
 
@@ -221,7 +455,7 @@ export default function LandingPage() {
       <section id="pricing" className="bg-gray-50 py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">Simple, transparent pricing</h2>
+            <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">Simple, transparent pricing</h2>
             <p className="text-lg text-gray-500">Start free. Upgrade when you're ready. Cancel anytime.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -261,7 +495,7 @@ export default function LandingPage() {
       <section id="about" className="max-w-4xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-4xl font-black text-gray-900 mb-4">Built by people who understand your business</h2>
+            <h2 className="font-display text-4xl font-bold text-gray-900 mb-4">Built by people who understand your business</h2>
             <p className="text-gray-500 leading-relaxed mb-4">
               RYXSOR AI was founded by RA, who grew up working in gas stations and convenience stores. We built the software we always wished existed — one that works with your existing POS, not against it.
             </p>
@@ -285,7 +519,7 @@ export default function LandingPage() {
       <section id="contact" className="bg-gray-900 py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-black text-white mb-4">Get in touch</h2>
+            <h2 className="font-display text-4xl font-bold text-white mb-4">Get in touch</h2>
             <p className="text-gray-400 text-lg">We'd love to hear from you. Reach out any time.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

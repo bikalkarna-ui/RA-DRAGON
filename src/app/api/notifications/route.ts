@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
       if (!isOut && !isLow && !isOver) continue;
 
       const type = isOut ? 'out_of_stock' : isLow ? 'low_stock' : 'overstock';
-      try {
-        await sb.from('notifications').upsert({
+      const { error: upsertErr } = await sb.from('notifications').upsert({
           store_id: store.id, type,
           title: isOut ? `${prod.name} is OUT OF STOCK` : isLow ? `${prod.name} is running low` : `${prod.name} overstocked`,
           message: isOut
@@ -35,12 +34,13 @@ export async function GET(request: NextRequest) {
           data: { quantity: prod.quantity, min_quantity: prod.min_quantity, max_quantity: prod.max_quantity, vendor: prod.vendor_company },
           is_read: false,
         }, { onConflict: 'store_id,type,product_id', ignoreDuplicates: false });
-      } catch { /* ok */ }
+      if (upsertErr) console.error(`notification upsert failed for product ${prod.id}:`, upsertErr.message);
     }
 
-    const { data: notifs } = await sb.from('notifications')
+    const { data: notifs, error: fetchErr } = await sb.from('notifications')
       .select('*').eq('store_id', store.id)
       .order('created_at', { ascending: false }).limit(50);
+    if (fetchErr) console.error('notifications fetch failed:', fetchErr.message);
 
     return NextResponse.json({ notifications: notifs ?? [] });
   } catch (err: any) {

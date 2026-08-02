@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { BarChart3, Package, Brain } from 'lucide-react';
 
 type Step = 'email' | 'password' | 'success';
 
@@ -85,7 +86,42 @@ export default function LoginPage() {
   const back = () => { setStep('email'); setErr(''); setPw(''); };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-5">
+    <div className="min-h-screen bg-gray-950 flex items-stretch">
+
+      {/* Desktop-only left panel — brand + product glimpse. Hidden on mobile so the
+          phone experience (what this owner actually tests on) is untouched. */}
+      <div className="hidden lg:flex lg:w-[46%] relative overflow-hidden bg-gray-900 border-r border-gray-800 flex-col justify-between p-12">
+        <div className="absolute inset-0 opacity-40" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(192,57,43,0.25), transparent 55%), radial-gradient(circle at 80% 80%, rgba(37,99,235,0.15), transparent 50%)' }} />
+        <div className="relative">
+          <Link href="/" className="inline-flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white font-black font-display text-xl">R</div>
+            <span className="font-display font-bold text-white text-xl">RYXSOR AI</span>
+          </Link>
+        </div>
+        <div className="relative">
+          <h2 className="font-display text-3xl font-bold text-white leading-tight mb-4">
+            Everything about your store,<br />in one place.
+          </h2>
+          <div className="space-y-3">
+            {[
+              { icon: BarChart3, label: 'Daily P&L, generated automatically' },
+              { icon: Package, label: 'Real-time inventory across every department' },
+              { icon: Brain, label: 'AI ordering that watches your sales velocity' },
+            ].map(i => (
+              <div key={i.label} className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                  <i.icon className="h-4 w-4 text-accent2" />
+                </div>
+                <span className="text-sm text-gray-300">{i.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="relative text-xs text-gray-500">© 2026 RYXSOR AI. Built for gas stations and convenience stores.</p>
+      </div>
+
+      {/* Right / mobile: the sign-in card */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5 py-16 relative">
 
       {/* Animated background dots */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -96,7 +132,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm relative z-10">
 
         {/* Logo */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 lg:hidden">
           <Link href="/">
             <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-white font-black text-3xl mb-4 shadow-lg shadow-red-900/30">
               R
@@ -108,6 +144,13 @@ export default function LoginPage() {
              step === 'password' ? `Welcome back` :
              'Check your email'}
           </p>
+        </div>
+        <div className="hidden lg:block text-center mb-8">
+          <h1 className="font-display text-2xl font-bold text-white">
+            {step === 'email' ? 'Sign in to your store' :
+             step === 'password' ? `Welcome back` :
+             'Check your email'}
+          </h1>
         </div>
 
         {/* Card */}
@@ -237,6 +280,7 @@ export default function LoginPage() {
           <span>256-bit encryption · Secured by Supabase</span>
         </div>
 
+      </div>
       </div>
     </div>
   );
